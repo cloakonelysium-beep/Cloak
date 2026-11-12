@@ -35,6 +35,15 @@ const PLAN: [string, string, string?][] = [
   ["Minting after launch", "None"],
 ];
 
+// how it works, in order (docs/GLOAK.md, docs/GLOAK-EXPERIMENT.md)
+const STEPS: [string, string][] = [
+  ["Born in one sealed launch", "Like any Cloak launch: sealed bids, one clearing price for every winner, then a Uniswap pool at that price. 70% of the raise goes into the pool and stays there forever. No team share."],
+  ["Free inside", "Shielding GLOAK into a private balance costs nothing, and so does trading it privately. Winning bids are paid out without a surcharge too."],
+  ["10% to leave", "Every move to a public address burns 10%: a withdrawal to a wallet, or a send between wallets. The rate can be lowered, never raised."],
+  ["A pool only private routers can use", "Before every swap, the pool asks the token who's trading. Approved private routers pass; Uniswap's own router, aggregators and bots are refused."],
+  ["Fees buy it back", "The pool's trading fees go to Cloak's treasury, which buys GLOAK privately and sends it to 0x…dEaD, where it never moves again."],
+];
+
 const RULES = [
   "Shielding into a private balance is free, and so is trading privately.",
   "Withdrawing to a wallet, or sending between wallets, burns 10%. The rate can be lowered, never raised.",
@@ -61,6 +70,20 @@ export function Gloak() {
           <p>GLOAK is free to hold and trade inside private vaults, and burns 10% every time it moves to a public address. These numbers come straight from the token's own meter on {chain.name}.</p>
         </div>
         {token ? <span className="pill"><span className="dot live" />Live · refreshes every minute</span> : <span className="pill">Not launched yet</span>}
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div className="card-head"><h3>The idea</h3></div>
+        <p className="small soft" style={{ margin: "0 0 10px" }}>On a public chain, privacy is opt-in. Most holders of a token sit in public wallets, so the few who go private stand out, and anyone can still track, copy or target the rest.</p>
+        <p className="small soft" style={{ margin: "0 0 10px" }}>GLOAK turns that around. Its rules make private the cheap place to be and public the expensive one, so holding it privately is the normal case rather than the exception, and the private crowd is everyone who holds it. The price is public, as for any Uniswap pool. Who holds GLOAK, and how much, is not.</p>
+        <p className="small soft" style={{ margin: 0 }}>It's an experiment: the first and only token of its kind on Cloak, to see whether a token can live private by default.</p>
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div className="card-head"><h3>How it works</h3></div>
+        <ol className="small soft" style={{ margin: 0, paddingLeft: 18 }}>
+          {STEPS.map(([h, t]) => <li key={h} style={{ marginBottom: 8 }}><b>{h}.</b> {t}</li>)}
+        </ol>
       </div>
 
       {!token && (
