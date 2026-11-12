@@ -1069,9 +1069,9 @@ button.asset-row { cursor: pointer; }
 /* ───────────── GLOAK page (pages/Gloak.tsx) ───────────── */
 :root {
   --gk-private: var(--brand-signal);
-  --gk-pool: color-mix(in srgb, var(--brand-signal) 55%, var(--mute));
-  --gk-contracts: color-mix(in srgb, var(--brand-signal) 25%, var(--line-strong));
-  --gk-public: var(--mute);
+  --gk-pool: #8b7cf0; /* violet */
+  --gk-contracts: #e2689a; /* rose */
+  --gk-public: #a3a8ad; /* grey: public wallets */
   --gk-burn: #e39a4f;
   --gk-off: color-mix(in srgb, var(--text) 14%, transparent);
 }
