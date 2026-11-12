@@ -26,6 +26,6 @@ export const ACCOUNT_TYPED_DATA = (chainId: number) =>
     types: { PrivateAccount: [{ name: "purpose", type: "string" }] },
     primaryType: "PrivateAccount",
     message: {
-      purpose: "Derive my Cloak private account. This costs nothing and moves no funds. Only sign this on cloak.boblabs.tech.",
+      purpose: "Derive my Cloak private account. This costs nothing and moves no funds. Only sign this on oncloak.xyz.",
     },
   }) as const;
