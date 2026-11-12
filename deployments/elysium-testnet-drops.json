@@ -1,0 +1,12 @@
+{
+ "chainId": 99801,
+ "note": "Cloak v2's own NFT drop contracts, on v2's CloakConfig. No owner or admin on any of them.",
+ "deployer": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+ "config": "0x31337213cab071c28eed8b2256c5658c9de8a9ba",
+ "defaultBaseURI": "https://testnet.oncloak.xyz/api/nft/",
+ "dropFactory": "0x7981e75475ede391153adcbee7ff876923afefe5",
+ "dropFactoryBlock": 28037996,
+ "spotBook": "0x8da43271d9fd55c6bebc03372f17dc0d021175f7",
+ "escrowDropFactory": "0xac4cc1fe9dd62a9a8101fa763a11f3a4530a3ec3",
+ "costHype": "0.0011896344"
+}

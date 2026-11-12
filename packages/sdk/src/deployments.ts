@@ -89,11 +89,12 @@ export const deployments: Record<number, CloakDeployment> = {
     v4Hook: "0x822c91E71BC5a63Ef2C38bc37cea6ff443CD2a80",
     whype: "0xe44b27113D4b947c0B1bDf4a93878D0e115f4bdD",
     relayerUrl: "https://cloak-testnet-keeper.onrender.com",
-    // shared with Cloak v1, not redeployed: sealed NFT drops (Nov 3), WL spot sales and escrow drops
-    dropFactory: "0x2afb7d9a5baa02a2d72a7c761521fc66dce9d783",
-    dropFactoryBlock: 22329730n,
-    spotBook: "0x91806d96814cc205d4b642e280023a1c7b361fc8",
-    escrowDropFactory: "0x5f3efbfd5d15440947abfbfce7f2fcfffff71079",
+    // v2's own NFT drop contracts (Nov 12, deployments/elysium-testnet-drops.json): sealed drops, WL spot sales and
+    // escrow drops on v2's config. Nothing is shared with Cloak v1.
+    dropFactory: "0x7981e75475ede391153adcbee7ff876923afefe5",
+    dropFactoryBlock: 28037996n,
+    spotBook: "0x8da43271d9fd55c6bebc03372f17dc0d021175f7",
+    escrowDropFactory: "0xac4cc1fe9dd62a9a8101fa763a11f3a4530a3ec3",
     // Elysium testnet USDC (bridged from Circle's USDC on HyperEVM), in Gloam's vault
     assets: [{ symbol: "USDC", token: "0x7D29d8047B905000459c0E80c34a26CeedcB47b2", decimals: 6 }],
     gloam: {
