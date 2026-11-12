@@ -223,7 +223,7 @@ export function Docs() {
           <div className="callout"><b>Tip:</b> don't shield 1 HYPE and immediately buy with exactly 1 HYPE. Wait, vary amounts, and use batch mode. Privacy grows with the number of people using the vault.</div>
 
           <h2 id="gloak">GLOAK</h2>
-          <p>GLOAK is an experiment: a token that only lives in private vaults. Moving it into a private vault and trading it privately is free. Taking it out to a public address, or sending it between public addresses, burns <b>10%</b> of what's sent, and that rate can be lowered but never raised. Its only Uniswap pool trades through approved private routers, so it can't be bought or sold in public.</p>
+          <p>GLOAK is an experiment: a token that only lives in private vaults. On a public chain privacy is usually opt-in, so the few private holders stand out. GLOAK's rules make private the cheap place to be and public the expensive one, so holding it privately is the normal case. Moving it into a private vault and trading it privately is free. Taking it out to a public address, or sending it between public addresses, burns <b>10%</b> of what's sent, and that rate can be lowered but never raised. Its only Uniswap pool trades through approved private routers, so it can't be bought or sold in public.</p>
           <table>
             <tbody>
               <tr><td>Supply</td><td>500,000 GLOAK, minted once, all to its launch. No team share, no minting after launch, no proxy</td></tr>
