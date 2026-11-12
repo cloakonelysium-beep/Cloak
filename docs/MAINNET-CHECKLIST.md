@@ -9,7 +9,8 @@ Who does it: **Bob**, **Claude**, or **Gloam**. The rehearsal of every deploy st
 ## 1. Before anything is deployed
 
 - [ ] **Bob:** send the reply to Gloam, with the treasury address filled in (from step 2).
-- [ ] **Gloam:** their memo board date. If there's none before Monday, Claude deploys their code unchanged (step 4).
+- [x] **Gloam:** the memo board. Gloam's CEO (Nov 12): Cloak deploys `GloamPayMemo` unchanged on Monday Nov 16 and sends
+  Gloam the address and deploy block; Gloam checks the bytecode and points their app at the same board (MAINNET-DECISIONS H3).
 - [ ] **Gloam:** HYPE and KNTQ open in their vault on Thursday Nov 12 (HYPE 12 / 600, KNTQ 1,400 / 70,000). **Claude** checks on chain that it happened.
 - [ ] **Bob:** a backup RPC endpoint (QuickNode lists Elysium; check it serves mainnet 99901 and `eth_getLogs`).
 - [ ] **Bob:** decide whether v2's keeper runs the NFT drops on mainnet (`DROPS`), or leaves them for later.
@@ -54,7 +55,8 @@ Four wallets. Each is created fresh, never reused from v1 or testnet, and never 
 ## 4. Deploy (private, in this order)
 
 Each step prints what it deployed and reads it back.
-- [ ] **Memo board**, only if Gloam's isn't live: Gloam's `GloamPayMemo`, unchanged, from the deployer.
+- [ ] **Memo board** (Monday Nov 16): Gloam's `GloamPayMemo`, unchanged, from the deployer. Record its address and deploy
+  block in the mainnet config (`memoBoard`), then send both to Gloam so they can match the bytecode and use the same board.
 - [ ] **Launch factory and hook:**
   ```bash
   node e2e-gloam/deploy-v2-factory.mjs --config deployments/elysium-mainnet-v2-factory.input.json

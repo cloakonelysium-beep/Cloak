@@ -9,7 +9,7 @@
   "treasury": "0xBB5Df281F605B886C3a4E73ECD6560847719936b",
   "vaultVerifier": "0x29053A713E3a7D37053374446869a6f55858FcEf",
   "launchFeeBps": 150,
-  "_launchFeeBps": "1.5% of a successful raise, taken at settlement. At most 300 (3%). DECIDE (docs/MAINNET-DECISIONS.md).",
+  "_launchFeeBps": "1.5% of a successful raise, taken at settlement. At most 300 (3%). Decided Nov 10 (docs/MAINNET-DECISIONS.md, A1).",
   "perBid": "100000000000000000000",
   "total": "10000000000000000000000",
   "capsOn": true,
@@ -18,7 +18,7 @@
     "minLpBps": 5000
   },
   "_launchFloors": "Every launch puts at least 50% of its raise into its pool, and its pool reserve must cover that share. No minimum raise is required (0): a creator may still set one, and under it the launch fails and every deposit comes back. Raising either floor later is instant; lowering waits 3 days in public. Decided Nov 11.",
-  "_caps": "Beta bid caps: 100 HYPE per bid, 10,000 HYPE per launch. DECIDE.",
+  "_caps": "Beta bid caps: 100 HYPE per bid, 10,000 HYPE per launch, until the audit. Decided Nov 10 (docs/MAINNET-DECISIONS.md, A3).",
   "hook": {
     "baseFee": 3000,
     "startFee": 100000,
