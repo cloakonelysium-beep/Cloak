@@ -73,6 +73,13 @@ The testnet keeper, the same job as mainnet's.
 - Its own address so its transactions never collide with the main wallet's.
 - Funding: testnet HYPE from the faucet.
 
+### E2E tester `0xE184…04E4` (testnet only, temporary)
+`0xE184Cd85DdDBcbaFE742bC241a383654eCBD04E4`. Created Nov 12 for the live end-to-end test, at the owner's request.
+- Plays a creator and two bidders on the new testnet factory, so the Render keeper can be watched revealing and settling.
+- Its key exists only in a git-ignored `.env` on that session's temporary machine, never printed; it's gone when the
+  session ends. It holds no role in any contract.
+- Funding: about 0.3 testnet HYPE from the testnet main wallet. Anything left is sent back to the main wallet after the test.
+
 ## Not Cloak's
 
 Addresses in the configs that belong to others, for reference:
