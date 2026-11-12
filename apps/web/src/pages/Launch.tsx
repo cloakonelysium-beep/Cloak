@@ -15,6 +15,7 @@ import { Icon, TokenIcon } from "../ui";
 import { launchCreatedLogs, useTokenMeta } from "../tokenMeta";
 import { publicClient, readCloak } from "../wallet";
 import { every } from "../every";
+import { GloakCard, useGloak } from "../gloak";
 import { LaunchTerms } from "../launchTerms";
 
 type MyBidsT = Awaited<ReturnType<typeof readCloak.bidsOf>>;
@@ -48,6 +49,7 @@ export function Launch({ auction }: { auction: Address }) {
   const { wallet, setError, toast } = useApp();
   const { query } = useRoute();
   const [isNew, setIsNew] = useState(query.get("new") === "1");
+  const gloak = useGloak();
   const [s, setS] = useState<AuctionState | null>(null);
   const [curve, setCurve] = useState<bigint[]>([]);
   const [mine, setMine] = useState<MyBidsT>([]);
@@ -157,6 +159,7 @@ export function Launch({ auction }: { auction: Address }) {
             <h1>{s.tokenName}</h1>
             <span className="tc-ticker">${s.tokenSymbol}</span>
             <span className={`pill ${status[1]}`}>{status[0]}</span>
+            {gloak.is(s.token) && <span className="pill" title="Free to trade privately; 10% burned when it leaves for a wallet">Private-only</span>}
           </div>
           <div className="token-card-ca">
             <span className="mute">Contract</span>
@@ -230,7 +233,7 @@ export function Launch({ auction }: { auction: Address }) {
               )}
             </div>
           )}
-          <TradeCard s={s} wallet={wallet} />
+          {gloak.is(s.token) ? <GloakCard info={gloak.info} /> : <TradeCard s={s} wallet={wallet} />}
           <CreatorProceedsCard s={s} wallet={wallet} />
           <CreatorFeesCard s={s} wallet={wallet} />
         </div>
