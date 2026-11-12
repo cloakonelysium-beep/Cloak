@@ -43,7 +43,7 @@ What each move costs:
 | Anyone not approved swapping in GLOAK's pool (Universal Router, aggregators, bots) | Refused |
 | Sending to 0x…dEaD | Free |
 
-**Why a private sell isn't charged.** Every private sell passes its tokens through a one-time escrow: an address made for that one swap, which the token can't recognise in advance. So the vault's payment to the escrow is charged 10% like any withdrawal. In the same transaction the escrow hands everything to the router, and the token gives the 10% back to the router. The swap gets the full amount and nothing is burned. A real withdrawal never reaches a router, so its 10% stays burned. The token remembers the refund only for the length of the transaction (transient storage).
+**Why a private sell isn't charged.** Every private sell passes its tokens through a one-time escrow: an address made for that one swap, which the token can't recognise in advance. So the vault's payment to the escrow is charged 10% like any withdrawal, and the token holds that 10% instead of burning it at once. In the same transaction the escrow hands everything to the router, and the token passes the held 10% on to the router with a plain transfer. The swap gets the full amount and nothing is burned. A real withdrawal never reaches a router, so its 10% burns with the next transfer of GLOAK (or when anyone calls `burnHeld()`). Nothing is ever minted after launch.
 
 **The cloakroom ticket, closed.** Uniswap v4 can leave a buyer's tokens inside Uniswap as claims instead of paying them out, and claims move without the token seeing them. Two rules close that on GLOAK. Only private routers can swap in its pool, and they always pay out into a vault. Only approved contracts can pay GLOAK into Uniswap, so nobody can turn public GLOAK into claims.
 
@@ -141,7 +141,7 @@ Our router always trades GLOAK in Cloak's launch vault, because launch tokens ar
 
 ## Known limits
 
-- **A spend sent alone pays 10%.** If someone submits a private sell's withdrawal in its own transaction, without the router, the refund can't happen. The money isn't stuck: after the deadline the router returns the 90% to the owner key. It takes deliberate front-running to cause.
+- **A spend sent alone pays 10%.** If someone submits a private sell's withdrawal in its own transaction, without the router, the held 10% can't go on to the router and burns. The money isn't stuck: after the deadline the router returns the 90% to the owner key. It takes deliberate front-running to cause.
 - **Pools with no hook are still reachable through our router.** Someone could open their own GLOAK pool with no hook, sell GLOAK into it privately, and take the result out as Uniswap claims. That gives them a small, isolated claims market that only custom contracts can use. Turning claims back into GLOAK still costs 10%, and GLOAK's own pool stays closed to it. Closing this would need router changes, which the experiment avoids.
 - **Public bids work.** The auction pays every winner without a surcharge, so a public bidder ends up with public GLOAK. The app should only offer private bids for GLOAK.
 - **Public buys through the market adapter cost 10%** once the adapter is approved for batch rounds. Anyone can call the adapter, and a public buyer receives 90%.

@@ -141,9 +141,12 @@ try {
   const b0 = bidders[0].account.address;
   const bal = await pub.readContract({ address: rec.token, abi: GL, functionName: "balanceOf", args: [b0] });
   const supplyBefore = await pub.readContract({ address: rec.token, abi: GL, functionName: "totalSupply" });
+  // a vault withdrawal's 10% waits in the token until the next transfer burns it: that transfer burns it too
+  const heldBefore = await pub.readContract({ address: rec.token, abi: GL, functionName: "heldForBurn" });
   await sendAndLog(pub, "public transfer", bidders[0].wallet.writeContract({ address: rec.token, abi: GL, functionName: "transfer", args: [bidders[1].account.address, bal / 2n] }));
   const burned = supplyBefore - (await pub.readContract({ address: rec.token, abi: GL, functionName: "totalSupply" }));
-  assert(burned === bal / 2n / 10n, `   a public transfer burns 10% (${formatEther(burned)} GLOAK)`);
+  assert(burned === bal / 2n / 10n + heldBefore, `   a public transfer burns 10% (${formatEther(burned - heldBefore)} GLOAK, plus ${formatEther(heldBefore)} held from earlier withdrawals)`);
+  assert((await pub.readContract({ address: rec.token, abi: GL, functionName: "heldForBurn" })) === 0n, "   nothing is left held after a transfer");
   let blocked = false;
   try {
     await pub.simulateContract({ account: bidders[0].account, address: rec.token, abi: GL, functionName: "transfer", args: [POOL_MANAGER, 1n] });
