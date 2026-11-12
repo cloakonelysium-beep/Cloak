@@ -4,6 +4,7 @@
   "rpcUrl": "https://testnet-rpc.elysium.kinetiq.xyz",
   "_why": "Testnet redeploy (Nov 12), shaped like the mainnet config. Writes deployments/elysium-testnet-gloam.json over the old record.",
   "gloamVault": "0x8D15BA46071D5AB2e59d746c22d51C906281cB44",
+  "gloamVaultBlock": 26230337,
   "_gloamVault": "Cloak's earlier testnet instance of Gloam's guarded vault, standing in for Gloam's (whose vault Cloak never controls on mainnet either). Its guard controller is the old test wallet 0x1302...BFE5 (checked on chain Nov 12), which nothing in this deploy needs.",
   "memoBoard": "0xf6816854b68CC4B67213289927d8e44050BA62D3",
   "poseidon": "0xa404af78405ab37e37958ee4c96870182625440a",

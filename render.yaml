@@ -1,5 +1,5 @@
 # Cloak v2 testnet keeper on Render's free plan (Blueprint: New > Blueprint, this repo). The testnet site is on Vercel at testnet.oncloak.xyz; the keeper keeps its onrender.com address.
-# Testnet values from deployments/elysium-testnet-gloam.json. For mainnet, swap in the mainnet addresses and blocks.
+# Testnet values from deployments/elysium-testnet-gloam.json and elysium-testnet-v2-factory.json (redeployed Nov 12, docs/TESTNET-REDEPLOY.md). For mainnet, swap in the mainnet addresses and blocks.
 # Free plan notes (docs/OPTIMIZATION.md):
 #   - Render stops a free service after 15 minutes with no incoming request. The keeper requests its own address
 #     (RENDER_EXTERNAL_URL, set by Render) every 10 minutes only while it has work pending, so it sleeps when idle and
@@ -32,9 +32,9 @@ services:
         sync: false
       # Cloak v2's own launch factory (launches, reveals, settles) and the block it was made at
       - key: FACTORY
-        value: "0x59d2cd703747a47288518c7380efa95879295784"
+        value: "0xb9060dc9c5dcd49d424b0257b3a8b1a2939271d7"
       - key: START_BLOCK
-        value: "26707681"
+        value: "27930789"
       # backup RPCs, comma-separated (for example a QuickNode Elysium endpoint; it carries a key, so set it in the dashboard)
       - key: RPC_BACKUP
         sync: false
@@ -52,17 +52,22 @@ services:
       - key: GLOAM_VAULT_BLOCK
         value: "26230337"
       - key: GLOAM_LAUNCH_VAULT
-        value: "0x13050b9a0abece56f80d30da107c3f3fad33288f"
+        value: "0xef42cf8f73b43764cd4c3ad97fb8c276975c84e7"
       - key: GLOAM_LAUNCH_VAULT_BLOCK
-        value: "26707908"
+        value: "27931042"
+      # Cloak's ecosystem vault (outside tokens), for the public leaf list
+      - key: GLOAM_ECOSYSTEM_VAULT
+        value: "0xaa0647ff29eb093627a7ab5c765b08888ad15cbf"
+      - key: GLOAM_ECOSYSTEM_VAULT_BLOCK
+        value: "27931042"
       - key: GLOAM_MEMO
         value: "0xf6816854b68CC4B67213289927d8e44050BA62D3"
       # Cloak's escrows the relay sends for: launch swap v4, batcher v4, bids, receive, funds gate (graduation removed for the beta)
       - key: GLOAM_ESCROWS
-        value: "0xc4b6ce66f12733e6737cda6cc1a882ea05bf99ce,0xbd4a41301b3c0ba2ca07677fd9ba3ba4640d28f8,0xb3f6f2142439f1b4f088ea24569cc73726dcea32,0xa462e810b985029b28b5cee49866760a7f8767bb,0x79aafd041a283c334421a17c781b12e353093210"
+        value: "0x285c456ce62369bdf439376e1a66b262a0122e84,0x1ea4da6c117ebe0886b13517363d1a1fede72249,0x270c5401b97b1cd97c83dfbecc5ebb4534fa81ae,0xbc5e58de65e4877c53d74cde3d76d702210568c9,0x3d2fd839cfe760242c1d26b41944c809c0be60fc"
       - key: GLOAM_BATCHER_V4
-        value: "0xbd4a41301b3c0ba2ca07677fd9ba3ba4640d28f8"
+        value: "0x1ea4da6c117ebe0886b13517363d1a1fede72249"
       - key: GLOAM_BATCHER_V4_BLOCK
-        value: "26707908"
+        value: "27931042"
       - key: GLOAM_FUNDS_GATE
-        value: "0x79aafd041a283c334421a17c781b12e353093210"
+        value: "0x3d2fd839cfe760242c1d26b41944c809c0be60fc"
