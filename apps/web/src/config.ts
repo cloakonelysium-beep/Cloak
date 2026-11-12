@@ -21,8 +21,9 @@ export const OTHER_NETWORK: { site: string; label: string } | undefined = deploy
 const setting = (name: string): string | undefined => env[`VITE_${name}_${CHAIN_ID}`] || (env.VITE_CHAIN_ID ? env[`VITE_${name}`] : undefined) || undefined;
 const BASE = CHAIN_ID === elysium.id ? elysium : elysiumTestnet;
 export const RPC_URL: string = setting("RPC_URL") ?? BASE.rpcUrls.default.http[0];
-/** RPC_BACKUP: one or more backup RPCs (comma-separated, for example a QuickNode endpoint). Reads move to the next
- *  one when an RPC fails or stops answering, and back when it recovers. */
+/** RPC_BACKUP: one or more backup RPCs (comma-separated; Alchemy since Nov 12, VITE_RPC_BACKUP_<chain id> on Vercel).
+ *  Reads move to the next one when an RPC fails or stops answering, and back when it recovers. Alchemy's free plan
+ *  reads logs only 10 blocks at a time, so log reads still rely on the main RPC. */
 export const RPC_URLS: string[] = [RPC_URL, ...String(setting("RPC_BACKUP") ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)];
 export const chain = { ...BASE, rpcUrls: { default: { http: [RPC_URL] } } };
 export const EXPLORER: string | undefined = (BASE as { blockExplorers?: { default: { url: string } } }).blockExplorers?.default.url;
