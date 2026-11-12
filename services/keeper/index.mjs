@@ -267,7 +267,7 @@ async function tick() {
 
 // ───────────── sealed NFT drops: open the bids, settle, number ties, deliver and pay out, as for launches ─────────────
 const knownDeployment = KNOWN;
-// DROPS=0: this keeper leaves NFT drops alone (the drop factories are shared with Cloak v1, whose keeper may run them)
+// DROPS=0: this keeper leaves NFT drops alone (v2 has its own drop contracts since Nov 12, apart from Cloak v1's)
 const DROPS_ON = process.env.DROPS !== "0";
 const DROP_FACTORY = DROPS_ON ? process.env.DROP_FACTORY || knownDeployment?.dropFactory : undefined;
 const ESCROW_DROP_FACTORY = DROPS_ON ? process.env.ESCROW_DROP_FACTORY || knownDeployment?.escrowDropFactory : undefined;

@@ -63,6 +63,7 @@ Used once, on deploy day.
 ### Main `0xA650…68d6`
 Owner, treasury and deployer in one, since testnet money isn't real.
 - Deploys the testnet contracts (its key in a local, git-ignored `.env` on the machine running the deploy).
+  That includes v2's own NFT drop contracts (`e2e-gloam/deploy-drops.mjs`), which have no owner role.
 - Every owner and treasury role in `deployments/elysium-testnet-*.input.json`: config owner and treasury, guard
   controller, pauser, fee recipient, trade-fee treasury, GLOAK admin. Accepts the roles after the deploy.
 - Funding: testnet HYPE from the faucet (elysium.kinetiq.xyz).
@@ -79,6 +80,7 @@ The testnet keeper, the same job as mainnet's.
 - Its key exists only in a git-ignored `.env` on that session's temporary machine, never printed; it's gone when the
   session ends. It holds no role in any contract.
 - Funding: about 0.3 testnet HYPE from the testnet main wallet. Anything left is sent back to the main wallet after the test.
+- Nov 12: 0.2785 HYPE sent back to the main wallet (tx `0x6db0cf5e…25db3e8`); 0.005 kept for gas.
 
 ## Not Cloak's
 

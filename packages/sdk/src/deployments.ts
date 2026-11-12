@@ -20,7 +20,7 @@ export interface CloakDeployment {
   whype: Address;
   /** Cloak's keeper and relay (POST /gloam/relay, /schedule, /leaves). */
   relayerUrl: string;
-  /** CloakDropFactory: sealed NFT drops (wallet bids, shared with Cloak v1). */
+  /** CloakDropFactory: sealed NFT drops (wallet bids). */
   dropFactory?: Address;
   /** Block the drop factory was deployed in: scan drop events from here. */
   dropFactoryBlock?: bigint;

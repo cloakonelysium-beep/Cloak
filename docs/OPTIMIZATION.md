@@ -91,7 +91,7 @@ v1 measured that Render's bandwidth is mostly **the keeper's own RPC reads**, no
 - **Then, with nothing pending:** about **1.3 MB an hour**. That's about 0.95 GB a month even if it never slept, against 5 GB. With nothing pending, Render lets it sleep anyway.
 - **Not done: raising `IDLE_MS`** (v1's option). At 1.3 MB an hour it isn't needed, and a longer idle wait would delay the first reveal or settle after bidding closes.
 - **Render workspace:** the plan already puts v2's keeper on its own Render account (Stage 2), so it doesn't share v1's 5 GB.
-- **Open, for Bob:** v2's keeper also runs the NFT drop factories shared with v1. If v1's keeper runs them too, both read and race on the same drops. One of them should own drops.
+- **Closed Nov 12:** v2's keeper used to run the NFT drop contracts shared with v1. v2 now has its own drop contracts (`deployments/elysium-testnet-drops.json`), so each keeper runs only its own.
 - **v1's on-demand snapshot advice** (build a public JSON only when asked): v2 has no keeper-built JSON besides `/leaves`, which already works that way (read only when asked, at most every 10 s).
 
 ## What it costs now (estimates, per open tab)
