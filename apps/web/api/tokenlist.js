@@ -41,7 +41,7 @@ async function fromChain() {
     pub.getContractEvents({ address: d.factory, abi: cloakFactoryAbi, eventName: "LaunchCreated", fromBlock: d.factoryBlock, strict: true }),
   ]);
   const launches = await Promise.all(list.map((l) => c.getAuction(l.auction)));
-  return { launches, meta: logs.map((l) => ({ auction: l.args.auction, metadataURI: l.args.metadataURI })) };
+  return { at: Date.now(), launches, meta: logs.map((l) => ({ auction: l.args.auction, metadataURI: l.args.metadataURI })) };
 }
 
 export async function GET(req) {
