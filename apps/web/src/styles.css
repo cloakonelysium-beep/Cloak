@@ -1065,3 +1065,39 @@ button.asset-row { cursor: pointer; }
 :root[data-theme="dark"] .partner .partner-ink { display: none; }
 :root[data-theme="dark"] .partner .partner-white { display: block; }
 .partner-note { max-width: 560px; margin: 2px auto 0; color: var(--mute); font-size: 13px; }
+
+/* ───────────── GLOAK page (pages/Gloak.tsx) ───────────── */
+:root {
+  --gk-private: var(--brand-signal);
+  --gk-pool: color-mix(in srgb, var(--brand-signal) 55%, var(--mute));
+  --gk-contracts: color-mix(in srgb, var(--brand-signal) 25%, var(--line-strong));
+  --gk-public: var(--mute);
+  --gk-burn: #e39a4f;
+  --gk-off: color-mix(in srgb, var(--text) 14%, transparent);
+}
+.gk-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 1000px) { .gk-tiles { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .gk-tiles { grid-template-columns: 1fr; } }
+.gk-tile { background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; display: flex; flex-direction: column; min-width: 0; }
+.gk-tile h3 { margin: 0; font-weight: 500; font-size: 15px; }
+.gk-sub { color: var(--mute); font-size: 13px; }
+.gk-ring { position: relative; margin: 18px auto 8px; }
+.gk-ring-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.gk-ring-label .k { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); }
+.gk-ring-label .v { font: 300 24px/1.2 var(--font-display); letter-spacing: -0.02em; }
+.gk-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 14px; }
+.gk-foot:empty { display: none; }
+.gk-foot .k { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); }
+.gk-foot .v { font: 300 22px/1.2 var(--font-display); letter-spacing: -0.02em; }
+.gk-legend { display: grid; grid-template-columns: 1fr; gap: 4px; font-size: 12px; color: var(--soft); margin-top: auto; padding-top: 10px; }
+.gk-legend > span { display: flex; justify-content: space-between; gap: 6px; }
+.gk-legend i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.gk-thesis { margin-top: 28px; }
+.gk-thesis h2 { margin: 0 0 10px; font: 400 22px/1.2 var(--font-display); letter-spacing: -0.02em; }
+.gk-thesis h4 { margin: 22px 0 8px; font-weight: 500; font-size: 14px; }
+.gk-thesis p { margin: 0; color: var(--soft); font-size: 14.5px; max-width: 760px; }
+.gk-thesis ol, .gk-thesis ul { margin: 0; padding-left: 18px; color: var(--soft); font-size: 14px; }
+.gk-thesis li { margin-bottom: 6px; }
+.gk-thesis li b { color: var(--text); font-weight: 500; }
+.gk-disclaimer { margin: 16px 2px 0; max-width: 760px; line-height: 1.6; }
+.token-card-share .btn:disabled { opacity: 0.55; cursor: not-allowed; }

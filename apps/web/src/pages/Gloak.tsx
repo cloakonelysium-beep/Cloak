@@ -1,149 +1,232 @@
+import { useEffect, useState } from "react";
+import { parseAbi, type Address } from "viem";
+import type { AuctionState } from "@cloakely/sdk";
 import { Link } from "../router";
-import { GITHUB } from "../ui";
-import { chain } from "../config";
+import { Icon } from "../ui";
+import { FACTORY, addrLink } from "../config";
 import { useGloak } from "../gloak";
-import { hype, tokens } from "../format";
+import { hype, short, tokens } from "../format";
+import { useApp } from "../state";
+import { publicClient, readCloak } from "../wallet";
 import { useMarkets } from "./markets";
 
 /**
- * The GLOAK experiment (docs/GLOAK.md): a token that only lives in private vaults. Before the launch factory's one-time
- * door is used the page shows the plan; after it, the token's own meter() and its pool, read live from the chain.
+ * The GLOAK experiment (docs/GLOAK.md): a token that only lives in private vaults. Before its launch the page shows the
+ * token and a Bid button (live once the launch is created); after it, the numbers from its pool and its own meter().
  */
 
-const pct = (bps: number) => `${(bps / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
-const share = (x: bigint, of: bigint) => (of > 0n ? pct(Number((x * 10_000n) / of)) : "0%");
+const DESCRIPTION =
+  "An experiment from Cloak: a token made to live in private. Holding and trading it inside Cloak's private vaults is free, and 10% of it is burned every time it moves to a public address.";
 
-function Stat({ k, v, unit, sub }: { k: string; v: string; unit?: string; sub?: string }) {
+const LAUNCHES = parseAbi([
+  "function launchesCount() view returns (uint256)",
+  "function launches(uint256) view returns (address auction, address token, address creator, address launchpad, uint256 creatorAlloc, address vesting)",
+]);
+
+/** GLOAK's launch (the door's one launch): the newest launch of the factory whose token is GLOAK. */
+async function findAuction(token: Address): Promise<Address | null> {
+  if (!FACTORY) return null;
+  const n = Number(await publicClient.readContract({ address: FACTORY, abi: LAUNCHES, functionName: "launchesCount" }));
+  for (let i = n - 1; i >= 0 && i >= n - 200; i--) {
+    const [auction, t] = await publicClient.readContract({ address: FACTORY, abi: LAUNCHES, functionName: "launches", args: [BigInt(i)] });
+    if (t.toLowerCase() === token.toLowerCase()) return auction;
+  }
+  return null;
+}
+
+const pct = (bps: number) => `${(bps / 100).toLocaleString(undefined, { maximumFractionDigits: 1 })}%`;
+const shareBps = (x: bigint, of: bigint) => (of > 0n ? Number((x * 10_000n) / of) : 0);
+const compact = (wei: bigint) => {
+  const n = Number(wei / 10n ** 14n) / 10_000;
+  return n >= 1000 ? `${(n / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K` : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+};
+
+/** A ring of ticks: either the first `bps` lit in one colour, or split into coloured parts. */
+function Ring({ size = 150, bps, color, parts, children }: { size?: number; bps?: number; color?: string; parts?: [bigint, string][]; children: React.ReactNode }) {
+  const n = 72;
+  const total = parts ? parts.reduce((a, [v]) => a + v, 0n) : 0n;
+  const colorAt = (i: number): string => {
+    if (!parts) return i < Math.round(((bps ?? 0) / 10_000) * n) ? color! : "var(--gk-off)";
+    if (total === 0n) return "var(--gk-off)";
+    let acc = 0n;
+    const at = ((BigInt(i) * 2n + 1n) * total) / BigInt(2 * n);
+    for (const [v, c] of parts) {
+      acc += v;
+      if (at < acc) return c;
+    }
+    return parts[parts.length - 1][1];
+  };
   return (
-    <div className="stat">
-      <div className="k">{k}</div>
-      <div className="v">{v} {unit && <span className="small mute">{unit}</span>}</div>
-      {sub && <div className="xs mute" style={{ marginTop: 6 }}>{sub}</div>}
+    <div className="gk-ring" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 150 150" width={size} height={size} aria-hidden>
+        {Array.from({ length: n }, (_, i) => {
+          const a = (i / n) * 2 * Math.PI - Math.PI / 2;
+          const c = colorAt(i);
+          const r2 = c === "var(--gk-off)" ? 66 : 70;
+          return <line key={i} x1={75 + 56 * Math.cos(a)} y1={75 + 56 * Math.sin(a)} x2={75 + r2 * Math.cos(a)} y2={75 + r2 * Math.sin(a)} stroke={c} strokeWidth="2.4" strokeLinecap="round" />;
+        })}
+      </svg>
+      <div className="gk-ring-label">{children}</div>
     </div>
   );
 }
 
-// the launch plan (deployments/elysium-mainnet-gloak.input.json, docs/GLOAK.md)
-const PLAN: [string, string, string?][] = [
-  ["Total supply", "500,000", "GLOAK"],
-  ["For sale", "294,000", "GLOAK"],
-  ["Paired with HYPE in the pool", "206,000", "GLOAK"],
-  ["Team share", "None"],
-  ["Raise into the pool", "70%", ""],
-  ["Price range", "0.0002 to 0.01", "HYPE"],
-  ["Surcharge to a public address", "10%", ""],
-  ["Minting after launch", "None"],
-];
+function Tile({ title, sub, children, foot }: { title: string; sub: string; children: React.ReactNode; foot: [string, string][] }) {
+  return (
+    <div className="gk-tile">
+      <h3>{title}</h3>
+      <div className="gk-sub">{sub}</div>
+      {children}
+      <div className="gk-foot">
+        {foot.map(([k, v]) => (
+          <div key={k}>
+            <div className="k">{k}</div>
+            <div className="v">{v}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-// how it works, in order (docs/GLOAK.md, docs/GLOAK-EXPERIMENT.md)
 const STEPS: [string, string][] = [
-  ["Born in one sealed launch", "Like any Cloak launch: sealed bids, one clearing price for every winner, then a Uniswap pool at that price. 70% of the raise goes into the pool and stays there forever. No team share."],
-  ["Free inside", "Shielding GLOAK into a private balance costs nothing, and so does trading it privately. Winning bids are paid out without a surcharge too."],
-  ["10% to leave", "Every move to a public address burns 10%: a withdrawal to a wallet, or a send between wallets. The rate can be lowered, never raised."],
-  ["A pool only private routers can use", "Before every swap, the pool asks the token who's trading. Approved private routers pass; Uniswap's own router, aggregators and bots are refused."],
-  ["Fees buy it back", "The pool's trading fees go to Cloak's treasury, which buys GLOAK privately and sends it to 0x…dEaD, where it never moves again."],
+  ["Born in one sealed launch", "Sealed bids, one clearing price for every winner, then a Uniswap pool at that price with 70% of the raise locked in it forever. No team share."],
+  ["Free inside", "Shielding GLOAK into a private balance and trading it privately cost nothing. Winning bids are paid out without a surcharge."],
+  ["10% to leave", "Every move to a public address burns 10%: a withdrawal to a wallet, or a send between wallets."],
+  ["A pool only private routers can use", "Before every swap, the pool asks the token who's trading. Cloak's private routers pass; Uniswap's own router, aggregators and bots are refused."],
 ];
 
 const RULES = [
-  "Shielding into a private balance is free, and so is trading privately.",
-  "Withdrawing to a wallet, or sending between wallets, burns 10%. The rate can be lowered, never raised.",
-  "Its only pool trades through approved private routers, so it can't be bought or sold in public.",
-  "Bidding in its launch and claiming are free. The app only offers private bids for it.",
-  "No team share, no minting after launch, no proxy. The admin can approve vaults and routers (3 days in public), remove approvals, lower the surcharge or renounce. It can't move anyone's GLOAK.",
+  "500,000 GLOAK, all made at launch. No minting after, no team share, no proxy.",
+  "The 10% surcharge can be lowered, never raised.",
+  "The admin can approve vaults and routers (3 days in public), remove approvals, lower the surcharge or give up the role. It can't move anyone's GLOAK.",
 ];
 
 export function Gloak() {
+  const { toast } = useApp();
   const { token, info } = useGloak();
   const { markets } = useMarkets();
-  const m = info?.meter;
   const market = token ? markets?.find((x) => x.token.toLowerCase() === token.toLowerCase()) : undefined;
-  const live = info && m ? info.totalSupply - m.atDead : 0n;
+  const [auction, setAuction] = useState<Address | null>(null);
+  const [launch, setLaunch] = useState<AuctionState | null>(null);
+
+  // GLOAK's launch: the Bid button opens it while bidding is open, and its Uniswap pool is linked once it trades
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    findAuction(token)
+      .then(async (a) => {
+        if (!alive || !a) return;
+        setAuction(a);
+        const s = await readCloak.getAuction(a);
+        if (alive) setLaunch(s);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [token]);
+
+  const m = info?.meter;
+  const live = info && m ? info.totalSupply - m.atDead : 0n; // circulating
   const price = market?.price ?? 0n; // HYPE (wei) per whole GLOAK
   const cap = (price * live) / 10n ** 18n;
+  const trading = !!market && !!info && !!m;
+  const bidOpen = !!auction && launch?.phase === "commit";
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <div className="eyebrow">The GLOAK experiment</div>
-          <h1>A token that only lives in private</h1>
-          <p>GLOAK is free to hold and trade inside private vaults, and burns 10% every time it moves to a public address. These numbers come straight from the token's own meter on {chain.name}.</p>
+      <div className="card token-card">
+        <img className="token-icon" src="/tokens/gloak.svg" alt="GLOAK" width={64} height={64} />
+        <div className="token-card-main">
+          <div className="token-card-title">
+            <h1>GLOAK</h1>
+            <span className="tc-ticker">$GLOAK</span>
+          </div>
+          {trading && token && (
+            <div className="token-card-ca">
+              <button className="ca-btn mono" onClick={() => { navigator.clipboard?.writeText(token).catch(() => {}); toast("Contract address copied"); }} title="Copy GLOAK's contract address">
+                {short(token)} <Icon.copy size={13} />
+              </button>
+              {addrLink(token) && <a href={addrLink(token)} target="_blank" rel="noreferrer" className="link">Explorer ↗</a>}
+              {launch?.uniPair && addrLink(launch.uniPair) && <a href={addrLink(launch.uniPair)} target="_blank" rel="noreferrer" className="link">Uniswap v4 pool ↗</a>}
+            </div>
+          )}
+          <p className="token-card-desc">{DESCRIPTION}</p>
         </div>
-        {token ? <span className="pill"><span className="dot live" />Live · refreshes every minute</span> : <span className="pill">Not launched yet</span>}
+        <div className="token-card-share">
+          {trading ? (
+            <Link to={`/app/trade?token=${token}`} className="btn btn-ink">Get GLOAK privately</Link>
+          ) : bidOpen ? (
+            <Link to={`/app/launch/${auction}`} className="btn btn-ghost">Bid</Link>
+          ) : (
+            <button className="btn btn-ghost" disabled title="Bidding opens with GLOAK's launch">Bid</button>
+          )}
+        </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-head"><h3>The idea</h3></div>
-        <p className="small soft" style={{ margin: "0 0 10px" }}>On a public chain, privacy is opt-in. Most holders of a token sit in public wallets, so the few who go private stand out, and anyone can still track, copy or target the rest.</p>
-        <p className="small soft" style={{ margin: "0 0 10px" }}>GLOAK turns that around. Its rules make private the cheap place to be and public the expensive one, so holding it privately is the normal case rather than the exception, and the private crowd is everyone who holds it. The price is public, as for any Uniswap pool. Who holds GLOAK, and how much, is not.</p>
-        <p className="small soft" style={{ margin: 0 }}>It's an experiment: the first and only token of its kind on Cloak, to see whether a token can live private by default.</p>
-      </div>
+      {trading && (
+        <>
+          <div className="stats">
+            <div className="stat"><div className="k">Price</div><div className="v">{hype(price, 8)} <span className="small mute">HYPE</span></div></div>
+            <div className="stat"><div className="k">Market cap</div><div className="v">{hype(cap, 2)} <span className="small mute">HYPE</span></div></div>
+            <div className="stat"><div className="k">Liquidity</div><div className="v">{hype(market!.reserveHype, 2)} <span className="small mute">HYPE</span></div><div className="xs mute" style={{ marginTop: 4 }}>Locked forever</div></div>
+            <div className="stat"><div className="k">GLOAK in the pool</div><div className="v">{tokens(market!.reserveToken)}</div><div className="xs mute" style={{ marginTop: 4 }}>Alongside the HYPE</div></div>
+          </div>
 
-      <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-head"><h3>How it works</h3></div>
-        <ol className="small soft" style={{ margin: 0, paddingLeft: 18 }}>
-          {STEPS.map(([h, t]) => <li key={h} style={{ marginBottom: 8 }}><b>{h}.</b> {t}</li>)}
+          <div className="eyebrow" style={{ margin: "28px 0 12px" }}>Statistics</div>
+          <div className="gk-tiles">
+            <Tile title="How private" sub="GLOAK in private vaults, now" foot={[["In vaults", compact(m!.inVaults)], ["In wallets", compact(m!.inPublic)]]}>
+              <Ring bps={m!.privateBps} color="var(--gk-private)">
+                <div className="k">Private</div>
+                <div className="v">{pct(m!.privateBps)}</div>
+              </Ring>
+            </Tile>
+            <Tile title="Where GLOAK is" sub="Every GLOAK in circulation" foot={[]}>
+              <Ring parts={[[m!.inVaults, "var(--gk-private)"], [m!.inPool, "var(--gk-pool)"], [m!.inContracts, "var(--gk-contracts)"], [m!.inPublic, "var(--gk-public)"]]}>
+                <div className="k">Circulating</div>
+                <div className="v">{compact(live)}</div>
+              </Ring>
+              <div className="gk-legend">
+                {([["Vaults", m!.inVaults, "--gk-private"], ["Pool", m!.inPool, "--gk-pool"], ["Contracts", m!.inContracts, "--gk-contracts"], ["Wallets", m!.inPublic, "--gk-public"]] as const).map(([k, v, c]) => (
+                  <span key={k}><span><i style={{ background: `var(${c})` }} />{k}</span>{pct(shareBps(v, live))}</span>
+                ))}
+              </div>
+            </Tile>
+            <Tile title="Burned" sub="By the 10% surcharge" foot={[["Burned", compact(info!.surchargeBurned)], ["Supply now", compact(info!.totalSupply)]]}>
+              <Ring bps={shareBps(info!.surchargeBurned, info!.surchargeBurned + info!.totalSupply)} color="var(--gk-burn)">
+                <div className="k">Burned</div>
+                <div className="v">{pct(shareBps(info!.surchargeBurned, info!.surchargeBurned + info!.totalSupply))}</div>
+              </Ring>
+            </Tile>
+            <Tile title="The pool" sub="Private routers only" foot={[["HYPE", compact(market!.reserveHype)], ["GLOAK", compact(market!.reserveToken)]]}>
+              <Ring parts={[[1n, "var(--gk-pool)"]]}>
+                <div className="k">Locked</div>
+                <div className="v">∞</div>
+              </Ring>
+            </Tile>
+          </div>
+        </>
+      )}
+
+      {market && !info && <div className="empty">Reading GLOAK…</div>}
+
+      <div className="card gk-thesis">
+        <h2>Thesis</h2>
+        <p>GLOAK is, first of all, an experimental token. On a public chain, privacy is opt-in: the few who go private stand out, and everyone else can be tracked, copied or targeted. GLOAK tests the opposite. Its rules make private the cheap place to be and public the expensive one, so holding it privately is the normal case and the private crowd is everyone who holds it. Its price is public, as for any Uniswap pool. Who holds GLOAK, and how much, is not.</p>
+        <h4>How it works</h4>
+        <ol>
+          {STEPS.map(([h, t]) => <li key={h}><b>{h}.</b> {t}</li>)}
         </ol>
-      </div>
-
-      {!token && (
-        <>
-          <div className="card" style={{ marginBottom: 18 }}>
-            <div className="card-head"><h3>Not launched yet on {chain.name}</h3></div>
-            <p className="small soft" style={{ margin: 0 }}>GLOAK is born in one sealed-bid launch, through a one-time door only Cloak's owner wallet can use. Until then, this is the plan. The live numbers appear here the moment it launches.</p>
-          </div>
-          <div className="stats">
-            {PLAN.map(([k, v, u]) => <Stat key={k} k={k} v={v} unit={u} />)}
-          </div>
-        </>
-      )}
-
-      {token && !info && <div className="empty">Reading GLOAK on {chain.name}…</div>}
-
-      {token && info && m && (
-        <>
-          <div className="card" style={{ marginBottom: 18 }}>
-            <div className="card-head"><h3>How private is GLOAK right now?</h3><span className="pill ok">{pct(m.privateBps)} private</span></div>
-            <div className="progress" aria-label={`${pct(m.privateBps)} of GLOAK is in private vaults`}><i style={{ width: `${m.privateBps / 100}%` }} /></div>
-            <p className="xs mute" style={{ margin: "8px 0 0" }}>The share of GLOAK in private vaults, out of everything not locked at 0x…dEaD.</p>
-          </div>
-
-          <div className="stats">
-            <Stat k="Total supply" v={tokens(info.totalSupply)} unit="GLOAK" sub="500,000 at launch, less what the surcharge burned" />
-            <Stat k="Burned by the surcharge" v={tokens(info.surchargeBurned)} unit="GLOAK" sub={`${pct(info.surchargeBps)} of every move to a public address`} />
-            <Stat k="Locked at 0x…dEaD" v={tokens(m.atDead)} unit="GLOAK" sub="Never moves again" />
-            <Stat k="Circulating" v={tokens(live)} unit="GLOAK" />
-          </div>
-
-          <div className="stats">
-            <Stat k="Private (in vaults)" v={tokens(m.inVaults)} unit="GLOAK" sub={share(m.inVaults, live)} />
-            <Stat k="Public (in wallets)" v={tokens(m.inPublic)} unit="GLOAK" sub={share(m.inPublic, live)} />
-            <Stat k="In the pool" v={tokens(m.inPool)} unit="GLOAK" sub={share(m.inPool, live)} />
-            <Stat k="In Cloak's contracts" v={tokens(m.inContracts)} unit="GLOAK" sub={`${share(m.inContracts, live)} · auction, routers, private bids`} />
-          </div>
-
-          <div className="stats">
-            <Stat k="Pool liquidity" v={market ? hype(market.reserveHype, 4) : "…"} unit="HYPE" sub={market ? `and ${tokens(market.reserveToken)} GLOAK, locked forever` : "Opens when the launch settles"} />
-            <Stat k="Price" v={market ? hype(price, 8) : "…"} unit="HYPE" sub="Per GLOAK, from the pool" />
-            <Stat k="Market cap" v={market ? hype(cap, 2) : "…"} unit="HYPE" sub="Price × circulating supply" />
-            <Stat k="Surcharge" v={pct(info.surchargeBps)} sub={info.setupMode ? "Setup: approvals are still being made" : "Setup ended: new approvals wait 3 days in public"} />
-          </div>
-        </>
-      )}
-
-      <div className="card" style={{ marginTop: 18 }}>
-        <div className="card-head"><h3>The rules</h3><span className="xs mute">Written into the token. Nobody can change them to move your GLOAK.</span></div>
-        <ul className="small soft" style={{ margin: 0, paddingLeft: 18 }}>
-          {RULES.map((r) => <li key={r} style={{ marginBottom: 6 }}>{r}</li>)}
+        <h4>Rules</h4>
+        <ul>
+          {RULES.map((r) => <li key={r}>{r}</li>)}
         </ul>
       </div>
 
-      <div className="row-flex" style={{ gap: 12, marginTop: 18, flexWrap: "wrap" }}>
-        {token && <Link to="/app/trade" className="btn btn-ink">Trade GLOAK privately</Link>}
-        <Link to="/docs#gloak" className="btn btn-ghost">How it works</Link>
-        <a className="btn btn-ghost" href={`${GITHUB}/blob/main/docs/GLOAK.md`} target="_blank" rel="noreferrer">Full write-up ↗</a>
-      </div>
-      <p className="xs mute" style={{ marginTop: 14 }}>An experiment. GLOAK has no team share and no promises attached. Hold only what you're happy to lose.</p>
+      <p className="xs mute gk-disclaimer">
+        <b>Disclaimer.</b> GLOAK is a launch experiment, not an investment. Nothing on this page is financial advice. It has no team share, no roadmap and no promises attached, and its price can go to zero. Moving it to a public address burns 10%. Only bid or hold what you're happy to lose, and check that holding it is allowed where you live.
+      </p>
     </>
   );
 }
