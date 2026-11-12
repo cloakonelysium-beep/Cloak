@@ -66,7 +66,7 @@ export function Docs() {
           </div>
 
           <h2>What is Cloak?</h2>
-          <p>On Elysium, one sequencer orders transactions by fee, every ~300 ms. A normal token launch becomes a race that bots win in the first block. After that, every buy, sell and balance is public forever and tied to your wallet.</p>
+          <p>On Elysium, one sequencer orders transactions first come, first served, several blocks a second. A normal token launch becomes a race that the fastest bots win in the first block. After that, every buy, sell and balance is public forever and tied to your wallet.</p>
           <p>Cloak fixes both. <b>Launches</b> are sealed-bid auctions: nobody sees a bid until bidding closes, and every winner pays one clearing price. <b>After launch</b>, you can hold, trade and send the token from a private balance. Proofs are made on your device and a relayer submits for you, so your wallet never appears.</p>
           <div className="picture">
             <div><div className="xs mute">Your wallet</div><div className="big">Public</div><div className="exp"><div className="xs mute">Explorer shows</div>1 HYPE</div><p className="xs mute" style={{ marginTop: 10 }}>Anyone can see the balance if they know the address.</p></div>

@@ -242,10 +242,21 @@ export function Landing() {
           </div>
         </section>
 
+        {/* Gloam's own wordmark files, unaltered (gloam.trade/brand: no recolouring, at least 88 px wide, clear space all
+            round, ink on light and white on dark). The note says which parts are whose. */}
+        <section className="wrap partner-band" aria-label="Partner">
+          <a className="partner" href="https://gloam.trade" target="_blank" rel="noreferrer">
+            <span className="partner-k">In partnership with</span>
+            <img className="partner-ink" src="/partners/gloam-wordmark.svg" alt="Gloam" width={117} height={32} />
+            <img className="partner-white" src="/partners/gloam-wordmark-white.svg" alt="Gloam" width={117} height={32} />
+          </a>
+          <p className="partner-note">Private balances, payments and their proofs run on Gloam's privacy layer. Cloak's launches, launch vault and escrows are Cloak's own.</p>
+        </section>
+
         <Section>
           <div className="statement">
             <h2 className="display-2">On Elysium, every launch is a race and every trade is a postcard. Cloak seals both.</h2>
-            <p className="lede">One sequencer orders transactions by fee every 300 ms, so bots win launches. Then every buy and sell is public forever, tied to your wallet. Cloak keeps settlement on-chain and the details private.</p>
+            <p className="lede">One sequencer orders transactions first come, first served, several blocks a second, so the fastest bots win launches. Then every buy and sell is public forever, tied to your wallet. Cloak keeps settlement on-chain and the details private.</p>
           </div>
           <Strip />
         </Section>
@@ -259,7 +270,7 @@ export function Landing() {
             <div className="step"><span className="n">01</span><h3>Seal</h3><p>Your price and size are hashed and timelock-encrypted. The chain only stores the fingerprint.</p></div>
             <div className="step"><span className="n">02</span><h3>Auto-reveal</h3><p>When bidding closes, the drand beacon releases the key. Anyone can open every bid, but nobody can change one.</p></div>
             <div className="step"><span className="n">03</span><h3>One price</h3><p>Demand is walked from the top until supply runs out. That price is what every winner pays.</p></div>
-            <div className="step"><span className="n">04</span><h3>Locked liquidity</h3><p>Part of the raise seeds the pool at exactly that price. The LP shares are burned, so there's no rug.</p></div>
+            <div className="step"><span className="n">04</span><h3>Locked liquidity</h3><p>Part of the raise opens a Uniswap pool at exactly that price. That liquidity can never be withdrawn, so there's no rug, and its trading fees go to the creator.</p></div>
           </div>
         </Section>
 
@@ -332,9 +343,9 @@ export function Landing() {
               <a href={`${EXPLORER}/address/${FACTORY}`} target="_blank" rel="noreferrer" className="arrow" style={{ display: "inline-block", marginTop: 18, fontSize: 14 }}>Verify the contracts</a>
             </div>
             <div className="three">
-              <div><h3>Nobody can take funds</h3><p>No function lets anyone, including us, move funds out of an auction or a vault. Rule changes wait a public 3-day delay.</p></div>
+              <div><h3>Nobody can take funds</h3><p>No function lets anyone, including us, move funds out of an auction or a vault. Loosening any rule waits a public 3-day delay.</p></div>
               <div><h3>Nothing to trust early</h3><p>Bids open on a public schedule. A relayer can submit your trade but can't change it.</p></div>
-              <div><h3>Open source, end to end</h3><p>Contracts, circuits, SDK, keeper and app are public, with tests and real testnet runs.</p></div>
+              <div><h3>Open source, end to end</h3><p>Contracts, SDK, keeper and app are public, with tests and real testnet runs. The proofs use Gloam's open-source circuits.</p></div>
             </div>
           </div>
         </Section>

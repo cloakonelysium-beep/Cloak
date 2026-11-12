@@ -76,9 +76,9 @@ export function Pitch() {
           <h2 className="p-h">On Elysium, speed wins and everything shows.</h2>
           <div className="p-two">
             <div className="p-card">
-              <div className="p-big">~300 ms</div>
+              <div className="p-big">~0.15 s</div>
               <h3>Launches are a race</h3>
-              <p>One sequencer orders transactions by fee every ~300 ms. The fastest bot buys the first block of every launch, and real buyers pay the markup.</p>
+              <p>One sequencer orders transactions first come, first served, a block every ~0.15 s. The fastest bot buys the first block of every launch, and real buyers pay the markup.</p>
             </div>
             <div className="p-card">
               <div className="p-big">100%</div>
