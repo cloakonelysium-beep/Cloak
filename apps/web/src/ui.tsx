@@ -71,7 +71,7 @@ export function More({ title, children, open }: { title: string; children: React
 }
 
 /** The public source repository: VITE_GITHUB_URL once v2's code is public (Cloak v1's repository until then). */
-export const GITHUB: string = import.meta.env.VITE_GITHUB_URL ?? "https://github.com/NECOKIZZ/Cloak";
+export const GITHUB: string = import.meta.env.VITE_GITHUB_URL ?? "https://github.com/cloakonelysium-beep/Cloak";
 export const EXPLORER = "https://elysium.kinetiq.xyz/testnet-explorer";
 
 export function ThemeToggle() {
