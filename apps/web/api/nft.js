@@ -3,20 +3,22 @@
 //   /api/nft/<drop>/<id>?img=1    the image itself, when the drop stored it on chain as a data URI
 // Only drops made by Cloak's factory are served, and only token ids that exist.
 import { createPublicClient, http } from "viem";
-import { CloakDrops, cloakDropAbi, deploymentFor, elysiumTestnet } from "@cloakely/sdk";
+import { CloakDrops, cloakDropAbi } from "@cloakely/sdk";
+import { netOf } from "./_chain.js";
 
 export const config = { maxDuration: 15 };
-const SITE = "https://oncloak.xyz";
 
 export async function GET(req) {
+  const n = netOf(req);
+  const SITE = n.site;
   const u = new URL(req.url);
   const drop = (u.searchParams.get("drop") ?? "").toLowerCase();
   const id = u.searchParams.get("id") ?? "";
   const bad = (status, error) => new Response(JSON.stringify({ error }), { status, headers: { "content-type": "application/json" } });
   if (!/^0x[0-9a-f]{40}$/.test(drop) || !/^[1-9]\d{0,5}$/.test(id)) return bad(400, "bad drop or id");
-  const d = deploymentFor(elysiumTestnet.id);
-  if (!d.dropFactory) return bad(404, "no drops here");
-  const pub = createPublicClient({ chain: elysiumTestnet, transport: http(undefined, { timeout: 8000 }) });
+  const d = n.d;
+  if (!d?.dropFactory) return bad(404, "no drops here");
+  const pub = createPublicClient({ chain: n.chain, transport: http(undefined, { timeout: 8000 }) });
   const drops = new CloakDrops(pub, undefined, d.dropFactory, d.dropFactoryBlock ?? 0n);
   const c = { address: drop, abi: cloakDropAbi };
   const [details, name, supply] = await Promise.all([

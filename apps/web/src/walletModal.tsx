@@ -102,7 +102,7 @@ export function WalletModal({ onPick, onClose }: { onPick: (o: WalletOption | "w
         <div className="wm-setup">
           <div className="eyebrow">New to Elysium?</div>
           <div className="wm-steps">
-            <button className="btn btn-ghost btn-sm" onClick={addNetwork}>Add Elysium testnet</button>
+            <button className="btn btn-ghost btn-sm" onClick={addNetwork}>Add {chain.name}</button>
             <a className="btn btn-ghost btn-sm" href={FAUCET_URL} target="_blank" rel="noreferrer">Get testnet HYPE ↗</a>
           </div>
           <p className="xs mute">Network: {chain.name} · Chain ID {chain.id} · Gas token HYPE</p>

@@ -6,7 +6,7 @@
 // Public gateways rate-limit browsers hard (ipfs.io answers 429), so pages ask here instead. Only ipfs:// and ar:// are
 // fetched by address, and only images and JSON under the size limits are passed on: this is not an open proxy.
 import { createPublicClient, http } from "viem";
-import { elysiumTestnet } from "@cloakely/sdk";
+import { netOf } from "./_chain.js";
 
 export const config = { maxDuration: 20 };
 const GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://w3s.link/ipfs/", "https://dweb.link/ipfs/", "https://ipfs.io/ipfs/", "https://nftstorage.link/ipfs/"];
@@ -80,7 +80,7 @@ export async function GET(req) {
     const collection = (q.get("collection") ?? "").toLowerCase();
     const id = q.get("id") ?? "";
     if (!/^0x[0-9a-f]{40}$/.test(collection) || !/^\d{1,78}$/.test(id)) return json({ error: "bad collection or id" }, 400);
-    const pub = createPublicClient({ chain: elysiumTestnet, transport: http(undefined, { timeout: 8000 }) });
+    const pub = createPublicClient({ chain: netOf(req).chain, transport: http(undefined, { timeout: 8000 }) });
     const uri = await pub.readContract({ address: collection, abi: ERC721, functionName: "tokenURI", args: [BigInt(id)] });
     const m = await readJson(uri);
     const attrs = Array.isArray(m?.attributes) ? m.attributes : [];

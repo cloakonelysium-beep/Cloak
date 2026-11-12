@@ -4,7 +4,7 @@ import type { Priv } from "../state";
 import { formatUnits, isAddress, parseUnits, type Address, type Hex } from "viem";
 import { friendly, Hint, linkProblem } from "../errors";
 import { linkClaims, linkState, openLinkAccount, tokenOf, TOKEN_DECIMALS, type LinkClaim } from "../links";
-import { txLink } from "../config";
+import { IS_MAINNET, txLink } from "../config";
 import { Link } from "../router";
 import { useApp } from "../state";
 import { Icon } from "../ui";
@@ -301,7 +301,7 @@ export function Claim() {
         )}
         {err && <div className="err">{err}</div>}
       </div>
-      <p className="xs mute" style={{ textAlign: "center", marginTop: 14 }}>Cloak on Elysium testnet. Play money only.</p>
+      <p className="xs mute" style={{ textAlign: "center", marginTop: 14 }}>{IS_MAINNET ? "Cloak on Elysium." : "Cloak on Elysium testnet. Play money only."}</p>
     </div>
   );
 }

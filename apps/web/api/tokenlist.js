@@ -4,7 +4,8 @@
 //   /api/tokenlist?feed=1  the same launches with their pool, launch page, clearing price and description, for partners
 //                          that list new tokens automatically
 import { createPublicClient, formatEther, http } from "viem";
-import { Cloak, cloakFactoryAbi, deploymentFor, elysiumTestnet } from "@cloakely/sdk";
+import { Cloak, cloakFactoryAbi } from "@cloakely/sdk";
+import { netOf } from "./_chain.js";
 import hidden from "../src/hidden.json" with { type: "json" };
 
 // Cloak's own test and demo launches stay off the list (src/hidden.json)
@@ -12,8 +13,6 @@ const HIDDEN = new Set(hidden.launches.flatMap(([, a, t]) => [a, t]).map((x) => 
 
 export const config = { maxDuration: 15 };
 
-const SITE = "https://oncloak.xyz";
-const CHAIN_ID = 99801;
 const revive = (_k, v) => (v && typeof v === "object" && "$n" in v ? BigInt(v.$n) : v);
 
 function parseMeta(uri) {
@@ -32,9 +31,10 @@ const okName = (s) => typeof s === "string" && s.length > 0 && s.length <= 40 &&
 const okSymbol = (s) => typeof s === "string" && /^[a-zA-Z0-9+\-%/$.]{1,20}$/.test(s);
 
 /** The launches and their metadata, in the shape the list below reads. */
-async function fromChain() {
-  const d = deploymentFor(elysiumTestnet.id);
-  const pub = createPublicClient({ chain: elysiumTestnet, transport: http(undefined, { timeout: 8000 }) });
+async function fromChain(n) {
+  const d = n.d;
+  if (!d) throw new Error("Cloak isn't on this network yet");
+  const pub = createPublicClient({ chain: n.chain, transport: http(undefined, { timeout: 8000 }) });
   const c = new Cloak(pub, undefined, d.factory);
   const [list, logs] = await Promise.all([
     c.listLaunches(),
@@ -45,9 +45,13 @@ async function fromChain() {
 }
 
 export async function GET(req) {
+  const n = netOf(req);
+  const SITE = n.site;
+  const CHAIN_ID = n.id;
   const feed = new URL(req.url).searchParams.has("feed");
   // every launch of Cloak v2's factory, read from the chain (the CDN keeps the answer 10 minutes)
-  const snap = await fromChain().catch(() => null);
+  if (!n.d) return new Response(JSON.stringify({ error: "Cloak isn't live on this network yet" }), { status: 404, headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
+  const snap = await fromChain(n).catch(() => null);
   if (!snap) return new Response(JSON.stringify({ error: "the network didn't answer, try again shortly" }), { status: 503, headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
 
   const meta = new Map((snap.meta ?? []).map((m) => [m.auction.toLowerCase(), parseMeta(m.metadataURI)]));

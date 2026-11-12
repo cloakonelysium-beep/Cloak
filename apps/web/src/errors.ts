@@ -1,4 +1,5 @@
 import { toFunctionSelector } from "viem";
+import { IS_MAINNET, chain } from "./config";
 
 /**
  * Turns any error (wallet, RPC, relayer, prover, contract revert) into one plain sentence.
@@ -53,8 +54,8 @@ const RULES: [RegExp, string][] = [
   [/user rejected|user denied|rejected the request|action_rejected|request rejected|user cancel|denied transaction|code:4001\b/, "You cancelled the request in your wallet. Nothing was sent."],
   [/already pending|code:-32002\b/, "Your wallet already has a request waiting. Open your wallet to approve or reject it."],
   [/at least one account|must has at least|no accounts|accounts? (is|are) empty|no account/, "Your wallet didn't share an account. Unlock your wallet (or create an account in it), then connect again."],
-  [/unrecognized chain|code:4902\b|chain .* not (been )?added|unknown chain/, "Elysium testnet isn't in your wallet yet. Use “Add Elysium testnet”, then try again."],
-  [/does not match the target chain|chain mismatch|wrong network|switch.*chain|current chain of the wallet/, "Your wallet is on a different network. Switch it to Elysium testnet and try again."],
+  [/unrecognized chain|code:4902\b|chain .* not (been )?added|unknown chain/, `${chain.name} isn't in your wallet yet. Use “Add ${chain.name}”, then try again.`],
+  [/does not match the target chain|chain mismatch|wrong network|switch.*chain|current chain of the wallet/, `Your wallet is on a different network. Switch it to ${chain.name} and try again.`],
   [/unauthorized|code:4100\b|not been authorized/, "Your wallet hasn't approved this site yet. Connect again and approve the connection."],
   [/disconnected|code:490[01]\b/, "Your wallet is disconnected. Reconnect it and try again."],
   [/no browser wallet|window\.ethereum/, "No wallet found in this browser. Install one (like MetaMask or Rabby), or use WalletConnect."],
@@ -63,7 +64,7 @@ const RULES: [RegExp, string][] = [
   [/invaliddecimalnumber|not a valid decimal number|cannot convert .* to a bigint|invalid number/, "Enter numbers only, like 0.01."],
   [/integeroutofrange|not in safe .* integer range|out of range/, "That number is out of range. Use a positive amount."],
   // funds and gas
-  [/insufficient funds|exceeds (the )?balance|not enough balance|gas required exceeds allowance/, `Not enough testnet HYPE in your wallet to cover this and the gas. Get some from ${FAUCET}.`],
+  [/insufficient funds|exceeds (the )?balance|not enough balance|gas required exceeds allowance/, IS_MAINNET ? "Not enough HYPE in your wallet to cover this and the gas." : `Not enough testnet HYPE in your wallet to cover this and the gas. Get some from ${FAUCET}.`],
   [/insufficient token balance in wallet/, "Your wallet doesn't hold that much USDC. Shield a smaller amount, or bridge more USDC to Elysium first."],
   [/a hidden send pays its relayer from your private hype/, "A private send of this token pays its relayer from your private HYPE, so nobody can tell which token moved. Shield a little HYPE first (a few thousandths is enough on testnet), then send again."],
   [/insufficient private balance/, "Not enough private balance for this, counting the small relayer fee. Try a slightly smaller amount, or shield more HYPE on the Portfolio page."],

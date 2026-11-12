@@ -7,13 +7,12 @@
 //   /api/preview?kind=pay     after the #, so these cards are the same for every link: no amount, no names.
 //   /api/preview?drop=0x…     an NFT drop (/app/drop/0x…): its name, status and price, with a share card from /api/card
 import { createPublicClient, formatEther, http } from "viem";
-import { Cloak, cloakFactoryAbi, deploymentFor, elysiumTestnet } from "@cloakely/sdk";
+import { Cloak, cloakFactoryAbi } from "@cloakely/sdk";
 import { dropSummary, loadDrop } from "./_drop.js";
+import { netOf } from "./_chain.js";
 
 export const config = { maxDuration: 15 };
 
-const SITE = "https://oncloak.xyz";
-const FALLBACK_IMG = `${SITE}/og.jpg`;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const revive = (_k, v) => (v && typeof v === "object" && "$n" in v ? BigInt(v.$n) : v);
@@ -32,9 +31,10 @@ const left = (s) => {
 };
 
 /** The launch and its metadataURI, from the chain (Cloak v2's factory and its LaunchCreated event). */
-async function load(a) {
-  const d = deploymentFor(elysiumTestnet.id);
-  const pub = createPublicClient({ chain: elysiumTestnet, transport: http(undefined, { timeout: 8000 }) });
+async function load(a, n) {
+  const d = n.d;
+  if (!d) return { s: null, uri: undefined };
+  const pub = createPublicClient({ chain: n.chain, transport: http(undefined, { timeout: 8000 }) });
   const [s, logs] = await Promise.all([
     new Cloak(pub, undefined, d.factory).getAuction(a).catch(() => null),
     pub.getContractEvents({ address: d.factory, abi: cloakFactoryAbi, eventName: "LaunchCreated", args: { auction: a }, fromBlock: d.factoryBlock, strict: true }).catch(() => []),
@@ -69,13 +69,14 @@ function summary(s) {
 }
 
 const LINK_CARDS = {
-  claim: ["Someone sent you money, privately", "Open the link to claim it into your private balance on Cloak, or straight to any wallet. No gas needed.", `${SITE}/brand/og-claim.jpg`],
-  pay: ["You have a payment request", "Open the link to pay it privately from your Cloak balance. Nobody sees who paid whom.", `${SITE}/brand/og-pay.jpg`],
+  claim: ["Someone sent you money, privately", "Open the link to claim it into your private balance on Cloak, or straight to any wallet. No gas needed.", "/brand/og-claim.jpg"],
+  pay: ["You have a payment request", "Open the link to pay it privately from your Cloak balance. Nobody sees who paid whom.", "/brand/og-pay.jpg"],
 };
 
-function linkCard(kind) {
-  const [title, desc, image] = LINK_CARDS[kind];
-  const page = `${SITE}/app/links`;
+function linkCard(kind, site) {
+  const [title, desc, path] = LINK_CARDS[kind];
+  const image = `${site}${path}`;
+  const page = `${site}/app/links`;
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
@@ -90,12 +91,12 @@ function linkCard(kind) {
 
 /** An NFT drop's preview page. The image is its share card, whose link changes with the drop's status so sites that
  *  keep cards for days show the new one. */
-async function dropCard(a) {
-  const page = `${SITE}/app/drop/${a}`;
-  const got = await loadDrop(a).catch(() => null);
+async function dropCard(a, n) {
+  const page = `${n.site}/app/drop/${a}`;
+  const got = await loadDrop(a, n).catch(() => null);
   if (!got) return Response.redirect(page, 302);
   const sum = dropSummary(got.s);
-  const image = `${SITE}/api/card?drop=${a}&v=${got.s.phase}-${sum.sold}`;
+  const image = `${n.site}/api/card?drop=${a}&v=${got.s.phase}-${sum.sold}`;
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>${esc(sum.title)}</title>
 <meta name="description" content="${esc(sum.desc)}">
@@ -111,15 +112,18 @@ async function dropCard(a) {
 }
 
 export async function GET(req) {
+  const n = netOf(req);
+  const SITE = n.site;
+  const FALLBACK_IMG = `${SITE}/og.jpg`;
   const q = new URL(req.url).searchParams;
   const kind = q.get("kind");
-  if (kind === "claim" || kind === "pay") return linkCard(kind);
+  if (kind === "claim" || kind === "pay") return linkCard(kind, SITE);
   const drop = (q.get("drop") ?? "").toLowerCase();
-  if (drop) return /^0x[0-9a-f]{40}$/.test(drop) ? dropCard(drop) : Response.redirect(SITE, 302);
+  if (drop) return /^0x[0-9a-f]{40}$/.test(drop) ? dropCard(drop, n) : Response.redirect(SITE, 302);
   const a = (q.get("a") ?? "").toLowerCase();
   if (!/^0x[0-9a-f]{40}$/.test(a)) return Response.redirect(SITE, 302);
   const page = `${SITE}/app/launch/${a}`;
-  const { s, uri } = await load(a);
+  const { s, uri } = await load(a, n);
   const meta = parseMeta(uri);
 
   if (q.get("img")) {

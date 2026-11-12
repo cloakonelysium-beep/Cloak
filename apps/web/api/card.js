@@ -5,11 +5,11 @@
 //   /api/card?drop=0x…
 import { ImageResponse } from "@vercel/og";
 import sharp from "sharp";
-import { SITE, absImage, dropSummary, loadDrop } from "./_drop.js";
+import { absImage, dropSummary, loadDrop } from "./_drop.js";
+import { netOf } from "./_chain.js";
 
 export const config = { maxDuration: 20 };
 
-const FALLBACK = `${SITE}/og.jpg`;
 const C = { paper: "#0b1013", ink: "#eef1f0", mute: "#8fa0a6", signal: "#6cb6cb", seal: "#e3a95a", line: "rgba(238,241,240,0.14)" };
 
 // a tiny element helper, so this file needs no JSX build step
@@ -19,8 +19,8 @@ const h = (type, style, ...children) => ({ type, props: { style, children: child
  * The art as a 420x420 PNG data URI the renderer can draw, or null. Collections store WebP, SVG, PNG, JPEG or GIF
  * (on chain as data: URIs, or at https, ipfs or ar links), so everything is converted to PNG first.
  */
-async function artData(uri) {
-  const src = absImage(uri);
+async function artData(uri, site) {
+  const src = absImage(uri, site);
   if (!src) return null;
   try {
     let buf;
@@ -45,13 +45,15 @@ async function artData(uri) {
 const cache = { "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" };
 
 export async function GET(req) {
+  const n = netOf(req);
+  const FALLBACK = `${n.site}/og.jpg`;
   const a = (new URL(req.url).searchParams.get("drop") ?? "").toLowerCase();
   if (!/^0x[0-9a-f]{40}$/.test(a)) return Response.redirect(FALLBACK, 302);
-  const got = await loadDrop(a).catch(() => null);
+  const got = await loadDrop(a, n).catch(() => null);
   if (!got) return Response.redirect(FALLBACK, 302);
   const { s, details } = got;
   const sum = dropSummary(s);
-  const art = await artData(details.image ?? details.banner);
+  const art = await artData(details.image ?? details.banner, n.site);
   try {
     // fractal glass: soft vertical ribs over the brand dark, with the art's colour glowing through on the left
     const rib = (i) => h("div", { width: 28, height: 630, display: "flex", backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 50%, rgba(0,0,0,0.18))" });
@@ -90,7 +92,7 @@ export async function GET(req) {
     const body = await img.arrayBuffer();
     return new Response(body, { headers: { "content-type": "image/png", ...cache } });
   } catch {
-    const own = absImage(details.image);
+    const own = absImage(details.image, n.site);
     return Response.redirect(own && own.startsWith("https://") ? own : FALLBACK, 302);
   }
 }

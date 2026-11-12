@@ -1050,3 +1050,8 @@ button.asset-row { cursor: pointer; }
 .verified { display: inline-flex; flex: none; color: var(--signal); vertical-align: middle; position: relative; top: -0.08em; }
 .vname { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .vname > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* the network: a "Play money" tag on testnet, and a link to the other network's address (api/_net.js) */
+.side-net .net-tag { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: var(--signal-soft); color: var(--signal); font-size: 11px; }
+.side-net-switch { display: block; margin-top: 6px; padding: 0 12px; color: var(--mute); font-size: 12px; text-decoration: none; }
+.side-net-switch:hover { color: var(--soft); text-decoration: underline; }
