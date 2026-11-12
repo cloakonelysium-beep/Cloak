@@ -384,7 +384,7 @@ function sendCached(req, res, { json, gz, etag }, extra = {}) {
   return res.end(zip ? gz : json);
 }
 
-const ORIGINS = (process.env.CORS_ORIGINS ?? "https://oncloak.xyz,http://localhost:5173,http://localhost:4173").split(",").map((s) => s.trim());
+const ORIGINS = (process.env.CORS_ORIGINS ?? "https://oncloak.xyz,https://testnet.oncloak.xyz,http://localhost:5173,http://localhost:4173").split(",").map((s) => s.trim());
 const MAX_BODY = 64 * 1024;
 const LIMIT = Number(process.env.RELAY_PER_MIN ?? 20); // relay requests per IP per minute
 const hits = new Map();

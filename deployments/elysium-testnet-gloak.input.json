@@ -1,0 +1,27 @@
+{
+  "name": "elysium-testnet-gloak",
+  "chainId": 99801,
+  "rpcUrl": "https://testnet-rpc.elysium.kinetiq.xyz",
+  "factoryRecord": "deployments/elysium-testnet-v2-factory.json",
+  "partnerRecord": "deployments/elysium-testnet-gloam.json",
+  "_records": "What deploy-v2-factory.mjs and deploy-partner.mjs write on testnet (steps 1 and 2).",
+  "admin": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "launch": {
+    "saleSupply": "294000000000000000000000",
+    "lpReserve": "206000000000000000000000",
+    "_supply": "500,000 GLOAK, no team share: 294,000 for sale, 206,000 to pair with HYPE in the pool. The reserve must be at least the sale \u00d7 the pool's share (205,800 at 70%). A sold-out sale uses about 202,700 of it at any price, so about 3,300 is burned. An undersold sale burns the unsold part and the unused reserve.",
+    "lpBps": 7000,
+    "_lpBps": "70% of the raise (after the 1.5% launch fee) into the pool, locked forever; 30% to Cloak's treasury for buybacks. Deeper than the usual 50% because GLOAK can't be traded anywhere else. DECIDE.",
+    "minPrice": "200000000000000",
+    "maxPrice": "10000000000000000",
+    "numTicks": 256,
+    "_prices": "0.0002 to 0.01 HYPE per GLOAK in 256 levels (steps of about 0.0000384 HYPE). Sold out at the lowest price: 58.8 HYPE raised, about 40.5 HYPE in the pool, all GLOAK worth about 100 HYPE. At the top: 2,940 HYPE raised, about 2,027 HYPE in the pool, all GLOAK worth about 5,000 HYPE. Decided Nov 11.",
+    "noRevealPenaltyBps": 2000,
+    "commitEnd": "FILL IN: when testnet bidding closes (ISO date). The owner wallet's door call must land before it.",
+    "revealMinutes": 30,
+    "_reveal": "The keeper opens every sealed bid with the drand time-lock key just after bidding closes; 30 minutes is plenty. Trading starts when it ends and the launch settles.",
+    "minRaise": "0",
+    "_minRaise": "None: GLOAK opens its pool whatever it raises (decided Nov 11). Its door works once, so a failed launch couldn't be redone.",
+    "metadataURI": ""
+  }
+}
