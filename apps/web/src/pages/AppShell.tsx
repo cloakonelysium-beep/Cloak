@@ -133,7 +133,7 @@ function Network() {
       {wrongChain ? (
         <button className="side-net bad" onClick={switchNetwork}><span className="dot" />Switch wallet to {chain.name}</button>
       ) : (
-        <div className="side-net"><span className="dot live" />{chain.name}{!IS_MAINNET && <span className="net-tag">Play money</span>}</div>
+        <div className="side-net"><span className="dot live" />{chain.name}</div>
       )}
       {/* the other network is another address (api/_net.js), so its tab, storage and private account stay apart */}
       {OTHER_NETWORK && <a className="side-net-switch" href={`${OTHER_NETWORK.site}/app`}>Go to {OTHER_NETWORK.label}</a>}
