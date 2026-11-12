@@ -1055,3 +1055,13 @@ button.asset-row { cursor: pointer; }
 .side-net .net-tag { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: var(--signal-soft); color: var(--signal); font-size: 11px; }
 .side-net-switch { display: block; margin-top: 6px; padding: 0 12px; color: var(--mute); font-size: 12px; text-decoration: none; }
 .side-net-switch:hover { color: var(--soft); text-decoration: underline; }
+
+/* landing: "In partnership with Gloam", with Gloam's own wordmark (ink on light, white on dark) */
+.partner-band { text-align: center; padding-top: 8px; }
+.partner { display: inline-flex; align-items: center; gap: 16px; padding: 14px 24px; color: var(--mute); text-decoration: none; }
+.partner-k { font-size: 13px; }
+.partner img { display: block; width: 117px; height: 32px; }
+.partner .partner-white { display: none; }
+:root[data-theme="dark"] .partner .partner-ink { display: none; }
+:root[data-theme="dark"] .partner .partner-white { display: block; }
+.partner-note { max-width: 560px; margin: 2px auto 0; color: var(--mute); font-size: 13px; }
