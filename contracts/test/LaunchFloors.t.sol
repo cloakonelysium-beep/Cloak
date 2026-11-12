@@ -28,7 +28,7 @@ contract LaunchFloorsTest is Test {
     function setUp() public {
         config = new CloakConfig(address(1), address(0));
         config.setFees(0, 150, treasury);
-        factory = new CloakFactory(config, new CloakVestingDeployer(), new CloakSeeder(IUniswapV2Factory(address(0)), IWETH(address(0)), 997), IFeeLocker(address(0)));
+        factory = new CloakFactory(config, new CloakVestingDeployer(address(0)), new CloakSeeder(IUniswapV2Factory(address(0)), IWETH(address(0)), 997), IFeeLocker(address(0)));
         vm.deal(alice, 10_000 ether);
         vm.deal(bob, 10_000 ether);
     }
