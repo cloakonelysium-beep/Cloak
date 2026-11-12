@@ -63,10 +63,11 @@ v1's batchers got the matching fix in v1's repository.
 
 Thank you to the people who reviewed Cloak's code on their own time and reported what they found privately.
 
-- **Haider Ali ([@haiderali_eth](https://x.com/haiderali_eth))** did an independent security review of Cloak's
-  contracts (Nov 7, 2026), with Foundry proofs of concept for each finding. He then rechecked our fixes and found that a
-  reveal window could still be one second long, which is now fixed with a 5-minute minimum. Findings CL-01 to CL-09 and
-  A-1 to A-3 are in [`docs/REVIEW-RESPONSES.md`](docs/REVIEW-RESPONSES.md).
+- **Proovant ([@proovant_ai](https://x.com/proovant_ai))**, run by Haider Ali, did an independent AI-assisted security
+  review of Cloak v1's contracts (Nov 7, 2026), with Foundry proofs of concept for each finding. This was not an audit,
+  and it covered v1, not v2's code on Gloam's vault. The launch and drop contracts it reviewed are the same in v2. A
+  recheck of our fixes found that a reveal window could still be one second long, which is now fixed with a 5-minute
+  minimum. Findings CL-01 to CL-09 and A-1 to A-3 are in [`docs/REVIEW-RESPONSES.md`](docs/REVIEW-RESPONSES.md).
 - **Shieldify Security ([@shieldifysec](https://x.com/shieldifysec))** reported findings on the auction's sealed bids
   and the batcher's price window (Nov 8, 2026). This was not an audit. Both findings led to fixes, described in Report 2
   of [`docs/REVIEW-RESPONSES.md`](docs/REVIEW-RESPONSES.md).
