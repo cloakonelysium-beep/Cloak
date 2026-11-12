@@ -1,0 +1,50 @@
+{
+  "name": "elysium-testnet-gloam",
+  "chainId": 99801,
+  "rpcUrl": "https://testnet-rpc.elysium.kinetiq.xyz",
+  "_why": "Testnet redeploy (Nov 12), shaped like the mainnet config. Writes deployments/elysium-testnet-gloam.json over the old record.",
+  "gloamVault": "0x8D15BA46071D5AB2e59d746c22d51C906281cB44",
+  "_gloamVault": "Cloak's earlier testnet instance of Gloam's guarded vault, standing in for Gloam's (whose vault Cloak never controls on mainnet either). Its guard controller is the old test wallet 0x1302...BFE5 (checked on chain Nov 12), which nothing in this deploy needs.",
+  "memoBoard": "0xf6816854b68CC4B67213289927d8e44050BA62D3",
+  "poseidon": "0xa404af78405ab37e37958ee4c96870182625440a",
+  "verifier": "0xe65Ad45F408b74Dc2eEb6562C54721fE60DCA7F2",
+  "shieldVerifier": "0xFacd1e048F7B6D1CdD9A7Bcca93b806Ed0C6F67d",
+  "factory": "FILL IN: the factory from deployments/elysium-testnet-v2-factory.json (step 1)",
+  "poolManager": "0x51027076df8416e42ea8438b27a0c433d9662e68",
+  "v4Hook": "FILL IN: the v4 hook from deployments/elysium-testnet-v2-factory.json (step 1)",
+  "whype": "0xe44b27113D4b947c0B1bDf4a93878D0e115f4bdD",
+  "_whype": "Testnet's WHYPE, as before (mainnet deploys CloakWHYPE).",
+  "safe": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "pauser": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "feeRecipient": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "withdrawFeeBps": 0,
+  "tradeFee": {
+    "bps": 25,
+    "treasury": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6"
+  },
+  "hype": {
+    "perDeposit": "10000000000000000000",
+    "total": "1000000000000000000000"
+  },
+  "_hype": "Testnet HYPE caps in the launch vault: 10 per deposit, 1,000 in total.",
+  "launchCaps": {
+    "perDeposit": "1000000000000000000000000000",
+    "total": "100000000000000000000000000000"
+  },
+  "batch": {
+    "roundSecs": 60,
+    "maxSlippageBps": 200,
+    "refundAfter": 600
+  },
+  "_assets": "None on testnet: the script needs each asset's plain HYPE pool, and testnet USDC has none to check against.",
+  "ecosystem": {
+    "minHypeLiquidity": "250000000000000000000",
+    "minMcapHype": "50000000000000000000000",
+    "liquidityFloor": "100000000000000000000",
+    "mcapFloor": "10000000000000000000000",
+    "maxPerDepositBps": 10,
+    "maxTotalBps": 100,
+    "launchpads": [],
+    "tokens": []
+  }
+}

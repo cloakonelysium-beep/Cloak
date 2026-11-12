@@ -7,7 +7,7 @@
 
 # Cloak v2: private launches and private trading for Elysium, on Gloam
 
-**Site: [oncloak.xyz](https://oncloak.xyz)** (being hosted; keeper at keeper.oncloak.xyz). Cloak v1 stays at [cloak.boblabs.tech](https://cloak.boblabs.tech) and lives in its own repository.
+**Site: [oncloak.xyz](https://oncloak.xyz)** (mainnet, keeper at keeper.oncloak.xyz) and [testnet.oncloak.xyz](https://testnet.oncloak.xyz) (testnet), being hosted. Cloak v1 stays at [cloak.boblabs.tech](https://cloak.boblabs.tech) and lives in its own repository.
 
 > **Launches nobody can snipe, and trades nobody can trace.** Bids stay sealed until bidding closes, hidden even from the sequencer. Every winner pays **one clearing price**, and the launch opens a Uniswap v4 pool at that price. After launch, anyone can hold, send, buy and sell the token **from a private balance** kept in [Gloam](https://github.com/gloamtrade/gloam)'s shielded vault: proofs are made on your device and a relay sends them, so your wallet never appears.
 

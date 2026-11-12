@@ -1,4 +1,4 @@
-# Cloak v2 keeper on Render's free plan (Blueprint: New > Blueprint, this repo). The site is on Vercel (apps/web).
+# Cloak v2 testnet keeper on Render's free plan (Blueprint: New > Blueprint, this repo). The testnet site is on Vercel at testnet.oncloak.xyz; the keeper keeps its onrender.com address.
 # Testnet values from deployments/elysium-testnet-gloam.json. For mainnet, swap in the mainnet addresses and blocks.
 # Free plan notes (docs/OPTIMIZATION.md):
 #   - Render stops a free service after 15 minutes with no incoming request. The keeper requests its own address
@@ -7,7 +7,7 @@
 #   - Memory is lost when it sleeps or redeploys: queued withdrawal pieces are handed back by the site.
 services:
   - type: web
-    name: cloak-v2-keeper
+    name: cloak-testnet-keeper
     runtime: node
     plan: free
     region: oregon
@@ -39,7 +39,7 @@ services:
       - key: RPC_BACKUP
         sync: false
       - key: CORS_ORIGINS
-        value: "https://oncloak.xyz,http://localhost:5173"
+        value: "https://testnet.oncloak.xyz,http://localhost:5173"
       # one proxy (Render's) in front: the client IP for rate limits comes from it (review O-03)
       # NFT drops: the drop factories are shared with Cloak v1. "0" if v1's keeper runs them, so the two don't race
       - key: DROPS
