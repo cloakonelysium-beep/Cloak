@@ -12,7 +12,13 @@ Who does it: **Bob**, **Claude**, or **Gloam**. The rehearsal of every deploy st
 - [x] **Gloam:** the memo board. Gloam's CEO (Nov 12): Cloak deploys `GloamPayMemo` unchanged on Monday Nov 16 and sends
   Gloam the address and deploy block; Gloam checks the bytecode and points their app at the same board (MAINNET-DECISIONS H3).
 - [ ] **Gloam:** HYPE and KNTQ open in their vault on Thursday Nov 12 (HYPE 12 / 600, KNTQ 1,400 / 70,000). **Claude** checks on chain that it happened.
-- [ ] **Bob:** a backup RPC endpoint (QuickNode lists Elysium; check it serves mainnet 99901 and `eth_getLogs`).
+- [x] **Bob:** a backup RPC endpoint (Nov 12): Alchemy, for mainnet (99901) and testnet (99801). Set on Vercel as
+  `VITE_RPC_BACKUP_99901` / `VITE_RPC_BACKUP_99801` and on the testnet keeper as `RPC_BACKUP` (dashboard only, it
+  carries a key). The mainnet keeper gets the mainnet URL the same way.
+  - [ ] Alchemy's free plan answers `eth_getLogs` only 10 blocks at a time, so it covers reads, quotes, sends and
+    receipts, not log reads. A paid plan lifts that; until then, log reads rely on the main RPC.
+  - [ ] In Alchemy's dashboard, limit the site's key to oncloak.xyz and testnet.oncloak.xyz (it is visible in the
+    site's code), and give the keepers their own key.
 - [ ] **Bob:** decide whether v2's keeper runs the NFT drops on mainnet (`DROPS`), or leaves them for later.
 
 ## 2. Wallets and keys
