@@ -11,7 +11,7 @@
     "lpReserve": "206000000000000000000000",
     "_supply": "500,000 GLOAK, no team share: 294,000 for sale, 206,000 to pair with HYPE in the pool. The reserve must be at least the sale × the pool's share (205,800 at 70%). A sold-out sale uses about 202,700 of it at any price, so about 3,300 is burned. An undersold sale burns the unsold part and the unused reserve.",
     "lpBps": 7000,
-    "_lpBps": "70% of the raise (after the 1.5% launch fee) into the pool, locked forever; 30% to Cloak's treasury for buybacks. Deeper than the usual 50% because GLOAK can't be traded anywhere else. DECIDE.",
+    "_lpBps": "70% of the raise (after the 1.5% launch fee) into the pool, locked forever; 30% to Cloak's treasury for buybacks. Deeper than the usual 50% because GLOAK can't be traded anywhere else. Decided (docs/GLOAK.md).",
     "minPrice": "200000000000000",
     "maxPrice": "10000000000000000",
     "numTicks": 256,

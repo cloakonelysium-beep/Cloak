@@ -181,7 +181,7 @@ The treasury tops up the relay key in HYPE once a month. Expect a few HYPE a mon
 
 **Now.** The pool, caps and decimals rules are fixed per vault. **The 250 HYPE and 50,000 HYPE rules are adjustable** (added Nov 10): the owner wallet changes them any time with one call, `setMarketRules`. Raising has no limit. Lowering stops at floors fixed at deploy, drafted at 100 HYPE in range and a 10,000 HYPE market cap, so even a stolen owner key can't list a token with no real market. A change only affects future listings.
 
-**Decide:** the two floors.
+**Decided:** the floors are 100 HYPE in range and a 10,000 HYPE market cap (above).
 
 **Recommendation.** Start at 250 and 50,000.
 - KNTQ passes: about 15,800 HYPE in range and a market cap of about 70,400 HYPE.
@@ -344,9 +344,19 @@ What a user pays, and what Cloak earns:
 - **0.25% (recommended).** The user pays about $13.50, and Cloak earns about $6.20.
 - **0.5%.** The user pays about $16, and Cloak earns about $8.70. You felt $13 was already a lot, so I wouldn't.
 
-**H3. The memo board (DECIDED Nov 10: ask Gloam)**
+**H3. The memo board (DECIDED Nov 12: Cloak deploys it, Gloam shares it)**
 
-*Decided.* Ask Gloam when it's coming (it's in the reply draft). Fallback: deploy their code unchanged until theirs is live.
+*Decided (Gloam's CEO, Nov 12).* "GloamPayMemo has no owner, so there's no need for two. Deploy it unchanged on Monday and
+send us the address and deploy block. Once we've checked the bytecode matches ours, we'll point the app at the same
+board, so payments made from Cloak and Gloam land in one place."
+
+So: on Monday Nov 16, Cloak's mainnet deployer deploys `GloamPayMemo` (vendor/gloam/contracts/src/GloamPayMemo.sol at the
+pinned submodule commit), byte for byte unchanged. It has no owner and no settings, so nobody controls it. Cloak sends
+Gloam its address and deploy block; Gloam checks the bytecode against theirs and points their app at it. One board for
+both apps. It goes in `memoBoard` (and its block) in `deployments/elysium-mainnet-gloam.input.json` and the keeper's
+`GLOAM_MEMO`.
+
+*Earlier (Nov 10):* ask Gloam when theirs is coming; fallback, deploy their code unchanged.
 
 *Original question:*
 
