@@ -1,0 +1,11 @@
+{
+  "name": "elysium-testnet-drops",
+  "chainId": 99801,
+  "rpcUrl": "https://testnet-rpc.elysium.kinetiq.xyz",
+  "_why": "Cloak v2's own NFT drop contracts (Nov 12). Before this, v2's testnet record used Cloak v1's drop contracts (v1's config 0x9Fdf…167F, metadata on v1's domain).",
+  "config": "0x31337213cab071c28eed8b2256c5658c9de8a9ba",
+  "_config": "v2's testnet CloakConfig: drop fees go to its treasury, the testnet main wallet.",
+  "defaultBaseURI": "https://testnet.oncloak.xyz/api/nft/",
+  "deployer": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "_deployer": "The testnet main wallet. It gets no role: none of the three contracts has an owner."
+}
