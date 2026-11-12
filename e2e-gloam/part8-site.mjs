@@ -186,10 +186,15 @@ try {
   // 5b. batch mode on the same page: sealed standard-size orders in the live v4 batcher's round, settled by the keeper
   if (G.batcherV4) {
     const fromBlock = await pub.getBlockNumber();
-    await page.getByRole("button", { name: /Batch · hides size/ }).click();
+    await page.getByRole("button", { name: /^Batch\s*Hides size/ }).click();
     await page.getByLabel("Amount").fill("0.0005"); // within the round's 4% of the pool
     await page.getByRole("button", { name: /Place \d+ sealed orders?/ }).click();
-    await page.getByText(/sealed buy orders? placed in round/).waitFor({ timeout: 180_000 });
+    await page.getByText(/sealed buy orders? placed in round/).waitFor({ timeout: 180_000 }).catch(async (e) => {
+      console.log("  page errors:", await page.locator(".err, .okmsg").allInnerTexts().catch(() => []));
+      console.log("  browser logs:", logs.slice(-15));
+      await shot("5b-batch-failed");
+      throw e;
+    });
     await shot("5b-batch-placed");
     const loop = createGloamLoop({ publicClient: pub, account: keeperWallet.account, send: (x) => keeperWallet.writeContract(x).then((h) => pub.waitForTransactionReceipt({ hash: h }).then(() => h)), batcherV4: G.batcherV4, batcherV4Block: fromBlock });
     let settled = [];
