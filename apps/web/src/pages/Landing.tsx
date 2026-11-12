@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "../router";
-import { Announce, EXPLORER, Footer, GITHUB, Icon, Logo, Nav, Section } from "../ui";
+import { EXPLORER, Footer, GITHUB, Icon, Logo, Nav, Section } from "../ui";
 import { FACTORY } from "../config";
 
 // each public card has a sealed twin; it turns into it as it crosses the Cloak line
@@ -213,7 +213,7 @@ function Uncloak() {
 export function Landing() {
   return (
     <>
-      <Announce />
+      {/* The "Live on Elysium testnet" strip is hidden for now; bring <Announce /> back with new wording when Cloak expands. */}
       <Nav />
       <main>
         <section className="hero">
