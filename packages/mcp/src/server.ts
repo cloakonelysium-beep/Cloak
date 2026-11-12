@@ -907,7 +907,7 @@ export function createCloakServer(settings: Settings, opts: { hosted?: boolean }
       const c = await cost(a, x);
       spending.check(c.budget, c.value);
       const out = await p.quoteTrade(a.token, b.token, await p.afterFee(a.pool, x));
-      if (isDry(dry_run)) return { dryRun: true, wouldSwap: `${fmtAmt(a, x)} for about ${fmtAmt(b, out)}`, route: a.kind === "hype" || b.kind === "hype" ? "one pool" : `through HYPE (${a.symbol} to HYPE to ${b.symbol})`, slippage: `${(slippage_bps ?? (a.kind === "hype" || b.kind === "hype" ? 100 : 150)) / 100}%` };
+      if (isDry(dry_run)) return { dryRun: true, wouldSwap: `${fmtAmt(a, x)} for about ${fmtAmt(b, out)}`, relayerFee: `0 ${a.symbol}`, route: a.kind === "hype" || b.kind === "hype" ? "one pool" : `through HYPE (${a.symbol} to HYPE to ${b.symbol})`, slippage: `${(slippage_bps ?? (a.kind === "hype" || b.kind === "hype" ? 100 : 150)) / 100}%` };
       return exclusive(async () => {
         // again inside the queue: parallel calls each passed the first check before any recorded (review O-09)
         spending.check(c.budget, c.value);
