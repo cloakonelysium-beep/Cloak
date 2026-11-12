@@ -77,6 +77,8 @@ Built, tested and pushed to `main`. All of it runs on Gloam's vault, circuits an
   - About 0.045 HYPE for both deploys.
 - [x] **The mainnet public RPC, measured:** no rate limit hit (120 parallel requests all answered), but **at most 10,000 logs per `eth_getLogs` answer**. Every log read now splits its range in halves when the answer would be too big (`logsSplitting`, head.ts), so a busy vault or memo board can't stall syncs.
 - [x] **W-08:** the reveal window is capped at 7 days, in the contract (for the mainnet factory) and in the form.
+- [x] **.ely names on mainnet** (Nov 12): the SDK has Elysium Name Service's mainnet contract (`0x41C5…7e3C`, from elysiumnameservice.xyz/developers.html, checked on chain: it answers `resolve` and is named "Ely Names"). Each network reads its own contract by chain id, so testnet and mainnet names never mix.
+- [ ] **NFT drops on mainnet, with everything else** (every feature goes to private mainnet, no exception): `e2e-gloam/deploy-drops.mjs` with a mainnet input file (v2's mainnet `CloakConfig`, the mainnet metadata URL), then the three addresses into the SDK's mainnet entry. The same contracts as testnet's, which are Cloak v1's, redeployed on v2's config.
 - [x] **The decisions left for Bob** are listed with recommendations in `docs/MAINNET-DECISIONS.md`: fees, caps, the pool-fee share and $CLOAK.
 
 **From Kinetiq:**

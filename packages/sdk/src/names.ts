@@ -2,9 +2,11 @@ import { isAddress, parseAbi, zeroAddress, type Address, type PublicClient } fro
 
 /**
  * .ely names (Elysium Name Service): type `bona.ely` instead of a long address. Two read-only calls on one contract,
- * no API key and no backend. Mainnet's address is published at launch; until then only testnet resolves.
+ * no API key and no backend. Each network has its own contract, picked by the client's chain id, so a mainnet lookup
+ * never reads testnet's names and the other way round.
  */
 export const ELY_NAMES: Record<number, Address> = {
+  99901: "0x41C58f003f898c30Af24be6A2EF74aB975637e3C", // Elysium mainnet (elysiumnameservice.xyz/developers.html)
   99801: "0x13A130B336400409c956dF042C128238F1486ddD", // Elysium testnet
 };
 
