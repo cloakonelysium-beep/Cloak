@@ -34,6 +34,8 @@ Around the vaults sit small escrows that turn a Gloam proof into an action:
 | **CloakFundsGate**, **CloakReceiptCheck** | Allocation gates and receipts, proved with Gloam's own holder circuit |
 | **CloakWHYPE** | The routers' own fixed WHYPE (Elysium's is upgradeable) |
 
+**Community:** [t.me/cloakdesk](https://t.me/cloakdesk) on Telegram, [@cloakonelysium](https://x.com/cloakonelysium) on X.
+
 ## Mainnet (Elysium, chain `99901`): coming, in stages
 
 The whole deploy has been rehearsed against Gloam's real Elysium vault (`0x89d3…2164`) on a fork of mainnet, with real proofs and real pools (`e2e-gloam/part22-mainnet-fork.mjs`). Here's what's settled:

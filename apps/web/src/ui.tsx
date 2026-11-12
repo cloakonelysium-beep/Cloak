@@ -73,6 +73,27 @@ export function More({ title, children, open }: { title: string; children: React
 
 /** The public source repository: VITE_GITHUB_URL once v2's code is public (Cloak v1's repository until then). */
 export const GITHUB: string = import.meta.env.VITE_GITHUB_URL ?? "https://github.com/cloakonelysium-beep/Cloak";
+export const TELEGRAM = "https://t.me/cloakdesk";
+export const X_URL = "https://x.com/cloakonelysium";
+
+/** Brand marks for the social links: Telegram's paper plane in its circle, and X's logo. */
+export const SocialIcon = {
+  telegram: ({ size = 18 }: { size?: number }) => (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
+      {/* the plane is cut out of the circle, so it shows whatever is behind it in any theme */}
+      <path
+        fillRule="evenodd"
+        fill="currentColor"
+        d="M12 1a11 11 0 1 1 0 22 11 11 0 0 1 0-22zM5.6 11.7c-.7.2-.7.6-.1.8l2.7.9 6.4-4c.3-.2.5-.1.3.1l-5.2 4.7-.2 2.9c.3 0 .4-.1.6-.3l1.4-1.3 2.8 2.1c.5.3.9.1 1-.5l1.9-8.8c.1-.7-.3-1-.8-.8z"
+      />
+    </svg>
+  ),
+  x: ({ size = 16 }: { size?: number }) => (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
+      <path d="M17.8 3h3.1l-6.8 7.7 8 10.3h-6.2l-4.9-6.3L5.4 21H2.3l7.2-8.3L1.8 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z" fill="currentColor" />
+    </svg>
+  ),
+};
 export const EXPLORER = "https://elysium.kinetiq.xyz/testnet-explorer";
 
 export function ThemeToggle() {
@@ -257,6 +278,8 @@ export function Footer() {
             <p className="tag">Private launches and trades on a public chain.</p>
             <div className="row-flex" style={{ gap: 6 }}>
               <a className="icon-btn" href={GITHUB} target="_blank" rel="noreferrer" aria-label="GitHub"><Icon.github /></a>
+              <a className="icon-btn" href={X_URL} target="_blank" rel="noreferrer" aria-label="Cloak on X"><SocialIcon.x /></a>
+              <a className="icon-btn" href={TELEGRAM} target="_blank" rel="noreferrer" aria-label="Cloak's Telegram channel"><SocialIcon.telegram /></a>
               <Link to="/app" className="btn btn-primary btn-sm">Open app</Link>
             </div>
           </div>
@@ -276,6 +299,7 @@ export function Footer() {
               <li><Link to="/docs">Docs</Link></li>
               <li><Link to="/docs#contracts">Contracts</Link></li>
               <li><a href={GITHUB} target="_blank" rel="noreferrer">GitHub</a></li>
+              <li><a href={TELEGRAM} target="_blank" rel="noreferrer">Telegram</a></li>
             </ul>
           </div>
           <div>
