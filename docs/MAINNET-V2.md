@@ -43,14 +43,14 @@ Built, tested and pushed to `main`. All of it runs on Gloam's vault, circuits an
 - [ ] **Gloam:** a Cloak partner account with `relayApproved`, and the reviews (packs in `docs/gloam-pack/`, brief `docs/FOR-GLOAM.md`).
 - [ ] **Gloam:** the SDK release that knows 99801 and 99901, plus the change-note seed. Then **Claude** bumps it, uses the seed, and reruns all parts.
 
-## Stage 2: hosting v2 (gloak.boblabs.tech)
+## Stage 2: hosting v2 (oncloak.xyz)
 
 - [ ] **Bob:** before the repo goes public:
   - a secret scan of the history;
   - decide whether `GLOAM_QUESTIONS.md`, `docs/FOR-GLOAM.md` and the partnership parts of `REPORT.md` move somewhere private.
-- [ ] **Bob:** a Vercel project on the same account, domain gloak.boblabs.tech. The build needs nothing special, since the site defaults to Gloam. Set `VITE_KEEPER_URL` and `VITE_RELAYER_URL` to the v2 keeper.
+- [ ] **Bob:** a Vercel project on the same account, domain oncloak.xyz. The build needs nothing special, since the site defaults to Gloam. Set `VITE_KEEPER_URL` and `VITE_RELAYER_URL` to the v2 keeper.
 - [ ] **Bob:** a v2 keeper on a new Render account (free plan, no custom domain yet): New > Blueprint on this repo. `render.yaml` holds the testnet addresses and settings. Set only `KEEPER_PK` in Render's dashboard, never in the repo. The env it sets:
-  - `FACTORY` and `START_BLOCK` (v2's own launch factory) and `CORS_ORIGINS` (gloak.boblabs.tech);
+  - `FACTORY` and `START_BLOCK` (v2's own launch factory) and `CORS_ORIGINS` (oncloak.xyz);
   - `GLOAM_VAULT`, `GLOAM_VAULT_BLOCK`, `GLOAM_LAUNCH_VAULT`, `GLOAM_LAUNCH_VAULT_BLOCK`, `GLOAM_MEMO`;
   - `GLOAM_ESCROWS` (launch swap v4, batcher v4, bids, receive, graduation, funds gate);
   - `GLOAM_BATCHER_V4`, `GLOAM_BATCHER_V4_BLOCK`, `GLOAM_FUNDS_GATE`;

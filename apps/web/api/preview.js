@@ -12,7 +12,7 @@ import { dropSummary, loadDrop } from "./_drop.js";
 
 export const config = { maxDuration: 15 };
 
-const SITE = "https://gloak.boblabs.tech";
+const SITE = "https://oncloak.xyz";
 const FALLBACK_IMG = `${SITE}/og.jpg`;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);

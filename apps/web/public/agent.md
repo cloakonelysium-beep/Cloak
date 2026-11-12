@@ -8,7 +8,7 @@ withdrawals run from a private balance: each one is proven on this machine and s
 appears on it. New launches open a normal Uniswap v4 pool at their clearing price, so their tokens trade anywhere, and
 private trades use that same pool. **It is on testnet only. Everything uses free play money (testnet HYPE). Never use
 real funds.** Every protocol rule (caps, fees, penalties, batch guards) with its number:
-https://gloak.boblabs.tech/docs#rules
+https://oncloak.xyz/docs#rules
 
 ## Rules
 
@@ -65,14 +65,14 @@ You can't hold a wallet here, so you can't trade. Tell the person they have two 
 
 1. **Look around from this chat (no wallet):** add Cloak as a connector, then you can list launches, read them and
    price trades.
-   - **claude.ai or Claude Desktop:** Settings, Connectors, Add custom connector, paste `https://gloak.boblabs.tech/mcp`.
+   - **claude.ai or Claude Desktop:** Settings, Connectors, Add custom connector, paste `https://oncloak.xyz/mcp`.
    - **ChatGPT:** Settings, Apps and connectors, turn on developer mode, add a connector with that link and no
      authentication.
 2. **Trade privately:**
-   - **themselves**, on https://gloak.boblabs.tech with their own wallet (Portfolio: Shield, then Trade, Send or
+   - **themselves**, on https://oncloak.xyz with their own wallet (Portfolio: Shield, then Trade, Send or
      Withdraw), or
    - **through an agent**, by opening Claude Code, Claude Desktop or Cursor and asking it: "Read
-     https://gloak.boblabs.tech/agent.md and set me up to trade privately."
+     https://oncloak.xyz/agent.md and set me up to trade privately."
 
 ## Using Cloak
 
@@ -125,6 +125,6 @@ Good to know:
 - **`cloak_info` says read only:** there's no wallet. Run A1 again (it keeps an existing wallet).
 - **"Not enough HYPE" or gas errors:** ask for more from the faucet (A3).
 - **"Not enough private balance":** the relayer fee counts too. Try a smaller amount or `"max"`.
-- **Anything else:** tell the person what failed in one sentence and point them to https://gloak.boblabs.tech/docs.
+- **Anything else:** tell the person what failed in one sentence and point them to https://oncloak.xyz/docs.
 
-More: https://gloak.boblabs.tech/docs · package: https://www.npmjs.com/package/@cloakely/mcp
+More: https://oncloak.xyz/docs · package: https://www.npmjs.com/package/@cloakely/mcp

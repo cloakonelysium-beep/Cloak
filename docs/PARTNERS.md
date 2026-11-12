@@ -22,9 +22,9 @@ mostly pays off from mainnet (Nov 9).
 | What | Where | Who uses it |
 |---|---|---|
 | Standard Uniswap V2 pools, opened at the clearing price, LP burned or locked | every launch from Nov 2 | trackers, aggregators, Uniswap's own app |
-| A standard token list that updates itself as launches settle | `https://cloak.boblabs.tech/tokenlist.json` | wallets and DEX front ends that import token lists (Uniswap app, many wallets) |
-| A launch feed with pool, launch page, clearing price, description and logo | `https://cloak.boblabs.tech/api/tokenlist?feed=1` | partners that want to list new tokens automatically, Elysium's ecosystem pages, bots |
-| Token logos as normal image links | `https://cloak.boblabs.tech/api/preview?a=<auction>&img=1` | token lists, explorers |
+| A standard token list that updates itself as launches settle | `https://oncloak.xyz/tokenlist.json` | wallets and DEX front ends that import token lists (Uniswap app, many wallets) |
+| A launch feed with pool, launch page, clearing price, description and logo | `https://oncloak.xyz/api/tokenlist?feed=1` | partners that want to list new tokens automatically, Elysium's ecosystem pages, bots |
+| Token logos as normal image links | `https://oncloak.xyz/api/preview?a=<auction>&img=1` | token lists, explorers |
 | Plain tokens: fixed supply, 18 decimals, no owner, no mint, no tax, no blacklist | `CloakToken` | every platform's safety checks (they flag taxes and owner powers) |
 
 Still to do on our side: verify `CloakToken` (and every Cloak contract) on the explorer, so "contract verified" shows
@@ -63,15 +63,15 @@ Written to send as they are. Fill in the mainnet details where marked.
 
 **GeckoTerminal (network and DEX request)**
 
-> Hello. We are requesting support for Elysium mainnet (chain id [id]) and its Uniswap V2 deployment at [factory address] with WHYPE at [WHYPE address]. Cloak is a sealed bid launchpad on Elysium and every Cloak launch opens a Uniswap V2 pool on that factory at a fair clearing price with the LP burned or locked. We keep a live token list at cloak.boblabs.tech/tokenlist.json if it helps with names and logos. Thank you
+> Hello. We are requesting support for Elysium mainnet (chain id [id]) and its Uniswap V2 deployment at [factory address] with WHYPE at [WHYPE address]. Cloak is a sealed bid launchpad on Elysium and every Cloak launch opens a Uniswap V2 pool on that factory at a fair clearing price with the LP burned or locked. We keep a live token list at oncloak.xyz/tokenlist.json if it helps with names and logos. Thank you
 
 **0x and KyberSwap (once live on Elysium)**
 
-> Hi. Cloak is a sealed bid launchpad on Elysium and every token we launch trades in a standard Uniswap V2 pool on [factory address]. Could you include that factory in your Elysium routing so our tokens are buyable through you from day one. Our token list is at cloak.boblabs.tech/tokenlist.json and a live feed of new launches is at cloak.boblabs.tech/api/tokenlist?feed=1. Happy to help test
+> Hi. Cloak is a sealed bid launchpad on Elysium and every token we launch trades in a standard Uniswap V2 pool on [factory address]. Could you include that factory in your Elysium routing so our tokens are buyable through you from day one. Our token list is at oncloak.xyz/tokenlist.json and a live feed of new launches is at oncloak.xyz/api/tokenlist?feed=1. Happy to help test
 
 **Elysium team**
 
-> Hey team. Two quick asks for Cloak. First, which Uniswap V2 factory and WHYPE will be the official ones on mainnet, so every Cloak launch opens its pool where DexScreener and the aggregators will look. Second, could you add Cloak to the ecosystem page and pass our token list cloak.boblabs.tech/tokenlist.json to the explorer team so our tokens show names and logos. If you are already talking to DexScreener or GeckoTerminal about the chain listing we would love to be part of that request
+> Hey team. Two quick asks for Cloak. First, which Uniswap V2 factory and WHYPE will be the official ones on mainnet, so every Cloak launch opens its pool where DexScreener and the aggregators will look. Second, could you add Cloak to the ecosystem page and pass our token list oncloak.xyz/tokenlist.json to the explorer team so our tokens show names and logos. If you are already talking to DexScreener or GeckoTerminal about the chain listing we would love to be part of that request
 
 ## Sources
 

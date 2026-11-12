@@ -2,10 +2,10 @@
 
 > Private trading on Elysium (testnet), built on Gloam's shielded vault: sealed-bid token launches, and trades, sends and withdrawals from a private balance, proven locally and sent by a relayer.
 
-AI agents: read https://gloak.boblabs.tech/agent.md and follow it. It sets you up and says what to ask the person.
+AI agents: read https://oncloak.xyz/agent.md and follow it. It sets you up and says what to ask the person.
 
-- [Agent instructions](https://gloak.boblabs.tech/agent.md)
-- [Docs](https://gloak.boblabs.tech/docs)
-- [Every rule, with its number](https://gloak.boblabs.tech/docs#rules)
+- [Agent instructions](https://oncloak.xyz/agent.md)
+- [Docs](https://oncloak.xyz/docs)
+- [Every rule, with its number](https://oncloak.xyz/docs#rules)
 - [MCP server on npm](https://www.npmjs.com/package/@cloakely/mcp)
 - [SDK on npm](https://www.npmjs.com/package/@cloakely/sdk)

@@ -51,7 +51,7 @@ Checked on Nov 8, night: Gloam's promised testnet vault (`0x39E28Cde55CAB7988747
 2. **A multisig** (Safe) on 99901 for the launch vault's guard controller and the launch pauser, and **separate keeper and relayer keys**.
 3. **Cloak's launch factory and v4 hook on 99901:** v2's launch vault admits launches of one factory, fixed at deploy. Does v1's mainnet deploy make that factory, and does v2 point at it?
 4. **An outside review** of our escrows and `CloakLaunchVault` (Kann audited only Gloam's vault). Keep deposit caps low until then.
-5. Deploy and verify, then hosting: gloak.boblabs.tech and the keeper with the `GLOAM_*` settings.
+5. Deploy and verify, then hosting: oncloak.xyz and the keeper with the `GLOAM_*` settings.
 
 ### New questions for Gloam's founder
 1. Is the mainnet vault at the same address as testnet (`0x39E2…0194`), and when exactly does it go up?

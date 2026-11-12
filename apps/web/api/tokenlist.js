@@ -12,7 +12,7 @@ const HIDDEN = new Set(hidden.launches.flatMap(([, a, t]) => [a, t]).map((x) => 
 
 export const config = { maxDuration: 15 };
 
-const SITE = "https://gloak.boblabs.tech";
+const SITE = "https://oncloak.xyz";
 const CHAIN_ID = 99801;
 const revive = (_k, v) => (v && typeof v === "object" && "$n" in v ? BigInt(v.$n) : v);
 

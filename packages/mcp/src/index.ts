@@ -6,7 +6,7 @@ import { createCloakServer, loadSettings, VERSION } from "./server.js";
 import { setup } from "./setup.js";
 
 if (process.argv[2] === "setup") {
-  // make the agent's wallet and print what's left to do (see https://cloak.boblabs.tech/agent.md)
+  // make the agent's wallet and print what's left to do (see https://oncloak.xyz/agent.md)
   await setup().then(
     () => process.exit(0),
     (e) => {
