@@ -141,6 +141,7 @@ const LINKS = [
   { to: "/app/volume", label: "Volume", match: (p: string) => p.startsWith("/app/volume") },
   { to: "/sdk", label: "Developers", match: (p: string) => p.startsWith("/sdk") },
   { to: "/docs", label: "Docs", match: (p: string) => p.startsWith("/docs") },
+  { to: "/gloak", label: "GLOAK", match: (p: string) => p.startsWith("/gloak") },
 ];
 
 /** Open/close state for a full-screen mobile sheet: Escape closes it and the page behind stops scrolling. */

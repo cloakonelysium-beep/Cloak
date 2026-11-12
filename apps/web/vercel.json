@@ -70,11 +70,11 @@
       "destination": "/brand.html"
     },
     {
-      "source": "/(docs|sdk|proof|agents|pitch|demo|claim|pay|app)",
+      "source": "/(docs|sdk|gloak|proof|agents|pitch|demo|claim|pay|app)",
       "destination": "/index.html"
     },
     {
-      "source": "/(docs|sdk|proof|agents|pitch|demo|claim|pay|app)/",
+      "source": "/(docs|sdk|gloak|proof|agents|pitch|demo|claim|pay|app)/",
       "destination": "/index.html"
     },
     {

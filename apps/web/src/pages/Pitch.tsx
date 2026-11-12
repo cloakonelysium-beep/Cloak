@@ -3,7 +3,7 @@ import { addrLink, FACTORY, GLOAM } from "../config";
 import { Link } from "../router";
 import { GITHUB, Icon, Logo, Nav } from "../ui";
 
-const SLIDES = ["Cloak", "Problem", "Insight", "Product", "Launch", "Different", "Live", "Distribution", "Model", "Roadmap", "Team", "Close"];
+const SLIDES = ["Cloak", "Problem", "Insight", "Product", "Launch", "Different", "Live", "Distribution", "GLOAK", "Model", "Roadmap", "Team", "Close"];
 
 function Slide({ i, dark, children, className = "" }: { i: number; dark?: boolean; children: ReactNode; className?: string }) {
   return (
@@ -123,7 +123,7 @@ export function Pitch() {
             <div className="cmp us">
               <span className="eyebrow">Cloak</span>
               <h3>A public clock opens the bids. Your device makes the proofs.</h3>
-              <p>drand timelock for bids, zero-knowledge proofs made in the browser for the vault. Plain EVM contracts that nobody can withdraw from, with rule changes behind a public 3-day delay.</p>
+              <p>drand timelock for bids, zero-knowledge proofs made in the browser for the vault. Plain EVM contracts that nobody can withdraw from. Loosening any rule waits a public 3-day delay.</p>
             </div>
           </div>
         </Slide>
@@ -131,10 +131,10 @@ export function Pitch() {
         <Slide i={6}>
           <h2 className="p-h">It's live on Elysium testnet</h2>
           <div className="p-stats">
-            <div><b>22</b><span>launches on testnet, 13 now trading on Uniswap</span></div>
-            <div><b>246</b><span>private transactions through the vault</span></div>
-            <div><b>139</b><span>contract tests passing, fuzzing included</span></div>
+            <div><b>360+</b><span>contract tests passing, fuzzing included</span></div>
             <div><b>~4 s</b><span>to prove a private trade in the browser</span></div>
+            <div><b>0</b><span>people needed to run a launch: the keeper reveals, settles and lists it</span></div>
+            <div><b>Nov 12</b><span>redeployed on the final contracts, every role on a fresh owner wallet</span></div>
           </div>
           <div className="p-contracts">
             <Contract name="Launch factory" addr={FACTORY} />
@@ -153,25 +153,35 @@ export function Pitch() {
         </Slide>
 
         <Slide i={8}>
-          <h2 className="p-h">Business model</h2>
-          <p className="p-tag">Live in the testnet contracts · hard caps written into the code</p>
+          <h2 className="p-h" style={{ maxWidth: 860 }}>GLOAK: a token that only lives in private</h2>
           <div className="p-three">
-            <div className="p-card"><div className="p-big">1.5%</div><h3>Launch fee</h3><p>Of each raise at settlement, only when the launch fills. Nothing if it doesn't. Capped at 3%.</p></div>
-            <div className="p-card"><div className="p-big">0.25%</div><h3>Vault exit fee</h3><p>When money leaves the private vault. Deposits, swaps and sends inside it pay none. Capped at 1%.</p></div>
-            <div className="p-card"><div className="p-big">Relaying</div><h3>Gas plus a margin</h3><p>Relayers recover gas plus a small margin from inside the private transaction, so users never need public gas.</p></div>
+            <div className="p-card"><Icon.lock /><h3>Free inside, 10% outside</h3><p>Shielding and trading privately cost nothing. Every move to a public address burns 10%, a rate that can be lowered, never raised.</p></div>
+            <div className="p-card"><Icon.layers /><h3>One private pool</h3><p>Its only Uniswap pool trades through approved private routers, so it can't be bought or sold in public.</p></div>
+            <div className="p-card"><Icon.rocket /><h3>Born in one sealed launch</h3><p>500,000 supply, no team share, no minting after launch. 70% of the raise goes into the pool, locked forever.</p></div>
           </div>
+          <p className="p-tag" style={{ marginTop: 22 }}><Link to="/gloak" className="arrow">Live supply, privacy and pool stats</Link></p>
         </Slide>
 
         <Slide i={9}>
-          <h2 className="p-h">Roadmap</h2>
-          <div className="p-road">
-            <div className="on"><span className="eyebrow">Now · testnet</span><h3>Launches, vault, SDK</h3><p>Sealed bids, one price, Uniswap pools with liquidity locked forever and creator fees. Private balances, swaps, sends, batch auctions and bids from a private balance. SDK and MCP server on npm.</p></div>
-            <div><span className="eyebrow">Next · mainnet</span><h3>Mainnet on Elysium</h3><p>On Gloam's live vault and final keys, with deposit caps that grow with Gloam. Then an audit of Cloak's own contracts and higher caps.</p></div>
-            <div><span className="eyebrow">After</span><h3>Grow</h3><p>$CLOAK with buyback and burn from revenue, private xStocks, and partner launchpads in Cloak's ecosystem vault.</p></div>
+          <h2 className="p-h">Business model</h2>
+          <p className="p-tag">Built into the contracts · hard caps written into the code · relaying is free for users: Cloak pays the gas from fee income</p>
+          <div className="p-three">
+            <div className="p-card"><div className="p-big">1.5%</div><h3>Launch fee</h3><p>Of each raise at settlement, only when the launch fills. Nothing if it doesn't. Capped at 3%.</p></div>
+            <div className="p-card"><div className="p-big">20%</div><h3>Of pool trading fees</h3><p>Every trade in a launch's Uniswap pool pays 0.3% (more in the first 5 minutes). Cloak keeps 20% of it, the creator 80%.</p></div>
+            <div className="p-card"><div className="p-big">0.25%</div><h3>On private sales</h3><p>Of what a private sale out of Cloak's vaults brings, in HYPE or USDC (capped at 1%). Plus half of Gloam's 0.5% exit fee on Cloak's flow, shared monthly.</p></div>
           </div>
         </Slide>
 
         <Slide i={10}>
+          <h2 className="p-h">Roadmap</h2>
+          <div className="p-road">
+            <div className="on"><span className="eyebrow">Now · testnet</span><h3>Launches, vault, SDK</h3><p>Sealed bids, one price, Uniswap pools with liquidity locked forever and creator fees. Private balances, swaps, sends, payment links, batch auctions and bids from a private balance. SDK and MCP server on npm. One site for testnet and mainnet.</p></div>
+            <div><span className="eyebrow">Next · mainnet</span><h3>Mainnet on Elysium</h3><p>On Gloam's live vault and final keys, with one memo board shared by Cloak and Gloam and deposit caps that grow with Gloam. Then GLOAK's launch, an audit of Cloak's own contracts and higher caps.</p></div>
+            <div><span className="eyebrow">After</span><h3>Grow</h3><p>$CLOAK with buyback and burn from revenue, private xStocks, partner launchpads in Cloak's ecosystem vault, and more chains on one site.</p></div>
+          </div>
+        </Slide>
+
+        <Slide i={11}>
           <h2 className="p-h">Team</h2>
           <div className="p-team">
             <div className="p-card">
@@ -179,13 +189,14 @@ export function Pitch() {
               <p style={{ marginTop: 14 }}>We build privacy tools for public chains. Cloak is our launch and trading product on Elysium: sealed-bid auctions, a private vault and batch trading, all open source.</p>
               <div className="row-flex" style={{ gap: 14, marginTop: 18, flexWrap: "wrap" }}>
                 <a className="arrow" href="https://oncloak.xyz" target="_blank" rel="noreferrer">oncloak.xyz</a>
+                <a className="arrow" href="https://gloam.trade" target="_blank" rel="noreferrer">In partnership with Gloam</a>
                 <a className="arrow" href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>
               </div>
             </div>
           </div>
         </Slide>
 
-        <Slide i={11} dark className="slide-close">
+        <Slide i={12} dark className="slide-close">
           <img className="close-art" src="/hero/cloaked.webp" alt="" />
           <div className="close-copy">
             <h2 className="p-title">Launch sealed.<br />Trade unseen.</h2>
