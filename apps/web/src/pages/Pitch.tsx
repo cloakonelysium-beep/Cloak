@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { addrLink, FACTORY, GLOAM } from "../config";
 import { Link } from "../router";
-import { GITHUB, Icon, Logo, Nav } from "../ui";
+import { GITHUB, Icon, Logo, Nav, TELEGRAM } from "../ui";
 
 const SLIDES = ["Cloak", "Problem", "Insight", "Product", "Launch", "Different", "Live", "Distribution", "GLOAK", "Model", "Roadmap", "Team", "Close"];
 
@@ -191,6 +191,7 @@ export function Pitch() {
                 <a className="arrow" href="https://oncloak.xyz" target="_blank" rel="noreferrer">oncloak.xyz</a>
                 <a className="arrow" href="https://gloam.trade" target="_blank" rel="noreferrer">In partnership with Gloam</a>
                 <a className="arrow" href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>
+                <a className="arrow" href={TELEGRAM} target="_blank" rel="noreferrer">Telegram</a>
               </div>
             </div>
           </div>

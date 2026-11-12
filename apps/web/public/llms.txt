@@ -6,6 +6,7 @@ AI agents: read https://oncloak.xyz/agent.md and follow it. It sets you up and s
 
 - [Agent instructions](https://oncloak.xyz/agent.md)
 - [Docs](https://oncloak.xyz/docs)
+- [Telegram channel](https://t.me/cloakdesk)
 - [Every rule, with its number](https://oncloak.xyz/docs#rules)
 - [MCP server on npm](https://www.npmjs.com/package/@cloakely/mcp)
 - [SDK on npm](https://www.npmjs.com/package/@cloakely/sdk)
