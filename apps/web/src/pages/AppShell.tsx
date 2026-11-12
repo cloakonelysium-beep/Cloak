@@ -5,7 +5,7 @@ import { useApp } from "../state";
 import { GITHUB, Icon, Logo, MenuButton, Sheet, ThemeSeg, ThemeToggle, WalletButton, useSheet } from "../ui";
 import { STEPS, guideShown, hideGuide, markDone, useGuide, type Step } from "../guide";
 import { navigate } from "../router";
-import { KEEPER_URL, chain } from "../config";
+import { IS_MAINNET, KEEPER_URL, OTHER_NETWORK, SITE, chain } from "../config";
 import { Bell } from "../bell";
 
 function Welcome({ onClose }: { onClose: () => void }) {
@@ -127,8 +127,17 @@ function NavItems({ path }: { path: string }) {
 
 function Network() {
   const { wrongChain, switchNetwork } = useApp();
-  if (wrongChain) return <button className="side-net bad" onClick={switchNetwork}><span className="dot" />Switch to Elysium</button>;
-  return <div className="side-net"><span className="dot live" />{chain.name}</div>;
+  return (
+    <>
+      {wrongChain ? (
+        <button className="side-net bad" onClick={switchNetwork}><span className="dot" />Switch wallet to {chain.name}</button>
+      ) : (
+        <div className="side-net"><span className="dot live" />{chain.name}{!IS_MAINNET && <span className="net-tag">Play money</span>}</div>
+      )}
+      {/* the other network is another address (api/_net.js), so its tab, storage and private account stay apart */}
+      {OTHER_NETWORK && <a className="side-net-switch" href={`${OTHER_NETWORK.site}/app`}>Go to {OTHER_NETWORK.label}</a>}
+    </>
+  );
 }
 
 function Status({ keeper }: { keeper: "up" | "down" | "?" }) {
@@ -219,7 +228,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <div className="sheet-row"><span className="small mute">Appearance</span><ThemeSeg /></div>
             <Status keeper={keeper} />
-            <Link to="/" className="small mute" style={{ display: "block", marginTop: 18 }}>Back to oncloak.xyz</Link>
+            <Link to="/" className="small mute" style={{ display: "block", marginTop: 18 }}>Back to {SITE.replace("https://", "")}</Link>
           </Sheet>
         )}
       </header>
@@ -233,7 +242,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         <Suspense fallback={<div className="skel" style={{ height: 240 }} aria-busy="true" />}>{children}</Suspense>
         <footer className="app-foot">
-          <span>Cloak on Elysium testnet. Play money only. Not investment advice.</span>
+          <span>{IS_MAINNET ? "Cloak on Elysium. Not investment advice." : "Cloak on Elysium testnet. Play money only. Not investment advice."}</span>
           <span className="row-flex" style={{ gap: 16 }}>
             <Link to="/docs">Docs</Link>
             <Link to="/demo">Demo</Link>

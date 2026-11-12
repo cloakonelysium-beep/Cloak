@@ -1,14 +1,13 @@
 // A drop's public state and details for link previews (api/preview.js) and the share card image (api/card.js).
 // Files starting with _ are not routes. Read from the chain with a short timeout; null when the drop can't be read.
 import { createPublicClient, formatEther, http } from "viem";
-import { CloakDrops, deploymentFor, elysiumTestnet } from "@cloakely/sdk";
+import { CloakDrops } from "@cloakely/sdk";
 
-export const SITE = "https://oncloak.xyz";
-
-export async function loadDrop(a) {
-  const d = deploymentFor(elysiumTestnet.id);
-  if (!d.dropFactory) return null;
-  const pub = createPublicClient({ chain: elysiumTestnet, transport: http(undefined, { timeout: 8000 }), batch: { multicall: true } });
+/** `n` is the request's network (netOf in _chain.js). */
+export async function loadDrop(a, n) {
+  const d = n.d;
+  if (!d?.dropFactory) return null;
+  const pub = createPublicClient({ chain: n.chain, transport: http(undefined, { timeout: 8000 }), batch: { multicall: true } });
   const c = new CloakDrops(pub, undefined, d.dropFactory, BigInt(d.dropFactoryBlock ?? 0), d.escrowDropFactory);
   const s = await c.get(a).catch(() => null);
   if (!s) return null;
@@ -18,9 +17,9 @@ export async function loadDrop(a) {
 }
 
 /** An image a link fetcher can load: ipfs:// and ar:// through this site's media route, https: as it is. */
-export function absImage(uri) {
+export function absImage(uri, site) {
   if (!uri || typeof uri !== "string") return undefined;
-  if (uri.startsWith("ipfs://") || uri.startsWith("ar://")) return `${SITE}/api/media?u=${encodeURIComponent(uri)}`;
+  if (uri.startsWith("ipfs://") || uri.startsWith("ar://")) return `${site}/api/media?u=${encodeURIComponent(uri)}`;
   if (uri.startsWith("https://")) return uri;
   if (/^data:image\/(png|jpeg|webp|gif);base64,/.test(uri)) return uri;
   return undefined;

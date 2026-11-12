@@ -85,12 +85,14 @@ Each step prints what it deployed and reads it back.
   - **Claude** prepares the mainnet block: `FACTORY`, `START_BLOCK`, `GLOAM_VAULT` and its block, `GLOAM_LAUNCH_VAULT`, `GLOAM_ECOSYSTEM_VAULT`, `GLOAM_MEMO`, `GLOAM_ESCROWS`, `GLOAM_BATCHER_V4`, `GLOAM_FUNDS_GATE`, `RPC_URL`.
   - **Bob** sets the secrets in the dashboard only: `KEEPER_PK` and `RPC_BACKUP`.
   - Also `TRUSTED_PROXY_HOPS=1`, `CORS_ORIGINS` (the mainnet site's domain) and `DROPS` (step 1).
-- [ ] **Bob:** a Vercel project for the mainnet site:
-  - `VITE_CHAIN_ID=99901`;
-  - `VITE_RPC_URL=https://rpc.elysium.kinetiq.xyz`;
-  - `VITE_RPC_BACKUP`;
-  - `VITE_KEEPER_URL` and `VITE_RELAYER_URL` (the mainnet keeper).
-- [ ] **Bob:** keep it private. Turn on Vercel's password protection, or use an unlisted domain, until public launch.
+- [ ] **Bob:** the mainnet site is the same Vercel project as testnet (`cloak`): the site picks its network from the
+  address it's opened at (`apps/web/api/_net.js`): oncloak.xyz and www are mainnet, everything else testnet.
+  - Add `oncloak.xyz` (and `www.oncloak.xyz`) to the project's domains.
+  - Per-network settings carry the chain id: `VITE_RPC_URL_99901`, `VITE_RPC_BACKUP_99901` (and `_99801` for testnet).
+    The keeper's address comes from the SDK's record (`relayerUrl`), so it needs no setting.
+  - Never set `VITE_CHAIN_ID` on this project: it would pin both addresses to one network.
+- [ ] **Bob:** keep it private until public launch. Password protection would cover testnet too (one project), so leave
+  oncloak.xyz unattached until launch and test mainnet on a private address (Claude adds it to `MAINNET_HOSTS`).
 - [ ] **Claude:** check the keeper's `/health`: awake, the right factory and vaults, enough gas.
 - [ ] **Claude:** check RPC failover on the hosted site and keeper by breaking the main URL once.
 
@@ -167,7 +169,7 @@ Test with a team wallet and 1 to 5 HYPE. For each step, check the result on chai
 - [ ] **Bob with Gloam:** the announcement, drafted together and sent to them first.
 - [ ] Remove the password from the site, and point the main domain at it.
 - [x] **The domain.** oncloak.xyz for the site and keeper.oncloak.xyz for the keeper: every reference in the site, SDK, MCP server, keeper and docs now says so. The private-account signing message (`packages/sdk/src/private/crypto.ts`) says oncloak.xyz too, changed before any v2 launch: it must never change after mainnet, since its text derives every user's private account.
-- [ ] **The source link.** Set `VITE_GITHUB_URL` to v2's public repository (or the official Cloak repo, if the code moves there). Until then the site links to v1's repository. Republish `@cloakely/sdk` and `@cloakely/mcp` with v2's READMEs (Bob).
+- [x] **The source link.** The site links to cloakonelysium-beep/Cloak by default (Nov 12); `VITE_GITHUB_URL` still overrides it. Republishing `@cloakely/sdk` and `@cloakely/mcp` with v2's READMEs is still to do (Bob).
 - [ ] Update the docs, roadmap, pitch and SDK README to "live on mainnet, with caps". Never say "audited" for Cloak's own contracts until the audit is done.
 - [ ] Credit the reviewers on X (Haider Ali, Ghost), as promised.
 - [ ] Gloam lists Cloak as a live partner on Elysium.
