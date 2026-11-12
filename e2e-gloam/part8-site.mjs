@@ -141,7 +141,7 @@ try {
   // 3. the balance on the Portfolio page
   await page.getByRole("link", { name: "Portfolio" }).first().click();
   // the Assets card lists HYPE with its private amount
-  await page.waitForFunction(() => /HYPE\s+Hyperliquid\s+1\s+HYPE/.test(document.body.innerText), null, { timeout: 120_000 }).catch(async (e) => {
+  await page.waitForFunction(() => /HYPE\s+Hyperliquid\s+1(\s+HYPE|\s+\$)/.test(document.body.innerText), null, { timeout: 120_000 }).catch(async (e) => {
     console.log("  page text:", (await page.innerText("body")).slice(0, 1500));
     console.log("  browser logs:", logs.slice(-15));
     throw e;
@@ -161,7 +161,10 @@ try {
   const got = (await pub.getBalance({ address: fresh })) - before;
   await page.locator(".okmsg").first().waitFor({ timeout: 60_000 });
   await shot("4-withdrawn");
-  assert(got === parseEther("0.4975"), `a withdrawal proved in the browser and relayed pays ${formatEther(got)} HYPE (0.5 less the vault's 0.5%)`);
+  // HYPE sits in the launch vault on testnet; its withdrawal fee is whatever the deploy set (0 since the Nov 12 redeploy)
+  const feeBps = BigInt(await pub.readContract({ address: G.launchVault, abi: [{ type: "function", name: "withdrawFeeBps", stateMutability: "view", inputs: [], outputs: [{ type: "uint16" }] }], functionName: "withdrawFeeBps" }));
+  const want = parseEther("0.5") - (parseEther("0.5") * feeBps) / 10_000n;
+  assert(got === want, `a withdrawal proved in the browser and relayed pays ${formatEther(got)} HYPE (0.5 less the vault's ${Number(feeBps) / 100}% fee)`);
   assert(relayed >= 1, `the private calls went through the local relay (${relayed})`);
 
   // 5. an instant private buy on the Trade page: the launch token, through its V2 pool, the buffer back as a note
