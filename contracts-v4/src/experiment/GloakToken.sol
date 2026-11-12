@@ -15,7 +15,7 @@ pragma solidity ^0.8.26;
  *          - SWAP     may swap in GLOAK's own pool (the hook asks canSwap): routers that always deliver into a vault;
  *          - VAULT    a private vault. Its withdrawals pay the surcharge, unless the recipient is a one-time swap
  *                     escrow that hands everything to a PAYEE in the same transaction (a private sell): then the
- *                     surcharge comes back to the PAYEE, so the swap gets the full amount;
+ *                     surcharge goes on to the PAYEE, so the swap gets the full amount;
  *          - PAYEE    a router or batch round that one-time escrows pay (it receives that refund).
  *
  *         The admin (Cloak's owner wallet) sets roles at once during setup. After endSetup, adding a role waits 3 days
@@ -24,8 +24,15 @@ pragma solidity ^0.8.26;
  *         SWAP only to an address with code, since those open Uniswap. RECEIVE, VAULT and PAYEE may go to any address:
  *         they make arriving free, never leaving, so what an approved address sends on to a public one still pays.
  *
- * @dev The escrow refund uses transient storage (EIP-1153): what a vault's withdrawal burned is remembered for the rest
- *      of that transaction only, keyed by the recipient.
+ *         Supply is fixed at launch and only ever falls: nothing is minted after the constructor. A vault withdrawal's
+ *         surcharge isn't burned on the spot but held by the token itself (balanceOf[address(this)]) for the rest of
+ *         that transaction, because a one-time escrow can't be recognised in advance. If the escrow hands its whole
+ *         balance to a PAYEE in the same transaction, the held surcharge moves on to the PAYEE as a plain transfer.
+ *         Whatever is held after its transaction is burned by the next transfer of GLOAK, or by anyone at once with
+ *         burnHeld(). Every other surcharge burns at once.
+ *
+ * @dev What a withdrawal's surcharge may still owe is remembered in transient storage (EIP-1153), keyed by the
+ *      recipient, plus a running total, so a burn inside that transaction can never take what is still owed.
  */
 contract GloakToken {
     string public name;
@@ -49,6 +56,8 @@ contract GloakToken {
     uint256 public constant ROLE_DELAY = 3 days;
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
     bytes32 private constant OWED_DOMAIN = keccak256("gloak.exit-owed.v1");
+    /// @dev Transient: the total still owed back within this transaction (held, not yet burnable).
+    bytes32 private constant PENDING_SLOT = keccak256("gloak.exit-pending.v1");
 
     /// @notice Uniswap v4's PoolManager: only FEED contracts may send GLOAK into it.
     address public immutable poolManager;
@@ -57,7 +66,7 @@ contract GloakToken {
     address public pendingAdmin;
     bool public setupMode = true;
     uint16 public surchargeBps = MAX_SURCHARGE_BPS;
-    /// @notice GLOAK burned by surcharges so far.
+    /// @notice GLOAK burned by surcharges so far (heldForBurn() is on its way there).
     uint256 public surchargeBurned;
 
     mapping(address => uint8) public rolesOf;
@@ -76,6 +85,7 @@ contract GloakToken {
     event SurchargeLowered(uint16 bps);
     event Surcharged(address indexed from, address indexed to, uint256 burned);
     event SurchargeRefunded(address indexed escrow, address indexed payee, uint256 amount);
+    event SurchargeHeld(address indexed from, address indexed to, uint256 amount);
     event AdminOffered(address indexed to);
     event AdminChanged(address indexed to);
 
@@ -90,6 +100,8 @@ contract GloakToken {
     /// @notice The admin can never grant SEND, and grants FEED or SWAP only to contracts.
     error RoleNotGrantable();
     error ZeroAddress();
+    /// @notice Nobody sends GLOAK to the token itself: its balance is only surcharges waiting to burn.
+    error ToToken();
     error Balance();
     error Allowance();
 
@@ -175,8 +187,29 @@ contract GloakToken {
         return (value * surchargeBps) / 10_000;
     }
 
+    /// @notice Surcharges held by the token and no longer owed to any transaction: burned by the next transfer.
+    function heldForBurn() public view returns (uint256) {
+        return balanceOf[address(this)] - _tget(PENDING_SLOT);
+    }
+
+    /// @notice Burn what the token holds from past withdrawals' surcharges now. Anyone may call it.
+    function burnHeld() external {
+        _burnHeld();
+    }
+
+    function _burnHeld() private {
+        uint256 h = heldForBurn();
+        if (h == 0) return;
+        balanceOf[address(this)] -= h;
+        totalSupply -= h;
+        surchargeBurned += h;
+        emit Transfer(address(this), address(0), h);
+    }
+
     function _transfer(address from, address to, uint256 value) internal {
         if (to == address(0)) revert ZeroAddress();
+        if (to == address(this)) revert ToToken();
+        _burnHeld();
         if (balanceOf[from] < value) revert Balance();
         uint8 rf = rolesOf[from];
 
@@ -190,15 +223,14 @@ contract GloakToken {
         uint8 rt = rolesOf[to];
         if (to == DEAD || rt & RECEIVE != 0) {
             _move(from, to, value);
-            // a one-time escrow handing all of a vault withdrawal to a router or batch round: give back what it burned
+            // a one-time escrow handing all of a vault withdrawal to a router or batch round: the surcharge the token
+            // holds for it in this transaction goes on to the router too (a transfer, never a mint)
             if (rt & PAYEE != 0 && balanceOf[from] == 0) {
                 uint256 owed = _owed(from);
                 if (owed != 0) {
                     _setOwed(from, 0);
-                    surchargeBurned -= owed;
-                    totalSupply += owed;
-                    balanceOf[to] += owed;
-                    emit Transfer(address(0), to, owed);
+                    _tset(PENDING_SLOT, _tget(PENDING_SLOT) - owed);
+                    _move(address(this), to, owed);
                     emit SurchargeRefunded(from, to, owed);
                 }
             }
@@ -210,15 +242,21 @@ contract GloakToken {
         }
 
         // out of the private zone, or between public addresses
-        uint256 burned = (value * surchargeBps) / 10_000;
-        _move(from, to, value - burned);
-        if (burned != 0) {
-            balanceOf[from] -= burned;
-            totalSupply -= burned;
-            surchargeBurned += burned;
-            emit Transfer(from, address(0), burned);
-            emit Surcharged(from, to, burned);
-            if (rf & VAULT != 0) _setOwed(to, _owed(to) + burned);
+        uint256 cut = (value * surchargeBps) / 10_000;
+        _move(from, to, value - cut);
+        if (cut == 0) return;
+        if (rf & VAULT != 0) {
+            // a vault's withdrawal: held for the rest of this transaction, in case `to` is a swap's one-time escrow
+            _move(from, address(this), cut);
+            _setOwed(to, _owed(to) + cut);
+            _tset(PENDING_SLOT, _tget(PENDING_SLOT) + cut);
+            emit SurchargeHeld(from, to, cut);
+        } else {
+            balanceOf[from] -= cut;
+            totalSupply -= cut;
+            surchargeBurned += cut;
+            emit Transfer(from, address(0), cut);
+            emit Surcharged(from, to, cut);
         }
     }
 
@@ -234,15 +272,21 @@ contract GloakToken {
         return keccak256(abi.encode(OWED_DOMAIN, a));
     }
 
-    function _owed(address a) private view returns (uint256 v) {
-        bytes32 s = _owedSlot(a);
+    function _owed(address a) private view returns (uint256) {
+        return _tget(_owedSlot(a));
+    }
+
+    function _setOwed(address a, uint256 v) private {
+        _tset(_owedSlot(a), v);
+    }
+
+    function _tget(bytes32 s) private view returns (uint256 v) {
         assembly {
             v := tload(s)
         }
     }
 
-    function _setOwed(address a, uint256 v) private {
-        bytes32 s = _owedSlot(a);
+    function _tset(bytes32 s, uint256 v) private {
         assembly {
             tstore(s, v)
         }
@@ -253,7 +297,7 @@ contract GloakToken {
     /**
      * @notice Where GLOAK is: in private vaults, in Uniswap's PoolManager (the pool), in other approved contracts,
      *         burned at 0x…dEaD, and in public addresses (the rest). `privateBps` is the vaults' share of everything not
-     *         burned, in basis points.
+     *         burned, in basis points. Surcharges the token holds until they burn count as none of these.
      */
     function meter()
         external
@@ -268,8 +312,9 @@ contract GloakToken {
         }
         inPool = balanceOf[poolManager];
         atDead = balanceOf[DEAD];
-        inPublic = totalSupply - inVaults - inPool - inContracts - atDead;
-        uint256 live = totalSupply - atDead;
+        uint256 held = balanceOf[address(this)];
+        inPublic = totalSupply - held - inVaults - inPool - inContracts - atDead;
+        uint256 live = totalSupply - held - atDead;
         privateBps = live == 0 ? 0 : (inVaults * 10_000) / live;
     }
 

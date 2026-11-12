@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {Test, stdJson} from "forge-std/Test.sol";
+import {Test, Vm, stdJson} from "forge-std/Test.sol";
 import {PoolManager} from "v4-core/PoolManager.sol";
 import {IPoolManager} from "v4-core/interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "v4-core/interfaces/callback/IUnlockCallback.sol";
@@ -381,13 +381,26 @@ contract GloakExperimentTest is Test {
         uint256 supply = gloak.totalSupply();
         uint256 noteSize = lv.deposited(address(gloak));
         uint256 before = lv.deposited(address(0));
+        vm.recordLogs();
         (bytes32 id, uint256 left) = _swap(bytes32(uint256(0x70)), address(gloak), noteSize, address(0), 1 ether);
+        _assertNoMint("a private sell");
+        assertEq(gloak.balanceOf(address(gloak)), 0, "the held surcharge went on to the router");
         assertEq(lv.deposited(address(0)) - before, 1 ether, "exactly 1 HYPE lands as a note");
         (address asset,, uint256 amount) = router.owed(id);
         assertEq(asset, address(gloak));
         assertEq(amount, left, "the unspent GLOAK is owed back in full");
         assertEq(gloak.totalSupply(), supply, "the escrow's surcharge came back: nothing burned");
         assertEq(gloak.surchargeBurned(), 0);
+    }
+
+    /// @dev No Transfer from address(0) in the recorded logs: GLOAK is never minted after its launch.
+    function _assertNoMint(string memory what) internal {
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 transferSig = keccak256("Transfer(address,address,uint256)");
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(gloak) || logs[i].topics.length < 3 || logs[i].topics[0] != transferSig) continue;
+            assertTrue(logs[i].topics[1] != bytes32(0), string.concat(what, " minted GLOAK"));
+        }
     }
 
     function test_leftoverClaimedBackIntoTheVaultIsFree() public {
@@ -402,13 +415,71 @@ contract GloakExperimentTest is Test {
 
     // ───────────── leaving costs 10% ─────────────
 
+    /// forge-config: default.isolate = true
     function test_withdrawalToAPublicAddressBurns10Percent() public {
         _live();
         uint256 supply = gloak.totalSupply();
         _unshield(bytes32(uint256(0x70)), 1_000e18, bob);
         assertEq(gloak.balanceOf(bob), 900e18, "bob gets 90%");
+        assertEq(gloak.heldForBurn(), 100e18, "after its transaction, the 10% waits to burn");
+        assertEq(gloak.totalSupply() - gloak.heldForBurn(), supply - 100e18);
+        vm.prank(makeAddr("anyone"));
+        gloak.burnHeld();
         assertEq(gloak.totalSupply(), supply - 100e18, "10% is burned");
         assertEq(gloak.surchargeBurned(), 100e18);
+        assertEq(gloak.balanceOf(address(gloak)), 0);
+    }
+
+    /// forge-config: default.isolate = true
+    function test_aHeldSurchargeBurnsWithTheNextTransfer() public {
+        _live();
+        uint256 supply = gloak.totalSupply();
+        _unshield(bytes32(uint256(0x70)), 1_000e18, bob);
+        vm.prank(bob);
+        gloak.transfer(alice, 500e18); // public to public: burns 50 at once, and the held 100 first
+        assertEq(gloak.surchargeBurned(), 150e18);
+        assertEq(gloak.totalSupply(), supply - 150e18);
+        assertEq(gloak.heldForBurn(), 0);
+    }
+
+    function test_aBurnInsideTheTransactionCantTakeWhatIsStillOwed() public {
+        _live();
+        // one transaction (no isolation): the withdrawal's 10% is still owed back to it, so it can't be burned yet
+        _unshield(bytes32(uint256(0x70)), 1_000e18, bob);
+        gloak.burnHeld();
+        assertEq(gloak.balanceOf(address(gloak)), 100e18, "still held for this transaction");
+        assertEq(gloak.heldForBurn(), 0);
+        assertEq(gloak.surchargeBurned(), 0);
+    }
+
+    /// @dev However a withdrawal and its hand-off to a router are sized, supply never grows and nothing is minted.
+    function testFuzz_supplyNeverGrows(uint256 out, uint256 handOff, bool toRouter) public {
+        _live();
+        uint256 noteSize = lv.deposited(address(gloak));
+        out = bound(out, 1, noteSize);
+        uint256 supply = gloak.totalSupply();
+        address hop = makeAddr("hop");
+        vm.recordLogs();
+        _unshield(bytes32(uint256(0x70)), out, hop);
+        uint256 bal = gloak.balanceOf(hop);
+        handOff = bound(handOff, 0, bal);
+        if (handOff != 0) {
+            vm.prank(hop);
+            gloak.transfer(toRouter ? address(router) : bob, handOff);
+        }
+        gloak.burnHeld();
+        _assertNoMint("a withdrawal and hand-off");
+        assertLe(gloak.totalSupply(), supply, "supply never grows");
+        (uint256 inVaults, uint256 inPool, uint256 inContracts, uint256 atDead, uint256 inPublic,) = gloak.meter();
+        assertEq(inVaults + inPool + inContracts + atDead + inPublic + gloak.balanceOf(address(gloak)), gloak.totalSupply(), "every GLOAK is accounted for");
+    }
+
+    function test_nobodyCanSendGloakToTheToken() public {
+        _live();
+        _unshield(bytes32(uint256(0x70)), 1_000e18, bob);
+        vm.prank(bob);
+        vm.expectRevert(GloakToken.ToToken.selector);
+        gloak.transfer(address(gloak), 1e18);
     }
 
     function test_exitFromTheRouterBurns10Percent() public {

@@ -29,7 +29,7 @@ export interface GloakInfo {
   token: Address;
   /** The surcharge on moves to public addresses, in basis points (1000 = 10%). */
   surchargeBps: number;
-  /** GLOAK burned by surcharges so far. */
+  /** GLOAK burned by surcharges so far, including what the token holds to burn on the next transfer (heldForBurn). */
   surchargeBurned: bigint;
   totalSupply: bigint;
   /** True until the admin ends setup; after it, new approvals wait 3 days in public. */
@@ -54,9 +54,11 @@ export async function findGloak(publicClient: PublicClient, factory: Address): P
 /** GLOAK's surcharge, totals and privacy meter, read in one go. */
 export async function readGloak(publicClient: PublicClient, token: Address): Promise<GloakInfo> {
   const c = { address: token, abi: gloakTokenAbi } as const;
-  const [bps, burned, supply, setup, m] = await Promise.all([
+  const [bps, burned, held, supply, setup, m] = await Promise.all([
     publicClient.readContract({ ...c, functionName: "surchargeBps" }),
     publicClient.readContract({ ...c, functionName: "surchargeBurned" }),
+    // a withdrawal's 10% is held by the token until the next transfer burns it: count it as burned already
+    publicClient.readContract({ ...c, functionName: "heldForBurn" }),
     publicClient.readContract({ ...c, functionName: "totalSupply" }),
     publicClient.readContract({ ...c, functionName: "setupMode" }),
     publicClient.readContract({ ...c, functionName: "meter" }),
@@ -65,8 +67,8 @@ export async function readGloak(publicClient: PublicClient, token: Address): Pro
   return {
     token,
     surchargeBps: Number(bps),
-    surchargeBurned: burned,
-    totalSupply: supply,
+    surchargeBurned: burned + held,
+    totalSupply: supply - held,
     setupMode: setup,
     meter: { inVaults, inPool, inContracts, atDead, inPublic, privateBps: Number(privateBps) },
   };

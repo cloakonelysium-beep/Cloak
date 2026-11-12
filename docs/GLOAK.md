@@ -13,7 +13,7 @@ GLOAK is an ERC-20 meant to be held and traded privately. Moving it into a priva
 | Standard | ERC-20, 18 decimals |
 | Supply at launch | 500,000 GLOAK, minted once, all to the launch auction |
 | Team share | None |
-| Minting | None after launch (see "Refunds" below for the one exception, which restores burned tokens within the same transaction) |
+| Minting | None after launch, ever: supply only falls (since Nov 12, see "Why private sells are free" below) |
 | Upgrades | None. No proxy |
 | Surcharge | 10%, burned. It can be lowered, never raised |
 | Admin | Cloak's owner wallet, with limited powers (see "Who controls what") |
@@ -46,16 +46,20 @@ Every address has a set of roles, empty by default. A transfer is checked in thi
 | Send | 2 | Transfers from this address are free. Only the launch auction and Cloak's hook have it, from the start; nobody can grant it |
 | Feed | 4 | May transfer GLOAK into Uniswap's PoolManager. Contracts only |
 | Swap | 8 | May swap in GLOAK's pool (Cloak's hook asks `canSwap`). Contracts only |
-| Vault | 16 | A private vault: its withdrawals are charged, with the refund below |
-| Payee | 32 | A router that one-time escrows pay; it receives refunds |
+| Vault | 16 | A private vault: its withdrawals are charged, held until the transaction ends (below) |
+| Payee | 32 | A router that one-time escrows pay; it receives the held surcharge |
 
-### Refunds: why private sells are free
+### Why private sells are free (and nothing is ever minted)
 
-Private routers on Elysium usually spend a note by withdrawing it to a one-time escrow address, which in the same transaction hands everything to the router. GLOAK can't recognise the escrow in advance, so the vault's payment to it is charged 10% like any withdrawal.
+Private routers on Elysium usually spend a note by withdrawing it to a one-time escrow address, which in the same transaction hands everything to the router. GLOAK can't recognise the escrow in advance: its address is new for every swap and has no code yet when the vault pays it. So the vault's payment to it is charged 10% like any withdrawal.
 
-The token remembers that amount, keyed by the recipient, in transient storage (EIP-1153) for the rest of the transaction. When that recipient then sends its whole balance to a **Payee**, the token mints the remembered amount to the Payee, and the swap has the full amount. A real withdrawal never reaches a Payee, so its 10% stays burned. After the transaction the memory is gone.
+That 10% isn't burned on the spot. The token holds it in its own balance and remembers, in transient storage (EIP-1153), who it was charged on. If that recipient then sends its whole balance to a **Payee** in the same transaction, the token moves the held 10% on to the Payee as an ordinary transfer, and the swap has the full amount.
 
-Supply changes only by burns (surcharges) and these same-transaction refunds. The refund only ever restores what that transaction burned.
+A real withdrawal never reaches a Payee. Once its transaction ends, its 10% is no longer owed to anyone, and the next transfer of GLOAK burns it. Anyone can also burn it at once with `burnHeld()`. A burn inside the transaction can never take what that transaction is still owed.
+
+Other surcharges (sends between public addresses, a public exit from the router) burn at once.
+
+Nothing is minted after the constructor, so supply only falls. Until Nov 12 the token minted the 10% back to the router instead (a same-transaction refund that never raised supply, but showed as a mint). It was changed before GLOAK's launch, so no deployed GLOAK ever had it.
 
 ## The launch
 
@@ -158,7 +162,7 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 
 ## Known limits
 
-- **A sell's withdrawal sent alone pays 10%.** If someone submits a private sell's withdrawal in its own transaction, away from the router, the refund can't happen. The seller recovers 90% after the swap's deadline.
+- **A sell's withdrawal sent alone pays 10%.** If someone submits a private sell's withdrawal in its own transaction, away from the router, the held 10% can't go on to the router, and it burns. The seller recovers 90% after the swap's deadline.
 - **Hookless pools.** Someone could open their own hookless GLOAK pool, sell GLOAK into it privately, and keep the result as v4 claims. That makes a small, isolated market reachable only by custom contracts. Turning claims back into GLOAK costs 10%, and GLOAK's own pool stays closed to it.
 - **Public bids are possible.** A public winner gets public GLOAK, free at the claim.
 - **A thin pool moves a lot.** The pool's depth is fixed at launch: with about 1.5 HYPE in it, a 0.2 HYPE buy moves the price by roughly a quarter.
@@ -169,9 +173,10 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 **Reads**
 - `rolesOf(address) → uint8`
 - `canSwap(address) → bool`
-- `surchargeOn(from, to, value) → uint256` (what a transfer would burn, ignoring a same-transaction refund)
+- `surchargeOn(from, to, value) → uint256` (what a transfer would charge, ignoring a private sell's same-transaction hand-on)
 - `surchargeBps()`, `MAX_SURCHARGE_BPS` (1,000)
 - `surchargeBurned()`
+- `heldForBurn()` (withdrawal surcharges waiting for the next transfer to burn them)
 - `meter()`
 - `members(i)`, `membersCount()`
 - `admin()`, `pendingAdmin()`, `setupMode()`
@@ -183,9 +188,12 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 - `queueRoles` / `applyRoles` / `cancelRoles(account, roles)` (3 days)
 - `endSetup()`, `lowerSurcharge(bps)`, `offerAdmin(to)` / `acceptAdmin()`, `renounceAdmin()`
 
+**Anyone**
+- `burnHeld()`: burn the held surcharges now
+
 **Events**
 - `Transfer`, `Approval`
-- `Surcharged(from, to, burned)`, `SurchargeRefunded(escrow, payee, amount)`
+- `Surcharged(from, to, burned)`, `SurchargeHeld(from, to, amount)`, `SurchargeRefunded(escrow, payee, amount)`
 - `RolesSet`, `RolesQueued`, `RolesCancelled`
 - `SetupEnded`, `SurchargeLowered`
 - `AdminOffered`, `AdminChanged`
