@@ -20,6 +20,8 @@ uniform-price auction:
    at that price through Cloak's hook.
 4. **Claim.** Every winner pays the same price, and the rest of each deposit comes back.
 
+NFT drops use the same sealed bids: a new collection sold through `CloakDrop`, or NFTs that already exist sold through `CloakEscrowDrop`.
+
 The full rules are in [`docs/RULES.md`](RULES.md), and the design in [`docs/HOW-IT-WORKS.md`](HOW-IT-WORKS.md).
 
 ## In scope
@@ -33,15 +35,18 @@ Counted without blank lines or comments:
 | `contracts/src/CloakAuction.sol` | 444 | Commit, reveal, settle and claim, the no-reveal penalty, and pull-based payouts. |
 | `contracts/src/CloakToken.sol` | 49 | The launched ERC-20. |
 | `contracts/src/CloakVesting.sol` | 92 | Linear vesting for a creator's allocation, and the deployer that makes launch tokens and vesting contracts for the factory. |
+| `contracts/src/CloakDrop.sol` | 555 | `CloakDrop` and `CloakDropFactory`: one NFT collection and its sealed sale (guaranteed spots, sealed bids with a whitelist boost, one clearing price, a fair draw for ties). |
+| `contracts/src/CloakEscrowDrop.sol` | 535 | `CloakEscrowDrop` and `CloakEscrowDropFactory`: a sealed auction of NFTs that already exist, held in escrow from creation. |
+| `contracts/src/CloakSpotBook.sol` | 87 | Whitelist spot sales on drops: winners name the wallets to whitelist. |
 | `contracts-v4/src/CloakV4Hook.sol` | 351 | The factory's seeder and Uniswap v4 hook: at settlement it opens a HYPE / token pool at the clearing price as one permanent full-range position, then runs the anti-snipe fee and splits trading fees (20% to Cloak, the rest to the creator). |
 | `contracts-v4/src/CloakV4Market.sol` | 134 | A launch's v4 pool as Cloak's contracts and SDK see a market: native HYPE in and out, reserves and a time-weighted price. |
-| **Total** | **about 1,500** | |
+| **Total** | **about 2,680** | |
 
 **Compiler settings:**
 - `contracts/`: solc 0.8.24, `shanghai`, optimizer at 200 runs, `via_ir`.
 - `contracts-v4/`: solc 0.8.26, `cancun`, the same settings as Uniswap's v4-core.
 
-**Deployment, for context:** `e2e-gloam/deploy-v2-factory.mjs` (with `e2e-gloam/v2factory.mjs`) deploys the config, the hook at its flagged address and the factory, and hands the config's ownership over.
+**Deployment, for context:** `e2e-gloam/deploy-v2-factory.mjs` (with `e2e-gloam/v2factory.mjs`) deploys the config, the hook at its flagged address and the factory, and hands the config's ownership over. `e2e-gloam/deploy-drops.mjs` deploys the two drop factories and `CloakSpotBook` on the same config; none of them has an owner or admin.
 Please flag anything you see in how roles are assigned.
 
 ## Out of scope
@@ -50,8 +55,7 @@ Please flag anything you see in how roles are assigned.
   receipt checks) and Gloam's own vault, circuits and keys (`vendor/gloam`). These go through Gloam's own audit
   process.
 - **Code that doesn't ship to mainnet:** the Uniswap V2 path (`CloakPair`, `CloakSeeder`, `CloakV2Market`,
-  `CloakFeeLocker`), NFT drops (`CloakDrop`, `CloakEscrowDrop`), `CloakSpotBook`, `contracts-v4/src/experiment`, and
-  `TestToken`. `CloakAuction` imports `CloakPair.sol` only for its token interface and the V2 fallback.
+  `CloakFeeLocker`), `contracts-v4/src/experiment` and `TestToken`. `CloakAuction` imports `CloakPair.sol` only for its token interface and the V2 fallback.
 - Uniswap v4-core and v4-periphery, solmate and forge-std, used as they are.
 - The TypeScript SDK, keeper, relay and site.
 
