@@ -166,7 +166,7 @@ Test with a team wallet and 1 to 5 HYPE. For each step, check the result on chai
 - [ ] Every box above is ticked, and the private tests ran clean for at least a few days.
 - [ ] **Bob with Gloam:** the announcement, drafted together and sent to them first.
 - [ ] Remove the password from the site, and point the main domain at it.
-- [x] **The domain.** oncloak.xyz for the site and keeper.oncloak.xyz for the keeper: every reference in the site, SDK, MCP server, keeper and docs now says so. Left on purpose: the private-account signing message in `packages/sdk/src/private/crypto.ts` still names cloak.boblabs.tech, since changing it changes every user's derived account (decide before mainnet).
+- [x] **The domain.** oncloak.xyz for the site and keeper.oncloak.xyz for the keeper: every reference in the site, SDK, MCP server, keeper and docs now says so. The private-account signing message (`packages/sdk/src/private/crypto.ts`) says oncloak.xyz too, changed before any v2 launch: it must never change after mainnet, since its text derives every user's private account.
 - [ ] **The source link.** Set `VITE_GITHUB_URL` to v2's public repository (or the official Cloak repo, if the code moves there). Until then the site links to v1's repository. Republish `@cloakely/sdk` and `@cloakely/mcp` with v2's READMEs (Bob).
 - [ ] Update the docs, roadmap, pitch and SDK README to "live on mainnet, with caps". Never say "audited" for Cloak's own contracts until the audit is done.
 - [ ] Credit the reviewers on X (Haider Ali, Ghost), as promised.
