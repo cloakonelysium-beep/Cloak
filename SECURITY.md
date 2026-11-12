@@ -59,6 +59,15 @@ v1's batchers got the matching fix in v1's repository.
 - **R-04 and R-05 (Low): no change.** The uint128 casts in batch settlement are bounded by the 4% side cap and the token's supply. An escrow can't be opened without its order being recorded in the same transaction.
 - `CloakGraduation`, which had R-01's flaw too, was removed for the beta.
 
+## Acknowledgements
+
+Thank you to the people who reviewed Cloak's code on their own time and reported what they found privately.
+
+- **Haider Ali ([@haiderali_eth](https://x.com/haiderali_eth))** did an independent security review of Cloak's
+  contracts (Nov 7, 2026), with Foundry proofs of concept for each finding. He then rechecked our fixes and found that a
+  reveal window could still be one second long, which is now fixed with a 5-minute minimum. Findings CL-01 to CL-09 and
+  A-1 to A-3 are in [`docs/REVIEW-RESPONSES.md`](docs/REVIEW-RESPONSES.md).
+
 ## Known issues (accepted for the beta)
 
 - **W-01 (High): one well-funded bidder can fill a launch's deposit cap.** With 100 wallets and about 10,000 HYPE, someone can fill a launch's 10,000 HYPE cap with bids at the creator's minimum price, lock others out, and buy the whole sale at that price. They always pay at least the creator's minimum, and their deposit beyond the cost comes back. It exists only while the beta caps do, and the fix (counting each bid's cost rather than its deposit, or dropping the total cap) waits for after the beta (`docs/MAINNET-DECISIONS.md`, A6).
