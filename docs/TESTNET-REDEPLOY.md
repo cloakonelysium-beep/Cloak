@@ -12,7 +12,7 @@ admin or pauser.
   starts. Never print it.
 - Foundry: the stable release from github.com/foundry-rs/foundry/releases, on `PATH`.
 - `git submodule update --init --recursive`, `pnpm install --frozen-lockfile`, then `forge build` in
-  `vendor/gloam/contracts`, `contracts`, `contracts-gloam` and `contracts-v4` (the last takes about 20 minutes).
+  `vendor/gloam/contracts`, `contracts`, `contracts-gloam` and `contracts-v4` (the last takes 5 to 20 minutes), then `pnpm --filter @cloakely/sdk build` (the deploy scripts import it).
 
 ## Deploy (in this order)
 
@@ -25,12 +25,19 @@ admin or pauser.
    ```
    NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-partner.mjs --config deployments/elysium-testnet-gloam.input.json
    ```
-4. From the main wallet (in its wallet app): `acceptOwnership()` on the config, `acceptController()` on the launch
-   vault guard and on the ecosystem vault guard. The scripts print each call (address and data). Then check
-   `owner()` / `controller()` read back the main wallet.
+4. From the main wallet (in its wallet app): `acceptController()` (data `0x9bc21c0c`) on the launch vault guard and on
+   the ecosystem vault guard. The config needs no `acceptOwnership()` here: when the deployer is the owner, it owns the
+   config directly (the call would revert with `NotPendingOwner()`). Then check `controller()` reads back the main
+   wallet with nothing pending.
+
+**Done Nov 12** (commit 09d5ac7): 0.0043 HYPE in all. Factory `0xb906…71d7` (block 27930789), hook `0x822c…2a80`,
+config `0x3133…a9ba`, launch vault `0xef42…84e7` and the escrows from block 27931042; every address is in
+`deployments/elysium-testnet-*.json` and `packages/sdk/src/deployments.ts`.
 
 ## After
 
+- The partner config needs `gloamVaultBlock` (Gloam's vault's deploy block, 26230337 on testnet) so the record and
+  the SDK read Gloam's vault from its start; `block` in the record is where Cloak's own vaults start.
 - `node scripts/sdk-entry.mjs deployments/elysium-testnet-gloam.json deployments/elysium-testnet-v2-factory.json`
   prints the SDK entry: put it in `packages/sdk/src/deployments.ts` (chain 99801).
 - `render.yaml`: `FACTORY`, `START_BLOCK` and every `GLOAM_*` address and block from the new records.

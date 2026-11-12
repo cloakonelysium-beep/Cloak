@@ -11,6 +11,8 @@ const [gPath, fPath, relayerUrl = ""] = process.argv.slice(2);
 if (!gPath || !fPath) throw new Error("usage: node scripts/sdk-entry.mjs <gloam.json> <factory.json> [relayerUrl]");
 const g = JSON.parse(readFileSync(gPath, "utf8"));
 const f = JSON.parse(readFileSync(fPath, "utf8"));
+// Gloam's vault is read from its own deploy block; `block` in the record is where Cloak's vaults start
+if (g.gloamVaultBlock === undefined) throw new Error("the gloam record has no gloamVaultBlock (Gloam's vault's deploy block): add it from the config");
 if (g.chainId !== f.chainId) throw new Error(`the records are for different chains (${g.chainId}, ${f.chainId})`);
 if (g.launchFactory.toLowerCase() !== f.factory.toLowerCase()) throw new Error("the launch vault isn't on this factory");
 if (g.poolManager.toLowerCase() !== f.poolManager.toLowerCase() || g.v4Hook.toLowerCase() !== f.v4Hook.toLowerCase()) throw new Error("the records name different PoolManagers or hooks");
@@ -30,8 +32,9 @@ console.log(`  ${g.chainId}: {
     gloam: {
       gloamVault: ${q(g.gloamVault)},
       memoBoard: ${q(g.memoBoard)},
-      block: ${g.block}n,
-      launchVault: ${q(g.launchVault)},${opt("launchSwapV4", g.launchSwapV4)}${opt("router", g.router)}${opt("ecosystemVault", g.ecosystemVault)}${g.ecosystemVault ? `\n      ecosystemVaultBlock: ${g.block}n,` : ""}${opt("batcherV4", g.batcherV4)}${opt("receive", g.receive)}${opt("bids", g.bids)}${opt("fundsGate", g.fundsGate)}${opt("receiptCheck", g.receiptCheck)}
+      block: ${g.gloamVaultBlock}n,
+      launchVault: ${q(g.launchVault)},
+      launchVaultBlock: ${g.block}n,${opt("launchSwapV4", g.launchSwapV4)}${opt("router", g.router)}${opt("ecosystemVault", g.ecosystemVault)}${g.ecosystemVault ? `\n      ecosystemVaultBlock: ${g.block}n,` : ""}${opt("batcherV4", g.batcherV4)}${opt("receive", g.receive)}${opt("bids", g.bids)}${opt("fundsGate", g.fundsGate)}${opt("receiptCheck", g.receiptCheck)}
       whype: ${q(g.whype)},
     },
   },`);

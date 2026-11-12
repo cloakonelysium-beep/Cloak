@@ -251,6 +251,8 @@ try {
     chainId: cfg.chainId,
     note: "Cloak v2 next to Gloam's vault: Cloak's launch vault under its own VaultOwnerGuard (controller: the Safe, once it accepts) and Cloak's escrows. Gloam's vault, memo board and verifiers are Gloam's.",
     block: Number(block),
+    // where Gloam's vault starts (apps rebuild its tree from here); `block` above is where Cloak's vaults start
+    gloamVaultBlock: cfg.gloamVaultBlock === undefined ? undefined : Number(cfg.gloamVaultBlock),
     gloamVault: cfg.gloamVault,
     memoBoard: cfg.memoBoard,
     poseidon: cfg.poseidon,

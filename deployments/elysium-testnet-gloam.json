@@ -2,6 +2,7 @@
   "chainId": 99801,
   "note": "Cloak v2 next to Gloam's vault: Cloak's launch vault under its own VaultOwnerGuard (controller: the Safe, once it accepts) and Cloak's escrows. Gloam's vault, memo board and verifiers are Gloam's.",
   "block": 27931042,
+  "gloamVaultBlock": 26230337,
   "gloamVault": "0x8D15BA46071D5AB2e59d746c22d51C906281cB44",
   "memoBoard": "0xf6816854b68CC4B67213289927d8e44050BA62D3",
   "poseidon": "0xa404af78405ab37e37958ee4c96870182625440a",
