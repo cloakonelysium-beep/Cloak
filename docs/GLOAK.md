@@ -130,6 +130,33 @@ Your protocol needs two approvals:
 
 Approval can be removed at once if a contract is found unsafe. Deposits into a vault that lost its approval stop, and its withdrawals and sells then pay 10%. Nobody can move the funds in it.
 
+### Integration note: what changes on your side
+
+Usually nothing. GLOAK doesn't ask a protocol to work a particular way: Cloak approves your contracts, and the token reacts to their roles. Your contracts and mechanics stay as they are.
+
+| What your protocol does | What GLOAK needs from us | Code change on your side |
+|---|---|---|
+| Users deposit (shield) GLOAK into your pool | Your vault gets Receive and Vault | None |
+| Private transfers inside your pool | Nothing: no tokens move | None |
+| A withdrawal to a wallet | Nothing: it pays 10%, as intended | None |
+| A private swap through a one-time escrow that hands everything to your router in the same transaction (Gloam's design) | Your router gets Payee (plus Receive, Feed, Swap) | None: the token handles any escrow, whatever its address |
+| A private swap where your vault pays your router directly | Your router gets Receive (plus Feed, Swap) | None |
+| A private swap where the escrow hands off in a later transaction | Nothing helps | Its sells pay 10% unless the flow changes |
+
+Two things may need a setting, not new code:
+- **Your router must trade on Uniswap v4 directly, in GLOAK's own pool.** Uniswap's Universal Router and aggregators are refused on purpose: that's what keeps GLOAK out of public trading.
+- **If your router keeps a list of allowed v4 hooks or pools**, it must allow Cloak's hook, since GLOAK's only pool uses it.
+
+What it costs: every approval after GLOAK's setup waits 3 days in public, and the swap and Uniswap roles (Swap, Feed) go only to contracts.
+
+**Gloam, for example.** Cloak approves Gloam's vault (Receive, Vault) and Gloam's v4 swap router (Receive, Feed, Swap, Payee). Gloam lists GLOAK in its vault (a deposit limit, through its own 3-day timelock) and allows GLOAK's pool in its router, from the router's deploy or through its 3-day pool queue. No change to Gloam's contracts.
+
+Tested Nov 12 on a fork of Elysium mainnet (`contracts-v4/test/GloakOnGloam.t.sol`): Gloam's real vault at its real address, with its owner guard, limits and 0.5% cash-out fee, and Gloam's own `GloamVaultSwapV4c`, unmodified (Gloam has no swap router on Elysium yet, so the test deploys their code as they would). Proof checks are stubbed there; real proofs on the same vault are part 22's.
+- Shielding GLOAK into Gloam's vault is free and exact, and the meter counts it as private.
+- A withdrawal to a wallet pays Gloam's fee, then GLOAK's 10%, which burns.
+- A private sell from Gloam's vault through Gloam's router and escrow is free: the escrow's 10% is held and handed on to Gloam's router, nothing is minted, and the exact HYPE lands as a new note in Gloam's vault.
+- One thing for Gloam to know: their router sends a swap's leftover input (its price buffer) to Gloam's treasury, a public address, so that leftover pays 10% like any exit. A tighter buffer on GLOAK sells keeps it small.
+
 ## Moving GLOAK between vaults
 
 A note can't move between vaults; each vault has its own tree. Moving is a withdrawal from one and a deposit into the other, and the withdrawal is what pays 10%.
