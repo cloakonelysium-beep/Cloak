@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "../router";
 import { EXPLORER, GITHUB, Icon } from "../ui";
-import { DEPLOYMENT, GLOAM } from "../config";
+import { CHAIN_ID, DEPLOYMENT, GLOAM, chain } from "../config";
 
 /** Cloak v2 on Gloam: the contracts and rules this build runs on. */
 const G = GLOAM;
@@ -10,7 +10,7 @@ const G = GLOAM;
 const NAV: [string, [string, string][]][] = [
   ["Start here", [["overview", "Overview"], ["quickstart", "Quickstart"], ["what-works", "What works today"]]],
   ["Launches", [["sealed-launches", "Sealed launches"], ["clearing-price", "The clearing price"], ["liquidity", "Locked liquidity"], ["uniswap", "Trading on Uniswap"], ["nft-drops", "NFT drops"], ["existing-nfts", "Auctions of existing NFTs"], ["wl-spots", "WL spot sales"]]],
-  ["Privacy", [["private-trading", "Private trading"], ["batch-auctions", "Batch auctions"], ["private-send", "Private send"], ["payment-links", "Payment links"], ["private-usdc", "Private USDC"], ["what-stays-private", "What stays private"]]],
+  ["Privacy", [["private-trading", "Private trading"], ["batch-auctions", "Batch auctions"], ["private-send", "Private send"], ["payment-links", "Payment links"], ["private-usdc", "Private USDC"], ["what-stays-private", "What stays private"], ["gloak", "GLOAK"]]],
   ["Build", [["sdk", "SDK"], ["agents", "AI agents (MCP)"], ["contracts", "Contracts"], ["fees", "Fees & caps"], ["rules", "All the rules"], ["governance", "Who can change what"], ["keeper", "Keeper & relayer"], ["limits", "Limits & threat model"]]],
 ];
 
@@ -68,6 +68,7 @@ export function Docs() {
           <h2>What is Cloak?</h2>
           <p>On Elysium, one sequencer orders transactions first come, first served, several blocks a second. A normal token launch becomes a race that the fastest bots win in the first block. After that, every buy, sell and balance is public forever and tied to your wallet.</p>
           <p>Cloak fixes both. <b>Launches</b> are sealed-bid auctions: nobody sees a bid until bidding closes, and every winner pays one clearing price. <b>After launch</b>, you can hold, trade and send the token from a private balance. Proofs are made on your device and a relayer submits for you, so your wallet never appears.</p>
+          <p><b>In partnership with <a href="https://gloam.trade" target="_blank" rel="noreferrer">Gloam</a>.</b> Private balances, payments and their proofs run on Gloam's privacy layer: Gloam's vault, its memo board and its final ceremony keys. Cloak's launches, its launch vault, its ecosystem vault and its escrows are Cloak's own, run by Cloak.</p>
           <div className="picture">
             <div><div className="xs mute">Your wallet</div><div className="big">Public</div><div className="exp"><div className="xs mute">Explorer shows</div>1 HYPE</div><p className="xs mute" style={{ marginTop: 10 }}>Anyone can see the balance if they know the address.</p></div>
             <div><div className="xs mute">Cloak vault <span className="signal">● only you</span></div><div className="big">Private</div><div className="exp"><div className="xs mute">Explorer shows</div><span className="dots">●●●●●●</span></div><p className="xs mute" style={{ marginTop: 10 }}>You hold encrypted notes. Trades go through a relayer.</p></div>
@@ -91,6 +92,8 @@ export function Docs() {
             <li>Private instant swaps (between any two markets, through HYPE), private batch swaps (hidden size), private sends, sealed bids from a private balance, and withdrawals.</li>
             <li>Receive addresses anyone can pay, and bridging in from 20 chains or an exchange (Bridge, on mainnet).</li>
             <li>A hosted keeper that reveals bids, settles launches and batch rounds, and relays private transactions.</li>
+            <li>Payment links: send money to anyone with a link, or ask for a payment, privately.</li>
+            <li><Link to="/gloak">GLOAK</Link>, an experiment: a token that only lives in private vaults (live stats on its page once it launches).</li>
             <li>The <Link to="/sdk">SDK</Link> for launchpads, with all of the above.</li>
           </ul>
 
@@ -219,6 +222,18 @@ export function Docs() {
           </table>
           <div className="callout"><b>Tip:</b> don't shield 1 HYPE and immediately buy with exactly 1 HYPE. Wait, vary amounts, and use batch mode. Privacy grows with the number of people using the vault.</div>
 
+          <h2 id="gloak">GLOAK</h2>
+          <p>GLOAK is an experiment: a token that only lives in private vaults. Moving it into a private vault and trading it privately is free. Taking it out to a public address, or sending it between public addresses, burns <b>10%</b> of what's sent, and that rate can be lowered but never raised. Its only Uniswap pool trades through approved private routers, so it can't be bought or sold in public.</p>
+          <table>
+            <tbody>
+              <tr><td>Supply</td><td>500,000 GLOAK, minted once, all to its launch. No team share, no minting after launch, no proxy</td></tr>
+              <tr><td>Launch</td><td>One sealed-bid launch: 294,000 for sale, 206,000 paired with HYPE in the pool, 70% of the raise into the pool (locked forever), from 0.0002 to 0.01 HYPE per GLOAK</td></tr>
+              <tr><td>How it's born</td><td>Through a one-time door in the launch factory that only Cloak's owner wallet can use, once. Nobody else can make a GLOAK</td></tr>
+              <tr><td>Admin</td><td>Can approve vaults and routers (3 days in public), remove approvals at once, lower the surcharge or renounce. Can't move anyone's GLOAK or exempt a wallet</td></tr>
+            </tbody>
+          </table>
+          <p>Live numbers (supply, burned, private and public supply, the pool and the price) are on the <Link to="/gloak">GLOAK page</Link>. The full write-up is <a href={`${GITHUB}/blob/main/docs/GLOAK.md`} target="_blank" rel="noreferrer">docs/GLOAK.md</a>.</p>
+
           <div className="crumb" style={{ marginTop: 60 }}>Build</div>
           <h2 id="sdk">SDK</h2>
           <p>Everything above is one package. See the <Link to="/sdk">SDK page</Link> for the full API.</p>
@@ -254,7 +269,7 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
           </ul>
           <p><b>The full agent (launch, bid, trade privately).</b> This part runs on your own machine with a wallet made just for the agent, signs there, and makes its proofs there, under spending limits per transaction and per day (1 and 10 HYPE by default) with a dry run on every action. By hand: <code>npx -y @cloakely/mcp setup</code> makes the agent's wallet and prints its address to fund from the faucet, then <code>claude mcp add cloak -- npx -y @cloakely/mcp</code> (or the same <code>npx -y @cloakely/mcp</code> command in any other app's MCP settings). Full setup is in the <a href="https://www.npmjs.com/package/@cloakely/mcp" target="_blank" rel="noreferrer">package README</a>.</p>
 
-          <h2 id="contracts">Contracts (Cloak v2 on Gloam, Elysium testnet, chain 99801)</h2>
+          <h2 id="contracts">Contracts (Cloak v2 on Gloam, {chain.name}, chain {CHAIN_ID})</h2>
           {G && (
             <>
               <table>
@@ -270,6 +285,7 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
                   {G.bids && <tr><td>CloakGloamBids (sealed bids from a private balance)</td><td><a href={A(G.bids)} target="_blank" rel="noreferrer"><code>{G.bids}</code></a></td></tr>}
                   {G.receive && <tr><td>CloakGloamReceive (receive addresses)</td><td><a href={A(G.receive)} target="_blank" rel="noreferrer"><code>{G.receive}</code></a></td></tr>}
                   {G.fundsGate && <tr><td>CloakFundsGate (allocation gates by proof of funds)</td><td><a href={A(G.fundsGate)} target="_blank" rel="noreferrer"><code>{G.fundsGate}</code></a></td></tr>}
+                  {G.receiptCheck && <tr><td>CloakReceiptCheck (private payment receipts)</td><td><a href={A(G.receiptCheck)} target="_blank" rel="noreferrer"><code>{G.receiptCheck}</code></a></td></tr>}
                   {DEPLOYMENT?.factory && <tr><td>CloakFactory (sealed launches into Uniswap v4 pools)</td><td><a href={A(DEPLOYMENT.factory)} target="_blank" rel="noreferrer"><code>{DEPLOYMENT.factory}</code></a></td></tr>}
                   {DEPLOYMENT?.v4Hook && <tr><td>CloakV4Hook (seeds each pool, keeps the liquidity, creator fees)</td><td><a href={A(DEPLOYMENT.v4Hook)} target="_blank" rel="noreferrer"><code>{DEPLOYMENT.v4Hook}</code></a></td></tr>}
                   {DEPLOYMENT?.config && <tr><td>CloakConfig (launch fee, treasury and bid caps for v2's launches)</td><td><a href={A(DEPLOYMENT.config)} target="_blank" rel="noreferrer"><code>{DEPLOYMENT.config}</code></a></td></tr>}
@@ -325,7 +341,7 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
           <ul>
             <li><b>Nobody can move your money.</b> No function in any Cloak contract does it, for us or anyone else.</li>
             <li><b>Rules in the code</b> (the auction, the pool opening, batch guards, fee ceilings, vaults that are never replaced) can't be changed by anyone. A new version can only be added next to the old one, and the old one keeps working.</li>
-            <li><b>Rules in <code>CloakConfig</code></b> (fees under their ceilings, caps, the verifier, which assets and factories are allowed): <b>today, on testnet, Cloak is still in setup</b>, so the owner (one wallet) can change them at once. On mainnet, setup ends for good at deploy, and the owner is one wallet (a multisig once Cloak has more than one person). From then on, tightening a rule is instant, and loosening one is queued on-chain, waits a public <b>3 days</b>, and lapses if it isn't carried out within 14 days after that. Anyone who disagrees has 3 days to leave.</li>
+            <li><b>Rules in <code>CloakConfig</code></b> (fees under their ceilings, caps, the verifier, which assets and factories are allowed): setup ends for good at deploy, on testnet (since the Nov 12 redeploy) and on mainnet. The owner is one wallet (a multisig once Cloak has more than one person). Tightening a rule is instant, and loosening one is queued on-chain, waits a public <b>3 days</b>, and lapses if it isn't carried out within 14 days after that. Anyone who disagrees has 3 days to leave.</li>
             <li><b>Keeper and app settings</b> (the claim window, relay fee, default slippage) are how our hosted services behave. Anyone can run their own.</li>
           </ul>
 

@@ -27,6 +27,7 @@ const Receive = lazy(() => import("./pages/Receive").then((m) => ({ default: m.R
 const ProveFunds = lazy(() => import("./pages/Funds").then((m) => ({ default: m.ProveFunds })));
 const ProofPage = lazy(() => import("./pages/Funds").then((m) => ({ default: m.ProofPage })));
 const Sdk = lazy(() => import("./pages/Sdk").then((m) => ({ default: m.Sdk })));
+const Gloak = lazy(() => import("./pages/Gloak").then((m) => ({ default: m.Gloak })));
 const Trade = lazy(() => import("./pages/Trade").then((m) => ({ default: m.Trade })));
 const Volume = lazy(() => import("./pages/Volume").then((m) => ({ default: m.Volume })));
 
@@ -41,6 +42,7 @@ function Routes() {
   if (path === "/") return <Landing />;
   if (path === "/docs") return <AppShell><Docs /></AppShell>;
   if (path === "/sdk") return <AppShell><Sdk /></AppShell>;
+  if (path === "/gloak") return <AppShell><Gloak /></AppShell>;
   if (path === "/proof") return <AppShell><ProofPage /></AppShell>;
   if (path === "/agents") return <AppShell><Agents /></AppShell>;
   if (path === "/pitch") return <Pitch />;

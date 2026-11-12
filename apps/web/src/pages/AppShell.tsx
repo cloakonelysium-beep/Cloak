@@ -53,6 +53,7 @@ const GROUPS: [string, Item[]][] = [
 const LEARN: Item[] = [
   { to: "/docs", label: "Docs", I: Icon.book, on: (p) => p === "/docs" },
   { to: "/sdk", label: "SDK", I: Icon.code, on: (p) => p === "/sdk" },
+  { to: "/gloak", label: "GLOAK", I: Icon.shield, on: (p) => p === "/gloak" },
 ];
 
 const GUIDE: Record<Step, { title: string; text: string; go: string }> = {
