@@ -178,7 +178,7 @@ export function Pitch() {
               <div className="brand" style={{ fontSize: 22 }}>Bob Labs</div>
               <p style={{ marginTop: 14 }}>We build privacy tools for public chains. Cloak is our launch and trading product on Elysium: sealed-bid auctions, a private vault and batch trading, all open source.</p>
               <div className="row-flex" style={{ gap: 14, marginTop: 18, flexWrap: "wrap" }}>
-                <a className="arrow" href="https://cloak.boblabs.tech" target="_blank" rel="noreferrer">cloak.boblabs.tech</a>
+                <a className="arrow" href="https://oncloak.xyz" target="_blank" rel="noreferrer">oncloak.xyz</a>
                 <a className="arrow" href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>
               </div>
             </div>

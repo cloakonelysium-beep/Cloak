@@ -5,7 +5,7 @@ import { buildClaimLink, parseClaimLink, buildRequestLink, parseRequestLink, glo
 test("claim link round-trips every field", () => {
   const secret = newLinkSecret();
   const url = buildClaimLink({ secret, block: 21500000n, token: "USDC", amount: "25", message: "Happy birthday 🎉", from: "Robin", locked: true, hint: "Our chain?", shares: 5 });
-  assert.match(url, /^https:\/\/gloak\.boblabs\.tech\/claim#c[0-9A-Za-z]+$/, "only letters and digits after the #, so chat apps keep the whole link");
+  assert.match(url, /^https:\/\/oncloak\.xyz\/claim#c[0-9A-Za-z]+$/, "only letters and digits after the #, so chat apps keep the whole link");
   const l = parseClaimLink(url);
   assert.deepEqual([...l.secret], [...secret]);
   assert.equal(l.block, 21500000n);
@@ -23,7 +23,7 @@ test("a damaged or cut link is refused", () => {
   const url = buildClaimLink({ secret: newLinkSecret(), block: 1n, message: "gm" });
   for (const cut of [10, 25, 60]) assert.throws(() => parseClaimLink(url.slice(0, -cut)), /cut short|damaged/);
   assert.throws(() => parseClaimLink(url.slice(0, url.indexOf("#") + 30)), /cut short|damaged/);
-  assert.throws(() => parseClaimLink("https://cloak.boblabs.tech/claim#x=1"), /isn't a Cloak claim link/);
+  assert.throws(() => parseClaimLink("https://oncloak.xyz/claim#x=1"), /isn't a Cloak claim link/);
 });
 
 test("link keys: same secret same account; a passcode changes it and ignores case and spaces", async () => {
@@ -40,9 +40,9 @@ test("link keys: same secret same account; a passcode changes it and ignores cas
 test("request link round-trips and checks the payee and amount", () => {
   const to = "0x1111111111111111111111111111111111111111";
   const url = buildRequestLink({ to, token: "USDC", amount: "012.50", note: "Invoice 42", name: "Robin" });
-  assert.equal(url, `https://gloak.boblabs.tech/pay#to=${to}&amount=12.5&token=USDC&note=Invoice+42&name=Robin`);
+  assert.equal(url, `https://oncloak.xyz/pay#to=${to}&amount=12.5&token=USDC&note=Invoice+42&name=Robin`);
   assert.deepEqual(parseRequestLink(url), { to, token: "USDC", amount: "12.5", note: "Invoice 42", name: "Robin" });
-  assert.deepEqual(parseRequestLink(`https://cloak.boblabs.tech/pay?to=${to}`), { to, token: "HYPE", amount: undefined, note: undefined, name: undefined });
+  assert.deepEqual(parseRequestLink(`https://oncloak.xyz/pay?to=${to}`), { to, token: "HYPE", amount: undefined, note: undefined, name: undefined });
   assert.throws(() => buildRequestLink({ to: "bob", token: "HYPE" }), /cloak: address or a 0x/);
   assert.throws(() => normalizeLinkAmount("1.1234567", 6), /6 decimal/);
   assert.equal(normalizeLinkAmount("", 18), "");
@@ -53,7 +53,7 @@ test("request link round-trips and checks the payee and amount", () => {
 test("links made before the compact format still open", () => {
   const secret = newLinkSecret();
   const b64 = Buffer.from(secret).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const l = parseClaimLink(`https://cloak.boblabs.tech/claim#k=${b64}&b=7&t=HYPE&a=0.01&m=gm&p=1&q=my+name`);
+  const l = parseClaimLink(`https://oncloak.xyz/claim#k=${b64}&b=7&t=HYPE&a=0.01&m=gm&p=1&q=my+name`);
   assert.deepEqual([...l.secret], [...secret]);
   assert.equal(l.amount, "0.01");
   assert.equal(l.hint, "my name");

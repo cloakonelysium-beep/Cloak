@@ -244,13 +244,13 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
 
           <h2 id="agents">AI agents (MCP)</h2>
           <p>Cloak has an MCP server, so Claude, ChatGPT, Cursor and other AI apps can work with it directly. It comes in two parts, so an agent's keys never leave the machine it runs on.</p>
-          <p><b>The easy way.</b> Tell your agent: <code>Read https://gloak.boblabs.tech/agent.md and set me up to trade privately.</code> The page is written for the agent. It works out what it can do in your app, sets up its own wallet and the connection, and only asks you for what it can't do itself, like getting free testnet HYPE from the faucet. It never needs your own wallet's key.</p>
-          <p><b>Connect by link (read and plan).</b> Paste <code>https://gloak.boblabs.tech/mcp</code> into your AI app. Nothing to install and no key. The agent can list launches, read a launch (bids stay hidden until bidding closes), price a sealed bid or a private swap, see vault totals and plan a launch. It never signs, and it refuses any message that looks like it carries a private key.</p>
+          <p><b>The easy way.</b> Tell your agent: <code>Read https://oncloak.xyz/agent.md and set me up to trade privately.</code> The page is written for the agent. It works out what it can do in your app, sets up its own wallet and the connection, and only asks you for what it can't do itself, like getting free testnet HYPE from the faucet. It never needs your own wallet's key.</p>
+          <p><b>Connect by link (read and plan).</b> Paste <code>https://oncloak.xyz/mcp</code> into your AI app. Nothing to install and no key. The agent can list launches, read a launch (bids stay hidden until bidding closes), price a sealed bid or a private swap, see vault totals and plan a launch. It never signs, and it refuses any message that looks like it carries a private key.</p>
           <ul>
             <li><b>Claude</b> (claude.ai or Desktop): Settings, Connectors, Add custom connector, then paste the link.</li>
             <li><b>ChatGPT</b>: turn on developer mode under Apps and connectors, then add a connector with the link and no authentication.</li>
-            <li><b>Claude Code</b>: <code>claude mcp add --transport http cloak https://gloak.boblabs.tech/mcp</code></li>
-            <li><b>Cursor, VS Code and others</b>: add a remote server with <code>{`{ "mcpServers": { "cloak": { "url": "https://gloak.boblabs.tech/mcp" } } }`}</code></li>
+            <li><b>Claude Code</b>: <code>claude mcp add --transport http cloak https://oncloak.xyz/mcp</code></li>
+            <li><b>Cursor, VS Code and others</b>: add a remote server with <code>{`{ "mcpServers": { "cloak": { "url": "https://oncloak.xyz/mcp" } } }`}</code></li>
           </ul>
           <p><b>The full agent (launch, bid, trade privately).</b> This part runs on your own machine with a wallet made just for the agent, signs there, and makes its proofs there, under spending limits per transaction and per day (1 and 10 HYPE by default) with a dry run on every action. By hand: <code>npx -y @cloakely/mcp setup</code> makes the agent's wallet and prints its address to fund from the faucet, then <code>claude mcp add cloak -- npx -y @cloakely/mcp</code> (or the same <code>npx -y @cloakely/mcp</code> command in any other app's MCP settings). Full setup is in the <a href="https://www.npmjs.com/package/@cloakely/mcp" target="_blank" rel="noreferrer">package README</a>.</p>
 

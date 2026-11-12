@@ -56,7 +56,7 @@ export { loadSettings, type Settings, type Limits } from "./config.js";
 export { Spending } from "./limits.js";
 
 export const VERSION = "0.9.2";
-export const HOSTED_URL = "https://cloak.boblabs.tech/mcp";
+export const HOSTED_URL = "https://oncloak.xyz/mcp";
 
 const INSTRUCTIONS = `Cloak: sealed-bid token launches and private trading on Kinetiq's Elysium (HYPE is the gas and base currency).
 
@@ -119,7 +119,7 @@ export function looksSecret(args: unknown): boolean {
 }
 
 /**
- * The Cloak MCP server. `hosted` is the public read-and-plan server (https://cloak.boblabs.tech/mcp): it never has a
+ * The Cloak MCP server. `hosted` is the public read-and-plan server (https://oncloak.xyz/mcp): it never has a
  * key, never signs, and refuses any call that looks like it carries a secret. Without `hosted`, it's the local server
  * that signs for one agent wallet under spending limits.
  */
@@ -522,7 +522,7 @@ export function createCloakServer(settings: Settings, opts: { hosted?: boolean }
       ...(det.description ? { description: det.description } : {}),
       ...(det.fields?.length ? { bidFields: det.fields.map((f) => `${f.label}${f.required ? " (required)" : ""}`), bidFieldsNote: "Pass them to place_drop_bid as fields. They're sealed with the bid and go on the winners sheet." } : {}),
       ...(det.requirements?.length ? { requirements: det.requirements.map((q) => (q.url ? `${q.text} (${q.url})` : q.text)), requirementsNote: "Off-chain tasks the creator or partner checks before honouring a win. Cloak can't check them." } : {}),
-      page: `https://cloak.boblabs.tech/app/drop/${s.address}`,
+      page: `https://oncloak.xyz/app/drop/${s.address}`,
     };
   }
   const bidView = (b: DropBid, settled: boolean) => ({
@@ -618,7 +618,7 @@ export function createCloakServer(settings: Settings, opts: { hosted?: boolean }
           toPool: `${lp}% of the raise, paired with tokens at the clearing price in a Uniswap V2 pool; the LP is locked forever and its 0.3% trading fees go to you (or burned, or locked for a set time)`,
           launchFee: "1.5% of a successful raise; nothing if the launch doesn't fill",
           caps: "During the beta a bid can be at most 100 HYPE and an auction can take at most 10,000 HYPE.",
-          create: { onTheSite: "https://cloak.boblabs.tech/app/create", withAnAgent: "the local server's create_launch tool (see connect_full_agent)" },
+          create: { onTheSite: "https://oncloak.xyz/app/create", withAnAgent: "the local server's create_launch tool (see connect_full_agent)" },
         };
       }),
     );
@@ -628,14 +628,14 @@ export function createCloakServer(settings: Settings, opts: { hosted?: boolean }
       { title: "Connect a full agent", description: "How to let an agent launch, bid and trade privately: the local Cloak MCP server, which signs on your own machine under spending limits.", inputSchema: {}, annotations: READ },
       safe(async () => ({
         why: "This hosted server never holds keys, so it can read and plan but not sign. Launching, bidding and private trading run in the local server, on the machine that holds the agent's wallet. Its proofs are made there too, so nobody else, Cloak included, can see or move the funds.",
-        easiest: "If you can run terminal commands, read https://cloak.boblabs.tech/agent.md and follow it: it sets everything up and says what to ask the person. If you can't (a chat app), tell the person to open that link in Claude Code, Claude Desktop or Cursor and ask the agent there to follow it.",
+        easiest: "If you can run terminal commands, read https://oncloak.xyz/agent.md and follow it: it sets everything up and says what to ask the person. If you can't (a chat app), tell the person to open that link in Claude Code, Claude Desktop or Cursor and ask the agent there to follow it.",
         steps: [
           "npx -y @cloakely/mcp setup (makes the agent's own wallet in ~/.cloak-agent-key and prints its address; the key is never printed)",
           "Claude Code: claude mcp add cloak -- npx -y @cloakely/mcp. Other clients: { \"mcpServers\": { \"cloak\": { \"command\": \"npx\", \"args\": [\"-y\", \"@cloakely/mcp\"] } } }",
           "The person gets free testnet HYPE for the agent's address at https://elysium.kinetiq.xyz/testnet-faucet",
         ],
         safety: "Spending limits per transaction and per day (1 HYPE and 10 HYPE by default, set with CLOAK_MAX_HYPE_PER_TX and CLOAK_MAX_HYPE_PER_DAY), dry_run on every action, testnet by default. Never paste a key into a chat or into this hosted server.",
-        docs: "https://cloak.boblabs.tech/agent.md",
+        docs: "https://oncloak.xyz/agent.md",
       })),
     );
     return server;

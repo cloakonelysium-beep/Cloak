@@ -8,7 +8,7 @@ An agent that trades on chain leaks its strategy with every transaction, and any
 
 **The easy way:** tell your agent
 
-> Read https://cloak.boblabs.tech/agent.md and set me up to trade privately.
+> Read https://oncloak.xyz/agent.md and set me up to trade privately.
 
 That page is written for agents. The agent sets up its own wallet and the connection, and asks you only for what it can't do itself (free testnet HYPE from the faucet). It never needs your own wallet's key.
 
@@ -16,16 +16,16 @@ There are two ways in:
 
 | | Hosted link | Local server (this package) |
 |---|---|---|
-| Install | Nothing: paste `https://cloak.boblabs.tech/mcp` | `npx -y @cloakely/mcp` |
+| Install | Nothing: paste `https://oncloak.xyz/mcp` | `npx -y @cloakely/mcp` |
 | Can do | Read and plan: launches, quotes, vault totals, launch plans | Everything: launch, bid, claim, shield, private swaps, batch orders, private sends, withdrawals |
 | Keys | None. It never signs and refuses calls that look like they carry a key | Your agent's wallet, on your machine only |
 
 ## Connect by link
 
-- **Claude** (claude.ai or Desktop): Settings, Connectors, Add custom connector, then paste `https://cloak.boblabs.tech/mcp`.
+- **Claude** (claude.ai or Desktop): Settings, Connectors, Add custom connector, then paste `https://oncloak.xyz/mcp`.
 - **ChatGPT**: turn on developer mode under Apps and connectors, then add a connector with the link and no authentication.
-- **Claude Code**: `claude mcp add --transport http cloak https://cloak.boblabs.tech/mcp`
-- **Cursor, VS Code and others**: `{ "mcpServers": { "cloak": { "url": "https://cloak.boblabs.tech/mcp" } } }`
+- **Claude Code**: `claude mcp add --transport http cloak https://oncloak.xyz/mcp`
+- **Cursor, VS Code and others**: `{ "mcpServers": { "cloak": { "url": "https://oncloak.xyz/mcp" } } }`
 
 Its tools: `cloak_info`, `list_launches`, `get_launch`, `quote_bid`, `quote_swap`, `vault_stats`, `plan_launch` and `connect_full_agent`. It's stateless (each request gets a fresh server and nothing is kept) and rate limited. You can serve it yourself from any runtime that speaks web `Request`/`Response`: `import { handleMcpRequest } from "@cloakely/mcp/http"`.
 
@@ -130,4 +130,4 @@ Amounts are in whole units (`"0.5"` HYPE). `private_send`, `withdraw` and a `pri
 | `CLOAK_RELAYER_URL` | Cloak's hosted relayer | |
 | `GLOAM_CIRCUITS_DIR` | download | Folder with Gloam's circuit files (shield, transfer, unshield), instead of downloading them |
 
-Built on [`@cloakely/sdk`](https://www.npmjs.com/package/@cloakely/sdk). Docs: [cloak.boblabs.tech/docs](https://cloak.boblabs.tech/docs). MIT.
+Built on [`@cloakely/sdk`](https://www.npmjs.com/package/@cloakely/sdk). Docs: [oncloak.xyz/docs](https://oncloak.xyz/docs). MIT.

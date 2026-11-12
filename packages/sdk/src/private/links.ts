@@ -1,7 +1,7 @@
 /**
  * Payment links: money and requests that travel as a URL.
  *
- *   claim link    https://cloak.boblabs.tech/claim#k=<secret>&b=<block>&t=HYPE&m=Happy+birthday
+ *   claim link    https://oncloak.xyz/claim#k=<secret>&b=<block>&t=HYPE&m=Happy+birthday
  *                 The link holds a whole throwaway private account. The sender funds it with a private send, and
  *                 whoever opens the link moves that money into their own private balance, or out to any wallet. The
  *                 relayer submits the claim and takes its fee from the link, so the claimer needs no gas and no
@@ -11,7 +11,7 @@
  *                 Split into shares (`n=`), it is a red envelope: several equal notes, and each person who opens the
  *                 link claims one, first come first served.
  *
- *   request link  https://cloak.boblabs.tech/pay#to=cloak:…&amount=25&token=USDC&note=Invoice+42&name=Robin
+ *   request link  https://oncloak.xyz/pay#to=cloak:…&amount=25&token=USDC&note=Invoice+42&name=Robin
  *                 Asks someone to pay you. `to` is a cloak: address (a private payment) or a 0x address (paid from
  *                 the payer's private balance, so the payer's wallet never shows). Leave out the amount for a tip
  *                 jar. Nothing about a request is on chain.
@@ -23,7 +23,7 @@ import { isReceiveTag } from "@gloamtrade/sdk";
 import { randomBytes } from "@noble/hashes/utils";
 import { concat, isAddress, toBytes, toHex, type Hex } from "viem";
 
-export const LINK_ORIGIN = "https://gloak.boblabs.tech";
+export const LINK_ORIGIN = "https://oncloak.xyz";
 export const LINK_MESSAGE_MAX = 140;
 export const LINK_NAME_MAX = 40;
 export const LINK_HINT_MAX = 120;
@@ -110,7 +110,7 @@ function claimParams(l: ClaimLink): URLSearchParams {
 }
 
 /**
- * A claim link: https://cloak.boblabs.tech/claim#c<letters and digits>. Everything after the # is one run of letters
+ * A claim link: https://oncloak.xyz/claim#c<letters and digits>. Everything after the # is one run of letters
  * and digits (base 62), because chat apps end a link at characters like "-", "_", "." or "%" (WhatsApp and Telegram
  * both cut links that way) and a cut link loses the money's key.
  */

@@ -20,4 +20,4 @@ Allow: /
 Disallow: /app/
 Disallow: /api/
 
-Sitemap: https://cloak.boblabs.tech/sitemap.xml
+Sitemap: https://oncloak.xyz/sitemap.xml

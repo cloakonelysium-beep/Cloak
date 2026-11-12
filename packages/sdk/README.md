@@ -1,6 +1,6 @@
 # @cloakely/sdk
 
-TypeScript SDK for [Cloak](https://cloak.boblabs.tech): fair launches and private trading on Kinetiq's **Elysium**, built on [Gloam](https://github.com/gloamtrade/gloam)'s shielded vault.
+TypeScript SDK for [Cloak](https://oncloak.xyz): fair launches and private trading on Kinetiq's **Elysium**, built on [Gloam](https://github.com/gloamtrade/gloam)'s shielded vault.
 
 **Launches**
 - Sealed-bid token launches that bots can't front-run.
@@ -131,4 +131,4 @@ await drops.claim(drop, bidId);
 | `deployments`, `deploymentFor` | Addresses and start blocks per chain |
 | `elysium`, `elysiumTestnet` | The viem chains |
 
-Docs: [cloak.boblabs.tech/docs](https://cloak.boblabs.tech/docs). Cloak's own contracts aren't audited yet, so the vaults run with deposit caps. MIT licensed.
+Docs: [oncloak.xyz/docs](https://oncloak.xyz/docs). Cloak's own contracts aren't audited yet, so the vaults run with deposit caps. MIT licensed.

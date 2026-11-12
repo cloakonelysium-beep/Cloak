@@ -10,7 +10,7 @@ import { createCloakServer } from "./server.js";
  */
 const REQUESTS_PER_MINUTE = 60;
 const MAX_BODY_BYTES = 64_000;
-const DOCS = "https://cloak.boblabs.tech/docs#agents";
+const DOCS = "https://oncloak.xyz/docs#agents";
 
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",

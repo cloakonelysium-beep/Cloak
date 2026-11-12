@@ -39,7 +39,7 @@ services:
       - key: RPC_BACKUP
         sync: false
       - key: CORS_ORIGINS
-        value: "https://gloak.boblabs.tech,http://localhost:5173"
+        value: "https://oncloak.xyz,http://localhost:5173"
       # one proxy (Render's) in front: the client IP for rate limits comes from it (review O-03)
       # NFT drops: the drop factories are shared with Cloak v1. "0" if v1's keeper runs them, so the two don't race
       - key: DROPS

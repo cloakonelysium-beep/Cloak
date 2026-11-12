@@ -6,7 +6,7 @@ import { createPublicClient, http } from "viem";
 import { CloakDrops, cloakDropAbi, deploymentFor, elysiumTestnet } from "@cloakely/sdk";
 
 export const config = { maxDuration: 15 };
-const SITE = "https://cloak.boblabs.tech";
+const SITE = "https://oncloak.xyz";
 
 export async function GET(req) {
   const u = new URL(req.url);

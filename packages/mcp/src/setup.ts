@@ -1,5 +1,5 @@
 // `npx -y @cloakely/mcp setup`: make the agent's own wallet (once) and say what's left to do, in words an agent can pass
-// on to a person. Written for agents following https://cloak.boblabs.tech/agent.md. The key is never printed.
+// on to a person. Written for agents following https://oncloak.xyz/agent.md. The key is never printed.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createPublicClient, formatEther, http, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";

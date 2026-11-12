@@ -64,7 +64,7 @@ v1 measured that Render's bandwidth is mostly **the keeper's own RPC reads**, no
 - Scheduled withdrawal pieces are saved only when something changed (before: every 30 s).
 
 ### Hosting files
-- `render.yaml` is now the v2 keeper's Blueprint (free plan, testnet addresses, `TRUSTED_PROXY_HOPS=1`, CORS for gloak.boblabs.tech, the build filter). The site goes on Vercel, whose `vercel.json` already skips builds that don't touch the site (v1's V2).
+- `render.yaml` is now the v2 keeper's Blueprint (free plan, testnet addresses, `TRUSTED_PROXY_HOPS=1`, CORS for oncloak.xyz, the build filter). The site goes on Vercel, whose `vercel.json` already skips builds that don't touch the site (v1's V2).
 
 ### R1. Reads up to the head on a load-balanced RPC (Nov 10, from Cloak v1's keeper notes)
 - **The bug:** Elysium's public RPC is several nodes behind one address, a block or two apart. `eth_getLogs` up to the head one node just reported can land on a node that hasn't reached it and is refused ("invalid block range params", shown by viem as "Missing or invalid parameters").
