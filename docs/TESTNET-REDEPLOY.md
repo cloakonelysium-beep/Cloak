@@ -112,3 +112,25 @@ node scripts/sdk-entry.mjs deployments/elysium-testnet-gloam.json deployments/el
   the README table, then push. Delete `DEPLOYER_PK` from the environment afterwards.
 - GLOAK on testnet, when wanted: put a `commitEnd` in `deployments/elysium-testnet-gloak.input.json` (its reveal window
   is now 6 hours) and run `deploy-gloak.mjs`; it prints the owner wallet's one door call.
+
+**Done Nov 13**, from the testnet main wallet `0xA650…68d6`, built with forge 1.5.1 (rehearsed on a fork first). GLOAK not
+launched; the stand-in vault, the test KNTQ and the NFT drops untouched.
+
+- **Factory** (block 28280297, 0.00132 HYPE): CloakConfig `0x716eb18ec96b21a134b8affe0daa6fa968bbb1a3` (owner
+  `0xA650…68d6`, nothing pending), CloakFactory `0x395db13360cf54d3dbc583a68ca956a407aef4d4`, CloakV4Hook
+  `0x04295229378E13f8bddE3014089b2C6625806A80`, vesting deployer `0x462f90c360d2d3e724f276c4bcf2a5d7f211cb71`.
+- **Partner** (block 28280687, 0.00305 HYPE), on the stand-in `0x3ABB…6370`:
+  - launch vault `0x30d8857a6d988577ab0206c0a782958e22cbcd3c`, its guard `0x22b8db11ba94f02933498921a801cc84be730e74`;
+  - ecosystem vault `0x4ed9b20cd16a0de1c94c056eb709de0c1a866bd9`, its guard `0x46613a147c0f11843bf4fa790247cddc082aff00`;
+  - launch swap `0xb8a7d9956c8c6af1829a6f61e30928ed52bd9a52`, router `0x987e7deca86081e459e1a86a31695bf9f917f4c8`;
+  - batcher `0x9b58c5365d79fb65ab8cb8796616d80c7e6ae903`, bids `0x7ee58219cf84b5a378279d5f10fc1369e13795c3`, receive
+    `0x5b67d9b3ea70d8d4da158af28772428d4cadc1f2`;
+  - funds gate `0x45bdb2ff14325342639cea193a7f92c87fa14019` (verifier `0xf16dda01ccb082ce83fbca10d6d3df55c989b8aa`),
+    receipt check `0x1d27fd681756fe9c72fd0ec4d6b4a18cf312f64d` (verifier `0xff019e197c1dfce113bc466178a0b980dbcd5880`);
+  - trade fee `0xc3fe6064fa0765a7e21af4b1f7b62fa5c4594a8c` (0.25% to `0xA650…68d6`).
+- **Checked on chain:** both guards' controller is `0xA650…68d6` (the pending controller is the same wallet, a no-op
+  offer to itself); the router's `privateOnlyToken()` is `0x0`; the router's `gloamVault`, and the batcher's, bids',
+  receive's and funds gate's HYPE vault, are the stand-in; the launch vault runs on the stand-in's verifier and Poseidon.
+- **Cost:** 0.00437 HYPE in all (0.28331 → 0.27894 HYPE).
+- The Nov 12 drops still read the Nov 12 config (`0x3133…a9ba`), as before: they weren't redeployed.
+- SDK entry, `render.yaml` and the Render service's `FACTORY`, `START_BLOCK` and `GLOAM_*` values updated.
