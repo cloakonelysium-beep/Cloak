@@ -110,7 +110,10 @@ after Gloam's own guard of Nov 10). `CLOAK_ALLOW_REDEPLOY=1` deploys a second se
   - the guards' controller, the config's owner and the trade fee's owner are the owner wallet;
   - the treasury is set everywhere;
   - the deployer holds nothing.
-- [ ] **Claude:** verify every contract's source on the explorer, once Kinetiq's verification API is available. Until then, publish the sources and the exact compiler settings.
+- [x] **Claude:** verify every contract's source on the explorer. Done Nov 13: all 24 mainnet contracts (factory set, partner
+  contracts, drops, GLOAK's maker and the memo board) verified on elysium.kinetiq.xyz/explorer through its Blockscout API
+  (`forge verify-contract --verifier blockscout --verifier-url https://elysium.kinetiq.xyz/explorer/api/`), each first
+  matched byte for byte against our builds. Launches and drops made later by the factories share verified code.
 - [ ] **Claude:** add the mainnet entry to the SDK (`scripts/sdk-entry.mjs` prints it into `packages/sdk/src/deployments.ts`).
 - [ ] **Claude:** send Gloam the mainnet addresses (router, batcher, bids), so they can count our flow for the 50/50 share.
 
