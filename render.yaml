@@ -19,7 +19,7 @@ services:
       paths:
         - services/keeper/**
         - packages/sdk/**
-        - deployments/**
+        - deployments/elysium-testnet-*
         - pnpm-lock.yaml
         - package.json
         - pnpm-workspace.yaml
@@ -89,7 +89,7 @@ services:
       paths:
         - services/keeper/**
         - packages/sdk/**
-        - deployments/**
+        - deployments/elysium-mainnet-*
         - pnpm-lock.yaml
         - package.json
         - pnpm-workspace.yaml
