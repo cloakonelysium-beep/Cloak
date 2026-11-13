@@ -59,10 +59,10 @@ test wallet. So testnet now runs a new stand-in that matches mainnet:
   Kinetiq's test USDC at 500 / 25,000 (Gloam's own testnet values). The cash-out fee is 0.5%, Gloam's mainnet fee.
 - **KNTQ.** It has no contract on testnet (Kinetiq's mainnet address is empty there), so a test KNTQ was deployed:
   `0x2bd9…2c1f`, 18 decimals, anyone can mint.
-- **Control.** The guard's control is offered to the testnet main wallet. Until it accepts, the deploy wallet (the
-  tester, `0xE184…04E4`) holds it. To accept, from `0xA650…68d6` send a call to the guard `0x5851…5F97` with value 0
-  and data `0x9bc21c0c` (`acceptController()`). The same goes for the new launch vault guard `0x7d6b…3d12` and the
-  ecosystem vault guard `0x5324…91ea`.
+- **Control.** The testnet main wallet `0xA650…68d6` controls the stand-in's guard `0x5851…5F97` since it accepted
+  on Nov 13 (tx `0x9ab4bc9e…b30f5c`, block 28286241); the tester deployed it and holds nothing. The launch vault and
+  ecosystem vault guards from this first deploy (`0x7d6b…3d12`, `0x5324…91ea`) belong to contracts replaced the same day
+  (next section) and are no longer used.
 - **Around it.** A new partner deploy (launch vault, launch swap, router, batch rounds, bids, receive, funds gate,
   receipt check, ecosystem vault), as on mainnet. HYPE now sits in Gloam's vault and trades through the router; the
   SDK sets `router` for testnet. Private balances in the Nov 12 launch vault (`0xef42…84e7`) stay withdrawable from
