@@ -5,7 +5,9 @@ import { useApp } from "../state";
 import { GITHUB, Icon, LINKEDIN, Logo, MenuButton, Sheet, SocialIcon, TELEGRAM, ThemeSeg, ThemeToggle, WalletButton, X_URL, useSheet } from "../ui";
 import { STEPS, guideShown, hideGuide, markDone, useGuide, type Step } from "../guide";
 import { navigate } from "../router";
-import { IS_MAINNET, KEEPER_URL, OTHER_NETWORK, SITE, chain } from "../config";
+import { CHAIN_ID, IS_MAINNET, KEEPER_URL, SITE, chain } from "../config";
+import { MAINNET, SITES, TESTNET } from "../../api/_net.js";
+import { deployments } from "@cloakely/sdk";
 import { Bell } from "../bell";
 
 function Welcome({ onClose }: { onClose: () => void }) {
@@ -130,18 +132,54 @@ function NavItems({ path }: { path: string }) {
   );
 }
 
+const NETWORKS = [
+  { id: MAINNET, label: "Elysium Mainnet" },
+  { id: TESTNET, label: "Elysium Testnet" },
+];
+
+/** The network menu: Elysium Mainnet and Elysium Testnet. Each network is its own address (api/_net.js), so picking the
+ *  other one opens that site on the same page; its tab, storage and private account stay apart. */
 function Network() {
   const { wrongChain, switchNetwork } = useApp();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const here = NETWORKS.find((n) => n.id === CHAIN_ID) ?? NETWORKS[1];
+  const go = (id: number) => {
+    setOpen(false);
+    if (id === CHAIN_ID || !SITES[id]) return;
+    location.href = `${SITES[id]}${location.pathname}${location.search}`;
+  };
   return (
-    <>
-      {wrongChain ? (
-        <button className="side-net bad" onClick={switchNetwork}><span className="dot" />Switch wallet to {chain.name}</button>
-      ) : (
-        <div className="side-net"><span className="dot live" />{chain.name}</div>
+    <div className="side-net-wrap" ref={box}>
+      {wrongChain && <button className="side-net bad" onClick={switchNetwork}><span className="dot" />Switch wallet to {here.label}</button>}
+      <button className="side-net side-net-pick" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <img src="/brand/elysium.svg" alt="" width={18} height={18} className="net-logo" />
+        <span>{here.label}</span>
+        <svg className="net-chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      {open && (
+        <div className="net-menu" role="menu">
+          {NETWORKS.filter((n) => n.id === CHAIN_ID || (SITES[n.id] && deployments[n.id])).map((n) => (
+            <button key={n.id} role="menuitemradio" aria-checked={n.id === CHAIN_ID} className={`net-item ${n.id === CHAIN_ID ? "on" : ""}`} onClick={() => go(n.id)}>
+              <img src="/brand/elysium.svg" alt="" width={18} height={18} className="net-logo" />
+              <span>{n.label}</span>
+              {n.id === CHAIN_ID && <svg className="net-tick" width="14" height="14" viewBox="0 0 14 14" aria-hidden><path d="M3 7.5 6 10.5 11 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            </button>
+          ))}
+        </div>
       )}
-      {/* the other network is another address (api/_net.js), so its tab, storage and private account stay apart */}
-      {OTHER_NETWORK && <a className="side-net-switch" href={`${OTHER_NETWORK.site}/app`}>Go to {OTHER_NETWORK.label}</a>}
-    </>
+    </div>
   );
 }
 
