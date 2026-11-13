@@ -77,18 +77,19 @@ export interface GloamDeployment {
 }
 
 export const deployments: Record<number, CloakDeployment> = {
-  // Cloak v2 on Elysium testnet. The factory, hook and drops are from Nov 12 (docs/WALLETS.md, docs/TESTNET-REDEPLOY.md,
-  // deployments/elysium-testnet-v2-factory.json). Gloam's vault is Cloak's stand-in running Gloam's mainnet vault code
-  // (Nov 13, deployments/elysium-testnet-gloam-standin.json) with HYPE, USDC and a test KNTQ listed, as Gloam's mainnet
-  // vault will have them; Cloak's launch vault and escrows around it are from the same day
+  // Cloak v2 on Elysium testnet. The factory, hook and config were redeployed on Nov 13 after the GLOAK audit fixes, from
+  // the testnet main wallet (docs/TESTNET-REDEPLOY.md, deployments/elysium-testnet-v2-factory.json); the drops are from
+  // Nov 12. Gloam's vault is Cloak's stand-in running Gloam's mainnet vault code (Nov 13,
+  // deployments/elysium-testnet-gloam-standin.json) with HYPE, USDC and a test KNTQ listed, as Gloam's mainnet vault will
+  // have them; Cloak's launch vault and escrows around it were redeployed with the audit fixes the same day
   // (deployments/elysium-testnet-gloam.json). Gloam's own testnet vault replaces the stand-in with use-gloam-vault.mjs.
   99801: {
     chainId: 99801,
-    config: "0x31337213cab071c28eed8b2256c5658c9de8a9ba",
-    factory: "0xb9060dc9c5dcd49d424b0257b3a8b1a2939271d7",
-    factoryBlock: 27930789n,
+    config: "0x716eb18ec96b21a134b8affe0daa6fa968bbb1a3",
+    factory: "0x395db13360cf54d3dbc583a68ca956a407aef4d4",
+    factoryBlock: 28280297n,
     poolManager: "0x51027076df8416e42ea8438b27a0c433d9662e68",
-    v4Hook: "0x822c91E71BC5a63Ef2C38bc37cea6ff443CD2a80",
+    v4Hook: "0x04295229378E13f8bddE3014089b2C6625806A80",
     whype: "0xe44b27113D4b947c0B1bDf4a93878D0e115f4bdD",
     relayerUrl: "https://cloak-testnet-keeper.onrender.com",
     // v2's own NFT drop contracts (Nov 12, deployments/elysium-testnet-drops.json): sealed drops, WL spot sales and
@@ -108,19 +109,19 @@ export const deployments: Record<number, CloakDeployment> = {
       gloamVault: "0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370",
       memoBoard: "0x0ffd9BC4767b5082409615e842CD7F0adC570B44",
       block: 28255692n,
-      launchVault: "0xe3847f0140bdc06629b2b30a770f393e080f30b2",
-      launchVaultBlock: 28256098n,
-      launchSwapV4: "0xa022edbe332f433ab8bc081b228c8a1d9bad98b6",
-      // set now (unset before Nov 13): the stand-in takes HYPE, so HYPE is held in Gloam's vault and buys and sells go
-      // through the router, as on mainnet
-      router: "0x6f67078181752ed9f312d51e2fd7f787564a86bf",
-      ecosystemVault: "0x95d9073ec1840dabe4de4b9cbebdfe6bdc86706f",
-      ecosystemVaultBlock: 28256098n,
-      batcherV4: "0xc2c642bfbd0ad192df272c7e7486696de2355e1f",
-      receive: "0x88eb84e9d8f2e59a73c41b198d32eeac84c5c7e4",
-      bids: "0x83430908906887d4b9ec920b0a90193b479b15f6",
-      fundsGate: "0xccbd5f8fe8b3a796f2eaedc010189349e61278f6",
-      receiptCheck: "0xe57a30d49842966605912dd9ed76a08635cdaf32",
+      launchVault: "0x30d8857a6d988577ab0206c0a782958e22cbcd3c",
+      launchVaultBlock: 28280687n,
+      launchSwapV4: "0xb8a7d9956c8c6af1829a6f61e30928ed52bd9a52",
+      // set since Nov 13: the stand-in takes HYPE, so HYPE is held in Gloam's vault and buys and sells go through the
+      // router, as on mainnet
+      router: "0x987e7deca86081e459e1a86a31695bf9f917f4c8",
+      ecosystemVault: "0x4ed9b20cd16a0de1c94c056eb709de0c1a866bd9",
+      ecosystemVaultBlock: 28280687n,
+      batcherV4: "0x9b58c5365d79fb65ab8cb8796616d80c7e6ae903",
+      receive: "0x5b67d9b3ea70d8d4da158af28772428d4cadc1f2",
+      bids: "0x7ee58219cf84b5a378279d5f10fc1369e13795c3",
+      fundsGate: "0x45bdb2ff14325342639cea193a7f92c87fa14019",
+      receiptCheck: "0x1d27fd681756fe9c72fd0ec4d6b4a18cf312f64d",
       whype: "0xe44b27113D4b947c0B1bDf4a93878D0e115f4bdD",
     },
   },

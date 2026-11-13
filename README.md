@@ -55,23 +55,24 @@ The rest:
 
 ## Live on Elysium testnet (chain `99801`)
 
-v2 has **its own launch factory** (redeployed Nov 12), apart from Cloak v1's. Its rules are copied from v1's: launch fee 1.5%, auctions capped at 100 HYPE per bid and 10,000 HYPE in total. Gloam has no vault on Elysium testnet yet, so testnet runs **Cloak's stand-in: Gloam's mainnet vault code, unmodified** (Nov 13), taking HYPE, USDC and a test KNTQ as Gloam's mainnet vault will. Cloak's launch vault and escrows are deployed around it, and `e2e-gloam/use-gloam-vault.mjs` swaps in Gloam's own testnet vault once it exists.
+v2 has **its own launch factory** (redeployed Nov 13 with the GLOAK audit fixes, from the testnet main wallet), apart from Cloak v1's. Its rules are copied from v1's: launch fee 1.5%, auctions capped at 100 HYPE per bid and 10,000 HYPE in total. Gloam has no vault on Elysium testnet yet, so testnet runs **Cloak's stand-in: Gloam's mainnet vault code, unmodified** (Nov 13), taking HYPE, USDC and a test KNTQ as Gloam's mainnet vault will. Cloak's launch vault and escrows are deployed around it (also redeployed Nov 13 with the audit fixes), and `e2e-gloam/use-gloam-vault.mjs` swaps in Gloam's own testnet vault once it exists.
 
 | Contract | Address |
 |---|---|
-| CloakConfig (v2) | `0x31337213cab071c28eed8b2256c5658c9de8a9ba` |
-| CloakFactory (v2), from block 27930789 | `0xb9060dc9c5dcd49d424b0257b3a8b1a2939271d7` |
-| CloakV4Hook (v2) | `0x822c91E71BC5a63Ef2C38bc37cea6ff443CD2a80` |
+| CloakConfig (v2) | `0x716eb18ec96b21a134b8affe0daa6fa968bbb1a3` |
+| CloakFactory (v2), from block 28280297 | `0x395db13360cf54d3dbc583a68ca956a407aef4d4` |
+| CloakV4Hook (v2) | `0x04295229378E13f8bddE3014089b2C6625806A80` |
 | Gloam's vault (Cloak's stand-in, Gloam's mainnet code), from block 28255692 | `0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370` |
 | Its guard / memo board | `0x5851D76992Cbc23DE75c675bEe581CbfA9Dc5F97` / `0x0ffd9BC4767b5082409615e842CD7F0adC570B44` |
 | Test KNTQ (anyone can mint) | `0x2bd92af06c47a8ad26101a7e2084aff66b5f2c1f` |
-| CloakLaunchVault, from block 28256098 | `0xe3847f0140bdc06629b2b30a770f393e080f30b2` |
-| CloakLaunchSwapV4 / CloakRouterV4 | `0xa022edbe332f433ab8bc081b228c8a1d9bad98b6` / `0x6f67078181752ed9f312d51e2fd7f787564a86bf` |
-| CloakEcosystemVault | `0x95d9073ec1840dabe4de4b9cbebdfe6bdc86706f` |
-| CloakGloamBatcherV4 | `0xc2c642bfbd0ad192df272c7e7486696de2355e1f` |
-| CloakGloamBids | `0x83430908906887d4b9ec920b0a90193b479b15f6` |
-| CloakGloamReceive | `0x88eb84e9d8f2e59a73c41b198d32eeac84c5c7e4` |
-| CloakFundsGate / CloakReceiptCheck | `0xccbd5f8fe8b3a796f2eaedc010189349e61278f6` / `0xe57a30d49842966605912dd9ed76a08635cdaf32` |
+| CloakLaunchVault, from block 28280687 / its guard | `0x30d8857a6d988577ab0206c0a782958e22cbcd3c` / `0x22b8db11ba94f02933498921a801cc84be730e74` |
+| CloakLaunchSwapV4 / CloakRouterV4 | `0xb8a7d9956c8c6af1829a6f61e30928ed52bd9a52` / `0x987e7deca86081e459e1a86a31695bf9f917f4c8` |
+| CloakEcosystemVault / its guard | `0x4ed9b20cd16a0de1c94c056eb709de0c1a866bd9` / `0x46613a147c0f11843bf4fa790247cddc082aff00` |
+| CloakTradeFee | `0xc3fe6064fa0765a7e21af4b1f7b62fa5c4594a8c` |
+| CloakGloamBatcherV4 | `0x9b58c5365d79fb65ab8cb8796616d80c7e6ae903` |
+| CloakGloamBids | `0x7ee58219cf84b5a378279d5f10fc1369e13795c3` |
+| CloakGloamReceive | `0x5b67d9b3ea70d8d4da158af28772428d4cadc1f2` |
+| CloakFundsGate / CloakReceiptCheck | `0x45bdb2ff14325342639cea193a7f92c87fa14019` / `0x1d27fd681756fe9c72fd0ec4d6b4a18cf312f64d` |
 | PoolManager (Uniswap v4 on testnet) | `0x51027076df8416e42ea8438b27a0c433d9662e68` |
 
 The full record: [`deployments/elysium-testnet-gloam.json`](deployments/elysium-testnet-gloam.json) and [`deployments/elysium-testnet-v2-factory.json`](deployments/elysium-testnet-v2-factory.json). The SDK carries the same addresses (`deploymentFor(99801)`). Every rule, with its number: [`docs/RULES.md`](docs/RULES.md). As on mainnet, HYPE (and USDC, KNTQ) sit in Gloam's vault and launch tokens in Cloak's launch vault, with the router trading between them, plus the ecosystem vault for outside tokens.

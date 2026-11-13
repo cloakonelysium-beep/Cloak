@@ -1,12 +1,12 @@
 {
   "chainId": 99801,
   "note": "Cloak v2's own launch factory (v2's launches, apart from Cloak v1's). CloakConfig v2 holds the launch fee, treasury and bid caps; its verifier field names Gloam's verifier and is unused (v2 has no Cloak vaults).",
-  "config": "0x31337213cab071c28eed8b2256c5658c9de8a9ba",
-  "factory": "0xb9060dc9c5dcd49d424b0257b3a8b1a2939271d7",
-  "factoryBlock": 27930789,
-  "v4Hook": "0x822c91E71BC5a63Ef2C38bc37cea6ff443CD2a80",
+  "config": "0x716eb18ec96b21a134b8affe0daa6fa968bbb1a3",
+  "factory": "0x395db13360cf54d3dbc583a68ca956a407aef4d4",
+  "factoryBlock": 28280297,
+  "v4Hook": "0x04295229378E13f8bddE3014089b2C6625806A80",
   "poolManager": "0x51027076df8416e42ea8438b27a0c433d9662e68",
-  "vestingDeployer": "0xe25e6864463bc130682e13469c04267ae93baa19",
+  "vestingDeployer": "0x462f90c360d2d3e724f276c4bcf2a5d7f211cb71",
   "launchFeeBps": 150,
   "auctionLimit": {
     "perBid": "100000000000000000000",
@@ -26,5 +26,5 @@
   "owner": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
   "ownerAccepts": null,
   "hookAdmin": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
-  "costHype": "0.00129627802694"
+  "costHype": "0.00132044261817"
 }
