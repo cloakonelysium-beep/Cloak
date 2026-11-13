@@ -43,7 +43,7 @@ What each move costs:
 | Anyone not approved swapping in GLOAK's pool (Universal Router, aggregators, bots) | Refused |
 | Sending to 0x…dEaD | Free |
 
-**Why a private sell isn't charged.** Every private sell passes its tokens through a one-time escrow: an address made for that one swap, which the token can't recognise in advance. So the vault's payment to the escrow is charged 10% like any withdrawal, and the token holds that 10% instead of burning it at once. In the same transaction the escrow hands everything to the router, and the token passes the held 10% on to the router with a plain transfer. The swap gets the full amount and nothing is burned. A real withdrawal never reaches a router, so its 10% burns with the next transfer of GLOAK (or when anyone calls `burnHeld()`). Nothing is ever minted after launch.
+**Why a private sell isn't charged.** Every private sell passes its tokens through a one-time escrow: an address made for that one swap, which the token can't recognise in advance. So the vault's payment to the escrow is charged 10% like any withdrawal, and the token holds that 10% instead of burning it at once. The token records that 10% as owed to the escrow, and when the escrow hands everything to the router (in the same transaction, or later if someone sent the withdrawal alone), the token passes the held 10% on to the router with a plain transfer. The swap gets the full amount and nothing is burned. A real withdrawal's 10% burns at its recipient's first move, or after 14 days via `releaseOwed`. Nothing is ever minted after launch.
 
 **The cloakroom ticket, closed.** Uniswap v4 can leave a buyer's tokens inside Uniswap as claims instead of paying them out, and claims move without the token seeing them. Two rules close that on GLOAK. Only private routers can swap in its pool, and they always pay out into a vault. Only approved contracts can pay GLOAK into Uniswap, so nobody can turn public GLOAK into claims.
 
@@ -141,29 +141,28 @@ Our router always trades GLOAK in Cloak's launch vault, because launch tokens ar
 
 ## Known limits
 
-- **A spend sent alone pays 10%.** If someone submits a private sell's withdrawal in its own transaction, without the router, the held 10% can't go on to the router and burns. The money isn't stuck: after the deadline the router returns the 90% to the owner key. It takes deliberate front-running to cause.
-- **Pools with no hook are still reachable through our router.** Someone could open their own GLOAK pool with no hook, sell GLOAK into it privately, and take the result out as Uniswap claims. That gives them a small, isolated claims market that only custom contracts can use. Turning claims back into GLOAK still costs 10%, and GLOAK's own pool stays closed to it. Closing this would need router changes, which the experiment avoids.
 - **Public bids work.** The auction pays every winner without a surcharge, so a public bidder ends up with public GLOAK. The app should only offer private bids for GLOAK.
-- **Public buys through the market adapter cost 10%** once the adapter is approved for batch rounds. Anyone can call the adapter, and a public buyer receives 90%.
 - **The pool's fees paid in GLOAK lose 10%** on their way to the treasury. Fees paid in HYPE are untouched.
-- **The admin key** can approve vaults, routers and receiving addresses (3 days after setup), remove approvals at once, lower the surcharge, or renounce for good. It can't move anyone's GLOAK, make an address tax-free on the way out, or open Uniswap to a wallet. Removing a router's approval would stop private trading until it's added back. Approving a contract with Feed or Swap still means trusting that contract, so vet each router first.
+- **A withdrawal's 10% is held until its recipient's first move** (or 14 days, then anyone can release it), so `totalSupply()` lags the burn a little. The page counts held GLOAK as burned.
+- **The admin key** is a single wallet until Elysium has a multisig. It can approve vaults, routers and receiving addresses (3 days after setup), remove approvals at once, lower the surcharge, or renounce for good. It can't move anyone's GLOAK, make an address tax-free on the way out, or open Uniswap to a wallet. Removing a router's approval would stop private trading until it's added back. Approving a contract with Feed or Swap still means trusting that contract, so vet each router first.
 - **Exchanges and other DEXs** can't really hold it: every deposit to a public address pays 10%.
 
 ## Tests
 
-`contracts-v4/test/GloakExperiment.t.sol`, 26 tests:
+`contracts-v4/test/GloakExperiment.t.sol`, 40 tests (14 added for the Nov 13 audit, below):
 - **The door:** makes GLOAK's launch; works once and only for the owner wallet; reverts whole if its launch fails; nobody else can make a GLOAK.
 - **Other launches untouched:** a launch after the door gets a plain token and an open pool; a deployer with no door never makes a private pool.
 - **The private pool:** an outside contract can't swap it (taking tokens or claims); public addresses can't pay into Uniswap or sell through the adapter.
 - **Private trading is free:** an exact buy, an exact sell, the leftover claimed back into the vault, and nothing burned.
 - **Leaving costs 10%:** a withdrawal, a router exit, and public-to-public transfers; shielding back in is free. A spend sent alone loses the 10% but is rescued.
-- **The adapter:** refused until approved; a public buy then arrives less 10%.
+- **The adapter:** serves only callers GLOAK lets swap (a public caller is refused even once it's approved); its limit is checked on what arrives; a plain launch's adapter stays open.
+- **The Nov 13 audit's findings:** the router refuses GLOAK in a pool with no hook; a spend sent alone (copied proof, then `burnHeld()`) burns nothing, and the sell still goes through or is rescued in full; a zero-value transfer settles nothing; a withdrawal's held 10% burns at the recipient's first move or after 14 days; queued roles expire and pin their code; Feed and Swap are refused to wallets delegating to code (EIP-7702) and to a wallet even at queue time; the token itself gets no role; the door refuses a wrong factory or maker; a failed GLOAK launch burns its supply while a failed plain launch still returns its tokens.
 - **The rules:** the 3-day wait after setup, instant removal, the surcharge only falling, the privacy meter; Send can never be granted; Feed and Swap only to contracts.
 - **Born with its zone:** the maker's zone is approved from GLOAK's first block, and a zone that would grant Send, or Feed to a wallet, makes the whole door call revert.
 - **Between vaults:** an approved address moves GLOAK from one vault to another for free, and still pays 10% sending anywhere else.
 - **Fork only:** Uniswap's real Universal Router on mainnet can't buy GLOAK but still buys a plain launch.
 
-Run locally (`forge test --match-contract GloakExperiment` in `contracts-v4`): all 26 pass; the 2 fork-only tests do nothing there. Run on a fork of Elysium mainnet against Uniswap's real PoolManager (`MAINNET_RPC=https://rpc.elysium.kinetiq.xyz forge test --match-contract GloakExperiment`): all 26 pass, the fork-only ones included. The existing suites still pass: 119 in `contracts`, 219 in `contracts-v4`, and the 5-test mainnet fork suite.
+Run locally (`forge test --match-contract GloakExperiment` in `contracts-v4`): all 40 pass; the 2 fork-only tests do nothing there. Run on a fork of Elysium mainnet against Uniswap's real PoolManager (`MAINNET_RPC=https://rpc.elysium.kinetiq.xyz forge test --match-contract GloakExperiment`): all 40 pass, the fork-only ones included, and so do the 2 Gloam fork tests (`GloakOnGloam`). Nov 13: 262 in `contracts-v4`, 128 in `contracts`, 160 in `contracts-gloam`, and part 23 (the launch scripts on a mainnet fork) all pass.
 
 **Simulation** (`contracts-v4/test/GloakSimulation.t.sol`, run with `-vv` to read it): 500,000 GLOAK (300,000 for sale, 200,000 reserved for the pool), no team share, 3 HYPE of bids (Ada 1 and Ben 1.5 from private balances, Cy 0.5 in public). It clears at 0.00001 HYPE: all 300,000 sold, a pool of about 1.48 HYPE and 147,750 GLOAK, and 52,250 unused burned at 0xdEaD. Then private claims (free and exact, the private-bid contract born approved), private buys and sells (nothing burned), Uniswap's real Universal Router refused, a withdrawal and a public transfer (10% each), a buyback from the pool's fees burned at 0xdEaD, and a move into a second vault through an approved bridge address (free) or a holder's own wallet (10%). It passes on the mainnet fork and locally. With a pool this thin a 0.2 HYPE buy moves the price about 25%, and two trades' fees buy back under 100 GLOAK; the raise itself (about 1.48 HYPE to the treasury) is the real buyback money.
 

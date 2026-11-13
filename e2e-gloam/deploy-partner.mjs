@@ -71,6 +71,15 @@ function rehearsalConfig() {
 }
 
 const cfg = REHEARSE ? rehearsalConfig() : JSON.parse(readFileSync(cfgPath, "utf8"));
+// "factoryRecord": the record deploy-v2-factory.mjs wrote; its factory and hook replace the config's (so a factory
+// redeploy needs no hand edit here)
+if (cfg.factoryRecord) {
+  const f = JSON.parse(readFileSync(join(REPO, cfg.factoryRecord), "utf8"));
+  if (f.chainId !== cfg.chainId) throw new Error(`factoryRecord is chain ${f.chainId}, the config says ${cfg.chainId}`);
+  cfg.factory = f.factory;
+  cfg.v4Hook = f.v4Hook;
+  console.log(`factory ${f.factory} and hook ${f.v4Hook} from ${cfg.factoryRecord}`);
+}
 // our vaults' withdrawal fee in bps (a swap out of them is a withdrawal): "withdrawFeeBps" in the config, 50 (0.5%) if unset
 const FEE_BPS = Number(cfg.withdrawFeeBps ?? 50);
 // the ecosystem vault's fee (paid in KNTQ and other outside tokens) can go elsewhere than the launch vault's (burned)

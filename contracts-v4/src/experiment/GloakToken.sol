@@ -25,14 +25,18 @@ pragma solidity ^0.8.26;
  *         they make arriving free, never leaving, so what an approved address sends on to a public one still pays.
  *
  *         Supply is fixed at launch and only ever falls: nothing is minted after the constructor. A vault withdrawal's
- *         surcharge isn't burned on the spot but held by the token itself (balanceOf[address(this)]) for the rest of
- *         that transaction, because a one-time escrow can't be recognised in advance. If the escrow hands its whole
- *         balance to a PAYEE in the same transaction, the held surcharge moves on to the PAYEE as a plain transfer.
- *         Whatever is held after its transaction is burned by the next transfer of GLOAK, or by anyone at once with
- *         burnHeld(). Every other surcharge burns at once.
+ *         surcharge isn't burned on the spot but held by the token itself (balanceOf[address(this)]) and owed to the
+ *         withdrawal's recipient, because a one-time swap escrow can't be recognised in advance. The recipient's first
+ *         outgoing transfer settles it: if that transfer hands its whole balance to a PAYEE, the held surcharge moves
+ *         on to the PAYEE as a plain transfer (a private sell, so the swap gets the full amount); any other transfer
+ *         makes it burnable. A recipient that never moves its GLOAK can be released by anyone after OWED_WINDOW.
+ *         Burnable surcharges are burned by the next transfer of GLOAK, or by anyone with burnHeld(). Every other
+ *         surcharge burns at once.
  *
- * @dev What a withdrawal's surcharge may still owe is remembered in transient storage (EIP-1153), keyed by the
- *      recipient, plus a running total, so a burn inside that transaction can never take what is still owed.
+ * @dev What is owed is kept in storage, not only for the withdrawal's transaction, so a withdrawal sent alone (someone
+ *      copying a pending swap's proof and spending it first) can't make the surcharge burn: the escrow still hands its
+ *      whole balance to the router later, in the swap or its rescue, and the surcharge follows. A zero-value transfer
+ *      never settles what is owed (it needs no allowance, so anyone could send one).
  */
 contract GloakToken {
     string public name;
@@ -54,10 +58,11 @@ contract GloakToken {
     uint16 public constant MAX_SURCHARGE_BPS = 1_000;
     /// @notice How long a new role waits after setup.
     uint256 public constant ROLE_DELAY = 3 days;
+    /// @notice A queued role change must be applied within this long after it becomes due, or it expires.
+    uint256 public constant ROLE_GRACE = 14 days;
+    /// @notice After this long, what a withdrawal's recipient is still owed may be released (made burnable) by anyone.
+    uint256 public constant OWED_WINDOW = 14 days;
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    bytes32 private constant OWED_DOMAIN = keccak256("gloak.exit-owed.v1");
-    /// @dev Transient: the total still owed back within this transaction (held, not yet burnable).
-    bytes32 private constant PENDING_SLOT = keccak256("gloak.exit-pending.v1");
 
     /// @notice Uniswap v4's PoolManager: only FEED contracts may send GLOAK into it.
     address public immutable poolManager;
@@ -73,8 +78,21 @@ contract GloakToken {
     /// @notice Every address that ever had a role (for the privacy meter).
     address[] public members;
     mapping(address => bool) internal _isMember;
-    /// @notice A queued role change (keccak256(account, roles)) → when it may be applied.
+    /// @notice A queued role change (keccak256(account, roles)) → when it may be applied (until ROLE_GRACE after).
     mapping(bytes32 => uint256) public queuedAt;
+    /// @notice The account's code hash when the change was queued (0 for an account with no code then): applying it
+    ///         requires the same code, so what was reviewed during the wait is what gets the roles.
+    mapping(bytes32 => bytes32) public queuedCodehash;
+
+    /// @notice A vault withdrawal's surcharge, held by the token and owed to its recipient until it settles.
+    struct Owed {
+        uint192 amount;
+        uint64 since;
+    }
+
+    mapping(address => Owed) public owed;
+    /// @notice The total held for recipients (not burnable until each one settles).
+    uint256 public totalOwed;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -86,6 +104,7 @@ contract GloakToken {
     event Surcharged(address indexed from, address indexed to, uint256 burned);
     event SurchargeRefunded(address indexed escrow, address indexed payee, uint256 amount);
     event SurchargeHeld(address indexed from, address indexed to, uint256 amount);
+    event OwedReleased(address indexed recipient, uint256 amount);
     event AdminOffered(address indexed to);
     event AdminChanged(address indexed to);
 
@@ -102,6 +121,9 @@ contract GloakToken {
     error ZeroAddress();
     /// @notice Nobody sends GLOAK to the token itself: its balance is only surcharges waiting to burn.
     error ToToken();
+    error Expired();
+    error CodeChanged();
+    error NotYet();
     error Balance();
     error Allowance();
 
@@ -187,9 +209,23 @@ contract GloakToken {
         return (value * surchargeBps) / 10_000;
     }
 
-    /// @notice Surcharges held by the token and no longer owed to any transaction: burned by the next transfer.
+    /// @notice Surcharges held by the token and owed to nobody: burned by the next transfer.
     function heldForBurn() public view returns (uint256) {
-        return balanceOf[address(this)] - _tget(PENDING_SLOT);
+        return balanceOf[address(this)] - totalOwed;
+    }
+
+    /// @notice Make what `recipient` is owed burnable, once OWED_WINDOW has passed since it was last added to. Anyone may.
+    function releaseOwed(address recipient) external {
+        Owed memory o = owed[recipient];
+        if (o.amount == 0 || block.timestamp < uint256(o.since) + OWED_WINDOW) revert NotYet();
+        _release(recipient, o.amount);
+        _burnHeld();
+    }
+
+    function _release(address recipient, uint256 amount) private {
+        delete owed[recipient];
+        totalOwed -= amount;
+        emit OwedReleased(recipient, amount);
     }
 
     /// @notice Burn what the token holds from past withdrawals' surcharges now. Anyone may call it.
@@ -211,45 +247,54 @@ contract GloakToken {
         if (to == address(this)) revert ToToken();
         _burnHeld();
         if (balanceOf[from] < value) revert Balance();
+        uint256 owedFrom = value == 0 ? 0 : owed[from].amount;
+        if (_route(from, to, value, owedFrom) || owedFrom == 0) return;
+        // the recipient of a withdrawal moved its GLOAK some other way: its held surcharge burns
+        _release(from, owedFrom);
+        _burnHeld();
+    }
+
+    /// @dev Moves `value` under the rule. Returns whether `from`'s owed surcharge went on to a PAYEE.
+    function _route(address from, address to, uint256 value, uint256 owedFrom) private returns (bool refunded) {
         uint8 rf = rolesOf[from];
 
         // into Uniswap: only the private zone's own contracts
         if (to == poolManager) {
             if (rf & FEED == 0) revert NotPrivate();
             _move(from, to, value);
-            return;
+            return false;
         }
 
         uint8 rt = rolesOf[to];
         if (to == DEAD || rt & RECEIVE != 0) {
             _move(from, to, value);
             // a one-time escrow handing all of a vault withdrawal to a router or batch round: the surcharge the token
-            // holds for it in this transaction goes on to the router too (a transfer, never a mint)
-            if (rt & PAYEE != 0 && balanceOf[from] == 0) {
-                uint256 owed = _owed(from);
-                if (owed != 0) {
-                    _setOwed(from, 0);
-                    _tset(PENDING_SLOT, _tget(PENDING_SLOT) - owed);
-                    _move(address(this), to, owed);
-                    emit SurchargeRefunded(from, to, owed);
-                }
+            // holds for it goes on to the router too (a transfer, never a mint)
+            if (owedFrom != 0 && rt & PAYEE != 0 && balanceOf[from] == 0) {
+                delete owed[from];
+                totalOwed -= owedFrom;
+                _move(address(this), to, owedFrom);
+                emit SurchargeRefunded(from, to, owedFrom);
+                return true;
             }
-            return;
+            return false;
         }
         if (rf & SEND != 0) {
             _move(from, to, value);
-            return;
+            return false;
         }
 
         // out of the private zone, or between public addresses
         uint256 cut = (value * surchargeBps) / 10_000;
         _move(from, to, value - cut);
-        if (cut == 0) return;
+        if (cut == 0) return false;
         if (rf & VAULT != 0) {
-            // a vault's withdrawal: held for the rest of this transaction, in case `to` is a swap's one-time escrow
+            // a vault's withdrawal: held and owed to `to`, in case it is a swap's one-time escrow
             _move(from, address(this), cut);
-            _setOwed(to, _owed(to) + cut);
-            _tset(PENDING_SLOT, _tget(PENDING_SLOT) + cut);
+            Owed storage o = owed[to];
+            o.amount += uint192(cut);
+            o.since = uint64(block.timestamp);
+            totalOwed += cut;
             emit SurchargeHeld(from, to, cut);
         } else {
             balanceOf[from] -= cut;
@@ -258,6 +303,7 @@ contract GloakToken {
             emit Transfer(from, address(0), cut);
             emit Surcharged(from, to, cut);
         }
+        return false;
     }
 
     function _move(address from, address to, uint256 value) private {
@@ -266,30 +312,6 @@ contract GloakToken {
         }
         balanceOf[to] += value;
         emit Transfer(from, to, value);
-    }
-
-    function _owedSlot(address a) private pure returns (bytes32) {
-        return keccak256(abi.encode(OWED_DOMAIN, a));
-    }
-
-    function _owed(address a) private view returns (uint256) {
-        return _tget(_owedSlot(a));
-    }
-
-    function _setOwed(address a, uint256 v) private {
-        _tset(_owedSlot(a), v);
-    }
-
-    function _tget(bytes32 s) private view returns (uint256 v) {
-        assembly {
-            v := tload(s)
-        }
-    }
-
-    function _tset(bytes32 s, uint256 v) private {
-        assembly {
-            tstore(s, v)
-        }
     }
 
     // ───────────────────────────── the privacy meter ─────────────────────────────
@@ -337,10 +359,13 @@ contract GloakToken {
 
     /// @notice After setup: announce a role change that adds roles; it may be applied ROLE_DELAY later.
     function queueRoles(address account, uint8 roles) external onlyAdmin returns (uint256 eta) {
-        if (roles > ALL_ROLES || account == address(0)) revert BadRoles();
-        if (roles & SEND & ~rolesOf[account] != 0) revert RoleNotGrantable();
+        if (roles > ALL_ROLES || account == address(0) || account == address(this)) revert BadRoles();
+        // checked now too, so the code to review during the wait already exists
+        _checkGrant(account, roles & ~rolesOf[account]);
         eta = block.timestamp + ROLE_DELAY;
-        queuedAt[keccak256(abi.encode(account, roles))] = eta;
+        bytes32 id = keccak256(abi.encode(account, roles));
+        queuedAt[id] = eta;
+        queuedCodehash[id] = account.code.length == 0 ? bytes32(0) : account.codehash;
         emit RolesQueued(account, roles, eta);
     }
 
@@ -349,21 +374,30 @@ contract GloakToken {
         uint256 eta = queuedAt[id];
         if (eta == 0) revert NotQueued();
         if (block.timestamp < eta) revert TooEarly();
+        if (block.timestamp > eta + ROLE_GRACE) revert Expired();
+        bytes32 h = queuedCodehash[id];
+        if (h != bytes32(0) && account.codehash != h) revert CodeChanged();
         delete queuedAt[id];
+        delete queuedCodehash[id];
         _checkGrant(account, roles & ~rolesOf[account]);
         _setRoles(account, roles);
     }
 
-    /// @dev What the admin may add: never SEND; FEED and SWAP only to a contract (checked when applied).
+    /// @dev What the admin may add: never SEND; FEED and SWAP only to a contract, and not to a wallet delegating to code
+    ///      (EIP-7702, code 0xef0100 ‖ address), which a key still controls. Checked when queued and when applied.
     function _checkGrant(address account, uint8 added) private view {
         if (added & SEND != 0) revert RoleNotGrantable();
-        if (added & (FEED | SWAP) != 0 && account.code.length == 0) revert RoleNotGrantable();
+        if (added & (FEED | SWAP) != 0) {
+            if (account.code.length == 0) revert RoleNotGrantable();
+            if (account.code.length == 23 && bytes3(account.code) == 0xef0100) revert RoleNotGrantable();
+        }
     }
 
     function cancelRoles(address account, uint8 roles) external onlyAdmin {
         bytes32 id = keccak256(abi.encode(account, roles));
         if (queuedAt[id] == 0) revert NotQueued();
         delete queuedAt[id];
+        delete queuedCodehash[id];
         emit RolesCancelled(account, roles);
     }
 
@@ -402,6 +436,7 @@ contract GloakToken {
 
     function _setRoles(address account, uint8 roles) private {
         if (account == address(0)) revert ZeroAddress();
+        if (account == address(this)) revert BadRoles(); // its balance is held surcharges, never a member's
         rolesOf[account] = roles;
         if (!_isMember[account]) {
             _isMember[account] = true;

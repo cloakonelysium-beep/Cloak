@@ -11,6 +11,7 @@ import {Currency} from "v4-core/types/Currency.sol";
 import {BalanceDelta} from "v4-core/types/BalanceDelta.sol";
 import {SwapParams} from "v4-core/types/PoolOperation.sol";
 import {TickMath} from "v4-core/libraries/TickMath.sol";
+import {IHooks} from "v4-core/interfaces/IHooks.sol";
 import {PoolKey} from "gloam/GloamVaultSwapV4.sol";
 import {CloakConfig} from "cloak/CloakConfig.sol";
 import {CloakFactory} from "cloak/CloakFactory.sol";
@@ -65,6 +66,22 @@ contract Outsider is IUnlockCallback {
     }
 
     receive() external payable {}
+}
+
+/// Stands in for a batch round: a contract that buys through the market adapter.
+contract AdapterUser {
+    function buy(CloakV4Market m, uint256 minOut, address to) external payable returns (uint256) {
+        return m.swapExactHypeForTokens{value: msg.value}(minOut, to);
+    }
+
+    receive() external payable {}
+}
+
+/// A contract that does nothing: something to grant roles to, whose code can change (vm.etch) during a role's wait.
+contract Blank {
+    function hi() external pure returns (uint256) {
+        return 1;
+    }
 }
 
 /**
@@ -291,6 +308,48 @@ contract GloakExperimentTest is Test {
         assertFalse(deployer.doorUsed(), "a failed attempt leaves the door unused");
     }
 
+    /// The audit's gap A: the door refuses a factory or a maker that isn't built for this deployer.
+    function test_doorRefusesAWrongFactoryOrMaker() public {
+        bytes memory call_ = abi.encodeCall(CloakFactory.createLaunch, ("GLOAK", "GLOAK", 0, 0, _params(), ""));
+        CloakFactory otherFactory = new CloakFactory(config, new CloakVestingDeployer(admin), IMarketSeeder(address(hook)), IFeeLocker(address(0)));
+        vm.startPrank(admin);
+        vm.expectRevert(bytes("door factory"));
+        deployer.useDoor(address(maker), address(otherFactory), call_);
+        vm.expectRevert(bytes("door factory"));
+        deployer.useDoor(address(maker), makeAddr("no code"), call_);
+        GloakMaker otherMaker = new GloakMaker(makeAddr("another deployer"), admin, address(pm), address(hook), new address[](0), new uint8[](0));
+        vm.expectRevert(bytes("door maker"));
+        deployer.useDoor(address(otherMaker), address(factory), call_);
+        vm.stopPrank();
+        assertFalse(deployer.doorUsed(), "the door is still unused");
+    }
+
+    /// The audit's gap B: a GLOAK launch where no bid is revealed burns the supply instead of sending it to the creator.
+    function test_aFailedGloakLaunchBurnsItsSupply() public {
+        _doorLaunch();
+        _commit(auction, alice); // committed, never revealed
+        (,,,,,,, uint64 revealEnd,,,,,) = auction.params();
+        vm.warp(revealEnd);
+        auction.settle();
+        assertTrue(auction.failed());
+        assertEq(gloak.balanceOf(treasury), 0, "nothing to the creator's public wallet");
+        assertEq(gloak.balanceOf(gloak.DEAD()), 2 * SALE, "the whole supply is burned");
+    }
+
+    /// A plain launch that fails still gives its tokens back to its creator.
+    function test_aFailedPlainLaunchReturnsItsTokens() public {
+        _doorLaunch();
+        address creator = makeAddr("creator");
+        CloakAuction.Params memory p = _params();
+        p.creator = creator;
+        factory.createLaunch("PLAIN", "PLAIN", 0, 0, p, "");
+        (address a, address t,,,,) = factory.launches(factory.launchesCount() - 1);
+        (,,,,,,, uint64 revealEnd,,,,,) = CloakAuction(payable(a)).params();
+        vm.warp(revealEnd);
+        CloakAuction(payable(a)).settle();
+        assertEq(CloakToken(t).balanceOf(creator), 2 * SALE);
+    }
+
     function test_onlyTheDoorCanMakeAGloak() public {
         vm.expectRevert(bytes("door only"));
         maker.make("X", "X", new address[](0), new uint256[](0));
@@ -421,13 +480,20 @@ contract GloakExperimentTest is Test {
         uint256 supply = gloak.totalSupply();
         _unshield(bytes32(uint256(0x70)), 1_000e18, bob);
         assertEq(gloak.balanceOf(bob), 900e18, "bob gets 90%");
-        assertEq(gloak.heldForBurn(), 100e18, "after its transaction, the 10% waits to burn");
-        assertEq(gloak.totalSupply() - gloak.heldForBurn(), supply - 100e18);
+        assertEq(gloak.balanceOf(address(gloak)), 100e18, "the 10% is held");
+        (uint192 owedBob,) = gloak.owed(bob);
+        assertEq(owedBob, 100e18, "and owed to bob until his first move");
+        assertEq(gloak.heldForBurn(), 0);
+        // bob never moves: anyone may release it after the window, and it burns
+        vm.expectRevert(GloakToken.NotYet.selector);
+        gloak.releaseOwed(bob);
+        vm.warp(block.timestamp + 14 days);
         vm.prank(makeAddr("anyone"));
-        gloak.burnHeld();
+        gloak.releaseOwed(bob);
         assertEq(gloak.totalSupply(), supply - 100e18, "10% is burned");
         assertEq(gloak.surchargeBurned(), 100e18);
         assertEq(gloak.balanceOf(address(gloak)), 0);
+        assertEq(gloak.totalOwed(), 0);
     }
 
     /// forge-config: default.isolate = true
@@ -436,20 +502,31 @@ contract GloakExperimentTest is Test {
         uint256 supply = gloak.totalSupply();
         _unshield(bytes32(uint256(0x70)), 1_000e18, bob);
         vm.prank(bob);
-        gloak.transfer(alice, 500e18); // public to public: burns 50 at once, and the held 100 first
+        gloak.transfer(alice, 500e18); // public to public: burns 50 at once, and bob's first move burns his held 100
         assertEq(gloak.surchargeBurned(), 150e18);
         assertEq(gloak.totalSupply(), supply - 150e18);
         assertEq(gloak.heldForBurn(), 0);
     }
 
-    function test_aBurnInsideTheTransactionCantTakeWhatIsStillOwed() public {
+    function test_aBurnCantTakeWhatIsStillOwed() public {
         _live();
-        // one transaction (no isolation): the withdrawal's 10% is still owed back to it, so it can't be burned yet
         _unshield(bytes32(uint256(0x70)), 1_000e18, bob);
         gloak.burnHeld();
-        assertEq(gloak.balanceOf(address(gloak)), 100e18, "still held for this transaction");
+        assertEq(gloak.balanceOf(address(gloak)), 100e18, "still held: owed to bob");
         assertEq(gloak.heldForBurn(), 0);
         assertEq(gloak.surchargeBurned(), 0);
+    }
+
+    /// A zero-value transferFrom needs no allowance, so it must never settle what someone is owed.
+    function test_aZeroValueTransferSettlesNothing() public {
+        _live();
+        address e2 = makeAddr("escrow");
+        _unshield(bytes32(uint256(0x70)), 1_000e18, e2);
+        vm.prank(makeAddr("stranger"));
+        gloak.transferFrom(e2, address(router), 0);
+        (uint192 o,) = gloak.owed(e2);
+        assertEq(o, 100e18, "still owed: a zero-value transfer neither refunds nor releases");
+        assertEq(gloak.balanceOf(address(router)), 0);
     }
 
     /// @dev However a withdrawal and its hand-off to a router are sized, supply never grows and nothing is minted.
@@ -505,8 +582,36 @@ contract GloakExperimentTest is Test {
         assertEq(lv.deposited(address(gloak)) - before, 450e18, "coming back in is free and exact");
     }
 
+    /// The audit's front-run: someone copies a pending private sell's proof and sends the spend alone, then calls
+    /// burnHeld(). Nothing burns, and the sell itself still goes through at the exact amount.
     /// forge-config: default.isolate = true
-    function test_aSpendSentAloneLosesTheSurchargeButIsRescued() public {
+    function test_aSpendSentAloneCantBurnTheSurcharge() public {
+        _live();
+        uint256 noteSize = lv.deposited(address(gloak));
+        uint256 supply = gloak.totalSupply();
+        CloakLaunchSwapBase.Spend memory s = CloakLaunchSwapBase.Spend(hex"", lv.currentRoot(), bytes32(uint256(0x70)), address(gloak), noteSize);
+        CloakLaunchSwapBase.Deposit memory d = CloakLaunchSwapBase.Deposit(hex"00", keccak256(abi.encode(bytes32(uint256(0x70)), "out")), address(0), 1 ether);
+        uint256 deadline = block.timestamp + 600;
+        s.proof = abi.encode(router.escrowFor(router.keyOf(s, d, _route(), owner, deadline)));
+        address escrow = router.escrowFor(router.keyOf(s, d, _route(), owner, deadline));
+        // the attacker: the spend alone, then a burn
+        vm.startPrank(makeAddr("attacker"));
+        lv.unshield(s.proof, s.root, s.nullifier, address(gloak), escrow, noteSize);
+        gloak.burnHeld();
+        vm.stopPrank();
+        assertEq(gloak.totalSupply(), supply, "nothing burned");
+        assertEq(gloak.heldForBurn(), 0);
+        // the seller's own swap, later
+        vm.recordLogs();
+        router.swap(s, d, _route(), owner, deadline);
+        _assertNoMint("the swap after a spend sent alone");
+        assertEq(gloak.totalSupply(), supply, "a private sell is still free");
+        assertEq(gloak.totalOwed(), 0);
+    }
+
+    /// If the seller only rescues after the deadline, the full amount comes back too.
+    /// forge-config: default.isolate = true
+    function test_aSpendSentAloneIsRescuedInFull() public {
         _live();
         uint256 noteSize = lv.deposited(address(gloak));
         CloakLaunchSwapBase.Spend memory s = CloakLaunchSwapBase.Spend(hex"", lv.currentRoot(), bytes32(uint256(0x70)), address(gloak), noteSize);
@@ -514,28 +619,85 @@ contract GloakExperimentTest is Test {
         uint256 deadline = block.timestamp + 600;
         CloakLaunchSwapBase.SwapKey memory k = router.keyOf(s, d, _route(), owner, deadline);
         address escrow = router.escrowFor(k);
-        // someone sends the spend alone, in its own transaction: the escrow isn't opened in it
         lv.unshield(abi.encode(escrow), s.root, s.nullifier, address(gloak), escrow, noteSize);
-        assertEq(gloak.balanceOf(escrow), noteSize - noteSize / 10, "the refund only works inside one transaction");
+        gloak.burnHeld();
         vm.warp(deadline + 1);
         uint256 got = router.rescue(k);
-        assertEq(got, noteSize - noteSize / 10, "nothing is stuck: 90% is owed back to the owner key");
+        assertEq(got, noteSize, "the whole note is owed back to the owner key");
     }
 
     // ───────────── the market adapter (batch rounds) ─────────────
 
-    function test_marketAdapterBuysOnceApprovedAndPublicBuysPay10Percent() public {
+    /// Approving the adapter (for batch rounds) doesn't open the pool: only callers GLOAK lets swap may use it.
+    function test_theAdapterServesOnlyWhomGloakLetsSwap() public {
         _live();
-        vm.prank(bob);
-        vm.expectRevert();
-        market.swapExactHypeForTokens{value: 1 ether}(1, bob);
-        vm.prank(admin);
+        AdapterUser rounds = new AdapterUser();
+        vm.startPrank(admin);
         gloak.setRoles(address(market), SWAP);
+        gloak.setRoles(address(rounds), RECEIVE | FEED | SWAP | PAYEE);
+        vm.stopPrank();
+        vm.prank(bob);
+        vm.expectRevert(bytes("private pool"));
+        market.swapExactHypeForTokens{value: 1 ether}(1, bob);
         (uint256 rH, uint256 rT,) = market.reserves();
         uint256 q = market.getAmountOut(1 ether, rH, rT);
+        uint256 got = rounds.buy{value: 1 ether}(market, q, address(rounds));
+        assertEq(got, gloak.balanceOf(address(rounds)), "the batch round gets the full amount");
+    }
+
+    /// minOut is checked on what arrives: a buy delivered to a public address (less 10%) can't pass a limit set on the
+    /// pool's quote.
+    function test_theAdaptersLimitIsOnWhatArrives() public {
+        _live();
+        AdapterUser rounds = new AdapterUser();
+        vm.startPrank(admin);
+        gloak.setRoles(address(market), SWAP);
+        gloak.setRoles(address(rounds), RECEIVE | FEED | SWAP | PAYEE);
+        vm.stopPrank();
+        (uint256 rH, uint256 rT,) = market.reserves();
+        uint256 q = market.getAmountOut(1 ether, rH, rT);
+        vm.expectRevert(bytes("slippage"));
+        rounds.buy{value: 1 ether}(market, q, bob);
+        uint256 got = rounds.buy{value: 1 ether}(market, 1, bob);
+        assertEq(got, gloak.balanceOf(bob), "the reported amount is what bob received");
+    }
+
+    /// Plain launches' adapters stay open to anyone.
+    function test_aPlainLaunchsAdapterIsOpen() public {
+        _doorLaunch();
+        _bidAndSettle(auction, alice);
+        factory.createLaunch("PLAIN", "PLAIN", 0, 0, _params(), "");
+        (address a,,,,,) = factory.launches(factory.launchesCount() - 1);
+        _bidAndSettle(CloakAuction(payable(a)), bob);
+        CloakV4Market m = CloakV4Market(payable(address(CloakAuction(payable(a)).pair())));
+        vm.warp(block.timestamp + 600);
         vm.prank(bob);
-        market.swapExactHypeForTokens{value: 1 ether}(1, bob);
-        assertApproxEqAbs(gloak.balanceOf(bob), q - q / 10, 1e15, "a public buy through the adapter arrives less 10%");
+        uint256 got = m.swapExactHypeForTokens{value: 1 ether}(1, bob);
+        assertGt(got, 0);
+    }
+
+    // ───────────── no pool without Cloak's hook for GLOAK ─────────────
+
+    /// The audit's first finding: a pool with no hook, opened by anyone, can't carry GLOAK through Cloak's router.
+    function test_theRouterRefusesGloakInAPoolWithNoHook() public {
+        _live();
+        PoolKey memory hookless = PoolKey(address(0), address(gloak), 3_000, 60, address(0));
+        pm.initialize(V4Key(Currency.wrap(address(0)), Currency.wrap(address(gloak)), 3_000, 60, IHooks(address(0))), TickMath.getSqrtPriceAtTick(0));
+        assertFalse(router.poolAllowed(hookless), "no hook, with GLOAK: refused");
+        assertTrue(router.poolAllowed(_key()), "Cloak's hooked pool: allowed");
+        assertEq(router.privateOnlyToken(), address(gloak));
+        PoolKey memory other = PoolKey(address(0), address(whype), 3_000, 60, address(0));
+        assertTrue(router.poolAllowed(other), "no hook, without GLOAK: allowed as before");
+
+        uint256 noteSize = lv.deposited(address(gloak));
+        PoolKey[] memory hops = new PoolKey[](1);
+        hops[0] = hookless;
+        CloakLaunchSwapBase.Spend memory sp = CloakLaunchSwapBase.Spend(hex"", lv.currentRoot(), bytes32(uint256(0x70)), address(gloak), noteSize);
+        CloakLaunchSwapBase.Deposit memory d = CloakLaunchSwapBase.Deposit(hex"00", keccak256("o"), address(0), 0.01 ether);
+        uint256 deadline = block.timestamp + 600;
+        sp.proof = abi.encode(router.escrowFor(router.keyOf(sp, d, abi.encode(hops), owner, deadline)));
+        vm.expectRevert(abi.encodeWithSelector(CloakLaunchSwapV4.HookNotAllowed.selector, address(0)));
+        router.swap(sp, d, abi.encode(hops), owner, deadline);
     }
 
     // ───────────── the rules' owner ─────────────
@@ -664,10 +826,42 @@ contract GloakExperimentTest is Test {
         vm.expectRevert(GloakToken.RoleNotGrantable.selector);
         gloak.setRoles(wallet, SWAP);
         gloak.endSetup();
-        gloak.queueRoles(wallet, RECEIVE | FEED); // queueing is allowed, applying checks the code
-        vm.warp(block.timestamp + 3 days);
         vm.expectRevert(GloakToken.RoleNotGrantable.selector);
-        gloak.applyRoles(wallet, RECEIVE | FEED);
+        gloak.queueRoles(wallet, RECEIVE | FEED); // checked when queued: there must be code to review during the wait
+        // a wallet delegating to code (EIP-7702) is still a key, so it's refused too
+        vm.etch(wallet, abi.encodePacked(hex"ef0100", address(new Blank())));
+        vm.expectRevert(GloakToken.RoleNotGrantable.selector);
+        gloak.queueRoles(wallet, RECEIVE | FEED);
+        vm.stopPrank();
+    }
+
+    /// The audit's queue findings: a queued change expires, and the code that gets the roles is the code that was queued.
+    function test_queuedRolesExpireAndPinTheirCode() public {
+        _live();
+        address c = address(new Blank());
+        vm.startPrank(admin);
+        gloak.endSetup();
+        gloak.queueRoles(c, RECEIVE | FEED);
+        vm.warp(block.timestamp + 3 days + 14 days + 1);
+        vm.expectRevert(GloakToken.Expired.selector);
+        gloak.applyRoles(c, RECEIVE | FEED);
+        gloak.queueRoles(c, RECEIVE | FEED); // queued again, fresh
+        vm.stopPrank();
+        vm.etch(c, address(new AdapterUser()).code); // the code changes during the wait
+        vm.warp(block.timestamp + 3 days);
+        vm.prank(admin);
+        vm.expectRevert(GloakToken.CodeChanged.selector);
+        gloak.applyRoles(c, RECEIVE | FEED);
+    }
+
+    function test_theTokenItselfGetsNoRole() public {
+        _live();
+        vm.startPrank(admin);
+        vm.expectRevert(GloakToken.BadRoles.selector);
+        gloak.setRoles(address(gloak), RECEIVE);
+        gloak.endSetup();
+        vm.expectRevert(GloakToken.BadRoles.selector);
+        gloak.queueRoles(address(gloak), RECEIVE);
         vm.stopPrank();
     }
 

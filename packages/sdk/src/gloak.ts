@@ -29,7 +29,7 @@ export interface GloakInfo {
   token: Address;
   /** The surcharge on moves to public addresses, in basis points (1000 = 10%). */
   surchargeBps: number;
-  /** GLOAK burned by surcharges so far, including what the token holds to burn on the next transfer (heldForBurn). */
+  /** GLOAK burned by surcharges so far, including what the token holds (withdrawals' 10%, burned once each recipient moves). */
   surchargeBurned: bigint;
   totalSupply: bigint;
   /** True until the admin ends setup; after it, new approvals wait 3 days in public. */
@@ -57,8 +57,9 @@ export async function readGloak(publicClient: PublicClient, token: Address): Pro
   const [bps, burned, held, supply, setup, m] = await Promise.all([
     publicClient.readContract({ ...c, functionName: "surchargeBps" }),
     publicClient.readContract({ ...c, functionName: "surchargeBurned" }),
-    // a withdrawal's 10% is held by the token until the next transfer burns it: count it as burned already
-    publicClient.readContract({ ...c, functionName: "heldForBurn" }),
+    // a withdrawal's 10% is held by the token (owed to its recipient until its first move, then burnable): count it as
+    // burned already. Only a private sell's escrow hands it on, and that settles in moments.
+    publicClient.readContract({ ...c, functionName: "balanceOf", args: [token] }),
     publicClient.readContract({ ...c, functionName: "totalSupply" }),
     publicClient.readContract({ ...c, functionName: "setupMode" }),
     publicClient.readContract({ ...c, functionName: "meter" }),

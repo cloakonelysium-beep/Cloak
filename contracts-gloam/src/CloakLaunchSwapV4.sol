@@ -6,6 +6,20 @@ import {PoolKey, SwapParams, IPoolManagerSwap} from "gloam/GloamVaultSwapV4.sol"
 import {IWETH} from "gloam/GloamVaultSwapV4b.sol";
 import {IGloamVault} from "gloam/GloamVaultSwap.sol";
 
+/// Cloak's v4 hook, as far as the router needs it: the launch factory it serves.
+interface ICloakHookFactory {
+    function factory() external view returns (address);
+}
+
+/// The factory's token deployer and its one-time door (CloakVestingDeployer): the one private-only token it made.
+interface ICloakFactoryDoorView {
+    function vestingDeployer() external view returns (address);
+}
+
+interface ICloakDoorView {
+    function doorToken() external view returns (address);
+}
+
 /**
  * @title CloakLaunchSwapV4
  * @notice The Uniswap v4 venue for CloakLaunchSwapBase: private swaps on Cloak's launch vault through v4 pools, the
@@ -15,7 +29,9 @@ import {IGloamVault} from "gloam/GloamVaultSwap.sol";
  * The swap logic is Gloam's GloamVaultSwapV4c's (route walk, exact-out from the last hop, middle currencies netting
  * to zero, native and wrapped HYPE both, paying by sync/transfer/settle with no approval), with one difference: no
  * allowlist with a 3-day wait. Instead a pool is usable at once if its hook is none or Cloak's own reviewed hook
- * (CloakV4Hook, immutable here). So a hostile hook can't be on any route, and what a pool priced against the swap can
+ * (CloakV4Hook, immutable here). The one exception: the door's private-only token (GLOAK) is usable only in Cloak's
+ * hooked pool, never in a pool with no hook, where its swaps would skip the token's pool gate and Uniswap's claims
+ * could carry it around in public. So a hostile hook can't be on any route, and what a pool priced against the swap can
  * take is bounded as in V4c: the new note is exactly d.amount (its proof binds it, the base checks it arrived), the
  * swap pays at most what the note brought in, and every route is fixed in the swap's escrow key.
  *
@@ -67,9 +83,29 @@ contract CloakLaunchSwapV4 is CloakLaunchSwapBase {
         return to == address(poolManager) || to == weth;
     }
 
-    /// @notice Whether a route may use this pool: sorted currencies, and no hook or Cloak's own.
+    /// @notice Whether a route may use this pool: sorted currencies, and Cloak's own hook, or no hook for a pool without
+    ///         the door's private-only token.
     function poolAllowed(PoolKey memory k) public view returns (bool) {
-        return k.currency0 < k.currency1 && (k.hooks == address(0) || (allowedHook != address(0) && k.hooks == allowedHook));
+        if (k.currency0 >= k.currency1) return false;
+        if (allowedHook != address(0) && k.hooks == allowedHook) return true;
+        if (k.hooks != address(0)) return false;
+        address d = privateOnlyToken();
+        return d == address(0) || (k.currency0 != d && k.currency1 != d);
+    }
+
+    /// @notice The token Cloak's launch deployer made through its one-time door (GLOAK), or address(0). Read the way
+    ///         the hook reads it (hook → factory → token deployer → doorToken), and never reverts.
+    function privateOnlyToken() public view returns (address t) {
+        if (allowedHook == address(0)) return address(0);
+        try ICloakHookFactory(allowedHook).factory() returns (address f) {
+            if (f.code.length == 0) return address(0);
+            try ICloakFactoryDoorView(f).vestingDeployer() returns (address d) {
+                if (d.code.length == 0) return address(0);
+                try ICloakDoorView(d).doorToken() returns (address x) {
+                    return x;
+                } catch {}
+            } catch {}
+        } catch {}
     }
 
     function _swapExactOut(address assetIn, address assetOut, uint256 amountOut, uint256 maxIn, bytes calldata route)

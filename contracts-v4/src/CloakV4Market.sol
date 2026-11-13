@@ -21,6 +21,7 @@ interface IHookView {
 
 interface IERC20Pull {
     function transferFrom(address from, address to, uint256 value) external returns (bool);
+    function balanceOf(address a) external view returns (uint256);
 }
 
 /// @title CloakV4Market — a launch's Uniswap v4 pool, seen the way Cloak's contracts see a market.
@@ -29,6 +30,11 @@ interface IERC20Pull {
 ///         The pool's only liquidity is the launch's full-range position (the hook allows no other), so the reserves
 ///         read here are the pool's real depth. Holds nothing between calls; anyone may use it. The token also trades
 ///         directly on the PoolManager (Universal Router, aggregators) like any v4 pool.
+///
+///         A token with its own swap gate (GLOAK's canSwap: its pool is private-only) is the exception: the adapter then
+///         serves only callers the token itself lets swap (its batch rounds), so approving the adapter never opens the
+///         pool to the public. A buy's `minOut` and event are checked on what reaches `to`, so a token that takes a cut
+///         on the way can't slip a short delivery past the caller's limit.
 contract CloakV4Market is IUnlockCallback {
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
@@ -130,7 +136,10 @@ contract CloakV4Market is IUnlockCallback {
     /// @notice Native HYPE in, tokens out to `to`.
     function swapExactHypeForTokens(uint256 minOut, address to) external payable lock returns (uint256 out) {
         require(msg.value > 0, "zero");
-        out = abi.decode(poolManager.unlock(abi.encode(true, msg.value, msg.sender, to)), (uint256));
+        _checkGate();
+        uint256 before = IERC20Pull(token).balanceOf(to);
+        poolManager.unlock(abi.encode(true, msg.value, msg.sender, to));
+        out = IERC20Pull(token).balanceOf(to) - before; // what arrived
         require(out >= minOut && out > 0, "slippage");
         emit Swap(msg.sender, true, msg.value, out, to);
     }
@@ -138,9 +147,16 @@ contract CloakV4Market is IUnlockCallback {
     /// @notice Tokens in (pulled from the caller), native HYPE out to `to`.
     function swapExactTokensForHype(uint256 amountIn, uint256 minOut, address to) external lock returns (uint256 out) {
         require(amountIn > 0, "zero");
+        _checkGate();
         out = abi.decode(poolManager.unlock(abi.encode(false, amountIn, msg.sender, to)), (uint256));
         require(out >= minOut && out > 0, "slippage");
         emit Swap(msg.sender, false, amountIn, out, to);
+    }
+
+    /// @dev A token with a swap gate (canSwap) decides who may use this adapter; any other token, anyone.
+    function _checkGate() internal view {
+        (bool ok, bytes memory r) = token.staticcall(abi.encodeWithSignature("canSwap(address)", msg.sender));
+        if (ok && r.length == 32) require(abi.decode(r, (bool)), "private pool");
     }
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {

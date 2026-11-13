@@ -74,3 +74,27 @@ All 12 findings were handled in Cloak v1 on Nov 7 (v1's `SECURITY.md`). The cont
 - **Promised to Ghost: the batcher fix "into the mainnet contracts".** Done for v2's batcher (2.2 above). v1's `PrivateBatcher` and `SharedBatcher` still anchor the band to the first order's spot. That fix sits with the held v1 batcher work, waiting for Bob's call.
 
 - **v1's batchers (report 2.2), done as a patch.** The band around the opening spot now **refuses** (and the round is refunded) instead of clamping, so a pinned opening spot can't pull an honest average. A settling deadline (`TooLate`) stops the settler from stretching the window. KupiaSec's held-price case stays covered: it's refunded, not crossed. Regression tests `test_ghost_*`, 287 of 287. `docs/patches/v1-batcher-band-and-deadline.patch` applies cleanly to v1's `main`. v2's Gloam batcher got the same band, and the live one was redeployed (`0x77a5…ea1b`).
+
+## Report 3: the GLOAK audit (Nov 13)
+
+An audit of the GLOAK experiment (the token, the door, the router's v4 venue and the market adapter), with two PoCs.
+GLOAK wasn't launched on any network yet, so every fix went in before launch. Tests: `contracts-v4/test/GloakExperiment.t.sol`
+(14 new, both PoCs among them), the 2 Gloam fork tests, and part 23 on a mainnet fork.
+
+| # | Finding | Verdict | What changed |
+|---|---|---|---|
+| 1 | Pools with no hook, plus v4 claims, give a public market without the surcharge (PoC) | Real | `CloakLaunchSwapV4.poolAllowed`: the door's token (read hook → factory → token deployer → `doorToken`, as the hook reads it) is allowed only in Cloak's hooked pool. Other tokens keep hookless pools. |
+| 2 | Front-running a private sell's withdrawal burns 10% of it (PoC) | Real (griefing, no profit; hard on Elysium, which has no public mempool) | The surcharge is owed to the withdrawal's recipient in storage, not only for its transaction. The escrow's later hand-off (the swap itself, which accepts a spend sent alone, or the rescue) still passes it on to the router. A zero-value transfer never settles it. A recipient's other moves burn it; `releaseOwed` burns it after 14 days. |
+| 3 | The admin is one key with irreversible powers | Known, by design for now | No code change. Multisig on the roadmap; `endSetup()` in the same session as the adapter approval. |
+| 4 | The 3-day queue is weaker than it reads | Valid | Queued roles expire 14 days after they become due; the account's code hash is pinned at queue time and checked when applied; Feed/Swap are checked at queue time too and refused to EIP-7702 delegated wallets. |
+| 5 | Public buys through the market adapter once it has Swap; `minOut` checked before the cut | Real | The adapter serves only callers a gated token lets swap (`canSwap(msg.sender)`); batch rounds are born with Swap. `minOut` and the event use what reaches `to`. Plain launches unchanged. |
+| 6a | Zero-value `transferFrom` can push a held surcharge to a Payee | Valid | A zero-value transfer never refunds or releases. |
+| 6b | `meter()` breaks if the token's own address gets a role | Valid | The token's own address can't get a role. |
+| 6c | Transfers under 10 wei pay nothing | Unattainable (gas costs more) | None. |
+| 6d | 0x…dEaD stays in `totalSupply` | By design | None; the meter reports it apart. |
+| 6e | A creator allocation would give the factory roles | Checked | GLOAK's door call passes 0. |
+| A | The door doesn't check its factory or maker | Low (owner key only, once) | `useDoor` requires `factory.vestingDeployer() == this` and `maker.door() == this`. Catches mistakes; a stolen key is answered by using the door right after deploy. |
+| B | No revealed bid sends the whole supply to the creator, tax-free | Real, unlikely | A failed launch of the door's token burns its supply to 0x…dEaD (plain launches unchanged), and GLOAK's reveal window is 6 hours, not 30 minutes. |
+
+Redeploys: the auction and token deployer changed (a new factory, hook and config), and the router and adapter changed
+(a new partner deploy). On testnet, from the main testnet wallet (docs/TESTNET-REDEPLOY.md); mainnet isn't deployed yet.
