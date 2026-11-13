@@ -20,12 +20,12 @@ export function Demo() {
       <div className="wrap demo-page">
         <div className="eyebrow">Walkthrough</div>
         <h1>How to use Cloak</h1>
-        <p className="lede">A full screen tour of the live testnet app. Shielding funds, launching a token, bidding privately, trading and sending, start to finish.</p>
+        <p className="lede">A full screen tour of the live app. Shielding funds, launching a token, bidding privately, trading and sending, start to finish.</p>
         <div className="demo-frame">
           {missing ? (
             <div className="demo-soon">
               <h3>The walkthrough is being recorded</h3>
-              <p>Check back soon. Meanwhile you can try the app yourself on Elysium testnet.</p>
+              <p>Check back soon. Meanwhile you can try the app yourself on Elysium.</p>
               <Link to="/app" className="btn btn-primary">Open the app</Link>
             </div>
           ) : (

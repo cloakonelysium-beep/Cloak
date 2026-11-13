@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatEther, parseAbi, parseEther, type Address, type Hex } from "viem";
 import { budgetBuckets, cloakAuctionAbi, cloakPairAbi, cloakTokenAbi, type AuctionState, type Wallet, Cloak } from "@cloakely/sdk";
-import { addrLink, FACTORY, GLOAM, IS_MAINNET, txLink } from "./config";
+import { addrLink, FACTORY, GLOAM, txLink } from "./config";
 import { hype, short, tokens } from "./format";
 import { loadSecrets, publicClient, saveSecret } from "./wallet";
 import { useApp } from "./state";
@@ -158,7 +158,7 @@ export function BidCard({ s, wallet, onDone }: { s: AuctionState; wallet: Wallet
     if (q === 0n) return "Enter how many tokens you want.";
     if (p < s.minPrice) return `Your max price is below this launch's minimum of ${hype(s.minPrice)} HYPE.`;
     if (!quote) return "Those amounts don't work for this launch. Try a different price or quantity.";
-    if (from === "wallet" && wallet && walletBal !== null && deposit > walletBal) return `Your wallet has ${hype(walletBal)} HYPE, which isn't enough for this deposit. Pick a smaller one or ${IS_MAINNET ? "add HYPE to your wallet" : "get testnet HYPE from the faucet"}.`;
+    if (from === "wallet" && wallet && walletBal !== null && deposit > walletBal) return `Your wallet has ${hype(walletBal)} HYPE, which isn't enough for this deposit. Pick a smaller one or add HYPE to your wallet.`;
     if (from === "private" && priv && privBal !== null && (deposit * 10_025n) / 10_000n + privNeed > privBal)
       return `Your private balance can spend ${hype(privBal)} HYPE. This deposit needs about ${hype((deposit * 10_025n) / 10_000n + privNeed)} with fees and gas. Shield more HYPE on Portfolio or pick a smaller deposit.`;
     return "";

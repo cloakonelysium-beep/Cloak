@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { parseAbi, zeroAddress, type Address, type Hex } from "viem";
-import { GLOAM, IS_MAINNET, txLink } from "../config";
+import { GLOAM, txLink } from "../config";
 import { friendly } from "../errors";
 import { hype, usd } from "../format";
 import { readCloak, publicClient } from "../wallet";
@@ -187,7 +187,7 @@ export function Volume() {
           )}
           {s.revenue && (
             <div className="card" style={{ marginTop: 18 }}>
-              <div className="card-head"><h3>Protocol revenue</h3><span className="xs mute">Fees go to the Cloak treasury.{IS_MAINNET ? "" : " Testnet figures are play money."}</span></div>
+              <div className="card-head"><h3>Protocol revenue</h3><span className="xs mute">Fees go to the Cloak treasury.</span></div>
               <div className="stats" style={{ marginTop: 4 }}>
                 <Card k="Fees earned" v={hype(s.revenue.collected + s.revenue.owed, 4)} sub={`${hype(s.revenue.collected, 4)} HYPE collected and ${hype(s.revenue.owed, 4)} HYPE waiting`} />
                 <Card k="From launches" v={hype(s.revenue.launches.collected + s.revenue.launches.owed, 4)} sub="A share of each successful raise" />

@@ -162,7 +162,7 @@ export function Announce() {
   return (
     <div className="announce">
       <span className="dot live" style={{ marginRight: 10, verticalAlign: 1 }} />
-      <b>Live on Elysium testnet.</b> <span style={{ opacity: 0.75 }}>Sealed launches, private balances and batch trading, all on-chain.</span>
+      <b>Live on Elysium.</b> <span style={{ opacity: 0.75 }}>Sealed launches, private balances and batch trading, all on-chain.</span>
       <Link to="/app" className="arrow">Try it</Link>
       <button className="x" aria-label="Dismiss" onClick={() => { setOpen(false); try { localStorage.setItem("cloak.announce", "0"); } catch {} }}>×</button>
     </div>
@@ -331,7 +331,7 @@ export function Footer() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>{IS_MAINNET ? "© 2026 Cloak. Not investment advice. Built by Bob Labs on Elysium." : "© 2026 Cloak. Testnet software with play money. Not investment advice. Built by Bob Labs on Elysium."}</span>
+          <span>© 2026 Cloak. Not investment advice. Built by Bob Labs on Elysium.</span>
           <div className="theme-seg">
             {T.map((t) => (
               <button key={t} className={theme === t ? "on" : ""} onClick={() => setTheme(t)}>{t[0].toUpperCase() + t.slice(1)}</button>

@@ -301,7 +301,7 @@ export function Claim() {
         )}
         {err && <div className="err">{err}</div>}
       </div>
-      <p className="xs mute" style={{ textAlign: "center", marginTop: 14 }}>{IS_MAINNET ? "Cloak on Elysium." : "Cloak on Elysium testnet. Play money only."}</p>
+      <p className="xs mute" style={{ textAlign: "center", marginTop: 14 }}>Cloak on Elysium.</p>
     </div>
   );
 }

@@ -86,11 +86,7 @@ export function Docs() {
             <li><b>Bid</b> in a launch: pick a max price and quantity, then click <i>Seal bid</i>. You can close the tab, because the bid reveals itself.</li>
             <li><b>Trade privately</b>: go to <Link to="/app/portfolio">Portfolio</Link>, unlock your private account (one free signature) and shield some HYPE. Then use <Link to="/app/trade">Trade</Link>.</li>
           </ol>
-          {IS_MAINNET ? (
-            <div className="callout">This is <b>mainnet</b>: real money. The vaults cap deposits for now, so start small. Proofs use Gloam's final ceremony keys.</div>
-          ) : (
-            <div className="callout">Everything here is <b>testnet</b> with play money. Proofs already use Gloam's final ceremony keys, the same as mainnet. Don't use real funds.</div>
-          )}
+          <div className="callout">The vaults cap deposits for now, so start small. Proofs use Gloam's final ceremony keys.</div>
 
           <h2 id="what-works">What works today</h2>
           <ul>
