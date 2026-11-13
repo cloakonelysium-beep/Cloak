@@ -4,7 +4,7 @@ import type { AuctionState } from "@cloakely/sdk";
 import { Link } from "../router";
 import { Icon } from "../ui";
 import { FACTORY, addrLink } from "../config";
-import { gloakAddress, useGloak } from "../gloak";
+import { dailyCache, gloakAddress, lastGloakCheck, useGloak } from "../gloak";
 import { hype, short, tokens } from "../format";
 import { useApp } from "../state";
 import { publicClient, readCloak } from "../wallet";
@@ -13,7 +13,7 @@ import { useMarkets } from "./markets";
 /**
  * The GLOAK experiment (docs/GLOAK.md): a token that only lives in private vaults. Before its launch the page shows the
  * token, the thesis and "Coming soon"; while bidding is open, a Bid button; after it, the numbers from its pool and its
- * own meter().
+ * own meter(). It asks the chain once a day (GLOAK_CHECK_HOUR_UTC in ../gloak.tsx); shorten that when the launch is near.
  *
  * Every state is read from the chain of the network this site serves (FACTORY and publicClient come from config, which
  * picks the network by hostname), so mainnet and testnet never affect each other: a launch on testnet opens bidding on
@@ -28,8 +28,20 @@ const LAUNCHES = parseAbi([
   "function launches(uint256) view returns (address auction, address token, address creator, address launchpad, uint256 creatorAlloc, address vesting)",
 ]);
 
-/** GLOAK's launch (the door's one launch): the newest launch of the factory whose token is GLOAK. */
+const auctionCache = dailyCache<Address | null>("auction");
+
+/** GLOAK's launch (the door's one launch): the newest launch of the factory whose token is GLOAK. Found is final; a
+ * miss is kept until the next daily check, like the token lookup. */
 async function findAuction(token: Address): Promise<Address | null> {
+  const kept = auctionCache.get();
+  if (kept?.v) return kept.v;
+  if (kept) return null;
+  const a = await searchAuction(token);
+  auctionCache.set(a);
+  return a;
+}
+
+async function searchAuction(token: Address): Promise<Address | null> {
   if (!FACTORY) return null;
   const n = Number(await publicClient.readContract({ address: FACTORY, abi: LAUNCHES, functionName: "launchesCount" }));
   for (let i = n - 1; i >= 0 && i >= n - 200; i--) {
@@ -117,10 +129,12 @@ export function Gloak() {
   const [checked, setChecked] = useState(false); // the first look for GLOAK's launch has finished
 
   // GLOAK's launch on this network: the Bid button opens it while bidding is open, and its Uniswap pool is linked once it
-  // trades. Read again every minute, so the page follows the launch from bidding to reveal to trading without a reload.
+  // trades. Read when the page opens, then at the daily check (GLOAK_CHECK_HOUR_UTC) if the tab stays open.
   useEffect(() => {
     let alive = true;
+    let at = 0;
     const load = async () => {
+      at = Date.now();
       try {
         const t = token ?? (await gloakAddress());
         const a = t ? await findAuction(t) : null;
@@ -135,7 +149,7 @@ export function Gloak() {
       }
     };
     load();
-    const id = setInterval(load, 60_000);
+    const id = setInterval(() => at < lastGloakCheck() && load(), 15 * 60_000);
     return () => {
       alive = false;
       clearInterval(id);

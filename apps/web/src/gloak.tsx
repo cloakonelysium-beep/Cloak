@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Address } from "viem";
 import { findGloak, readGloak, gloakArrives, type GloakInfo } from "@cloakely/sdk";
 import { publicClient } from "./wallet";
-import { FACTORY } from "./config";
+import { CHAIN_ID, FACTORY } from "./config";
 import { tokens } from "./format";
 
 /**
@@ -10,21 +10,61 @@ import { tokens } from "./format";
  * public address. The app finds it through the launch factory's one-time door and warns before anything would burn.
  */
 
-let lookup: { at: number; p: Promise<Address | null>; found?: Address | null } | null = null;
+/**
+ * How often the site asks the chain whether GLOAK exists yet: once a day, after this hour (UTC). Until GLOAK is made, a
+ * "not yet" answer is kept (in memory and in this browser) until the next check time, so visitors don't keep reading the
+ * chain for a launch that isn't scheduled. Once GLOAK's launch is announced, shorten this (docs/GLOAK.md, "The site").
+ */
+export const GLOAK_CHECK_HOUR_UTC = 8;
 
-/** The GLOAK token on this deployment, or null. A miss is asked again after a minute (the door may be used later). */
+/** The latest daily check time at or before now: today's check hour, or yesterday's if it hasn't come yet. */
+export function lastGloakCheck(now = Date.now()): number {
+  const d = new Date(now);
+  d.setUTCHours(GLOAK_CHECK_HOUR_UTC, 0, 0, 0);
+  if (d.getTime() > now) d.setUTCDate(d.getUTCDate() - 1);
+  return d.getTime();
+}
+
+/** Remembers an answer for this network only until the next daily check (the key carries the chain id). */
+export function dailyCache<T>(name: string) {
+  const key = `cloak.gloak.${name}.${CHAIN_ID}`;
+  return {
+    get(): { v: T } | null {
+      try {
+        const r = JSON.parse(localStorage.getItem(key) ?? "null") as { at: number; v: T } | null;
+        return r && r.at >= lastGloakCheck() ? { v: r.v } : null;
+      } catch {
+        return null;
+      }
+    },
+    set(v: T) {
+      try {
+        localStorage.setItem(key, JSON.stringify({ at: Date.now(), v }));
+      } catch {
+        // storage blocked: the answer lives in memory for this visit only
+      }
+    },
+  };
+}
+
+const tokenCache = dailyCache<Address | null>("token");
+let lookup: { at: number; p: Promise<Address | null> } | null = null;
+
+/** The GLOAK token on this deployment, or null. Found is final; "not yet" is asked again at the next daily check. */
 export function gloakAddress(): Promise<Address | null> {
-  const now = Date.now();
-  if (!lookup || (lookup.found === null && now - lookup.at > 60_000)) {
-    const p = FACTORY ? findGloak(publicClient, FACTORY).catch(() => null) : Promise.resolve(null);
-    const entry: { at: number; p: Promise<Address | null>; found?: Address | null } = { at: now, p };
-    p.then((t) => (entry.found = t));
-    lookup = entry;
+  if (!lookup || lookup.at < lastGloakCheck()) {
+    const kept = tokenCache.get();
+    const p = kept
+      ? Promise.resolve(kept.v)
+      : FACTORY
+        ? findGloak(publicClient, FACTORY).then((t) => (tokenCache.set(t), t), () => null)
+        : Promise.resolve(null);
+    lookup = { at: Date.now(), p };
   }
   return lookup.p;
 }
 
-/** GLOAK's address and its live rules and meter (refreshed every minute while mounted). */
+/** GLOAK's address and its live rules and meter: read when a page opens, then once a day (GLOAK_CHECK_HOUR_UTC). */
 export function useGloak(): { token: Address | null; info: GloakInfo | null; is: (a?: string | null) => boolean } {
   const [token, setToken] = useState<Address | null>(null);
   const [info, setInfo] = useState<GloakInfo | null>(null);
@@ -37,7 +77,7 @@ export function useGloak(): { token: Address | null; info: GloakInfo | null; is:
       if (t) readGloak(publicClient, t).then((i) => alive && setInfo(i)).catch(() => {});
     };
     load();
-    const id = setInterval(load, 60_000);
+    const id = setInterval(() => lookup && lookup.at < lastGloakCheck() && load(), 15 * 60_000); // an open tab picks up the next daily check
     return () => {
       alive = false;
       clearInterval(id);
