@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useRoute } from "../router";
 import { every } from "../every";
 import { useApp } from "../state";
-import { GITHUB, Icon, Logo, MenuButton, Sheet, SocialIcon, TELEGRAM, ThemeSeg, ThemeToggle, WalletButton, X_URL, useSheet } from "../ui";
+import { GITHUB, Icon, LINKEDIN, Logo, MenuButton, Sheet, SocialIcon, TELEGRAM, ThemeSeg, ThemeToggle, WalletButton, X_URL, useSheet } from "../ui";
 import { STEPS, guideShown, hideGuide, markDone, useGuide, type Step } from "../guide";
 import { navigate } from "../router";
 import { IS_MAINNET, KEEPER_URL, OTHER_NETWORK, SITE, chain } from "../config";
@@ -250,6 +250,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <a href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>
             <a href={X_URL} target="_blank" rel="noreferrer">X</a>
             <a href={TELEGRAM} target="_blank" rel="noreferrer" aria-label="Cloak's Telegram channel" className="row-flex" style={{ gap: 6 }}><SocialIcon.telegram size={14} />Telegram</a>
+            <a href={LINKEDIN} target="_blank" rel="noreferrer" aria-label="Cloak on LinkedIn" className="row-flex" style={{ gap: 6 }}><SocialIcon.linkedin size={13} />LinkedIn</a>
           </span>
         </footer>
       </main>
