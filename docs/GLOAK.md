@@ -205,6 +205,27 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 - **A thin pool moves a lot.** The pool's depth is fixed at launch: with about 1.5 HYPE in it, a 0.2 HYPE buy moves the price by roughly a quarter.
 - **Exchanges and public DEXs can't really hold it.** Every move to a public address pays 10%.
 
+## The site
+
+The GLOAK page (oncloak.xyz/gloak on mainnet, testnet.oncloak.xyz/gloak on testnet) shows the thesis, the rules and the disclaimer on both networks. Its button follows the launch on that network's own factory, and never the other network's:
+
+| Launch | The page shows |
+|---|---|
+| Not made yet | Coming soon |
+| Taking bids | Bid |
+| Bids closed, settling | Bidding closed · see results |
+| Trading | Get GLOAK privately, and the live stats |
+
+**How often it checks: once a day.** Until GLOAK exists, the site asks the chain whether it has been made once a day, after 08:00 UTC (`GLOAK_CHECK_HOUR_UTC` in `apps/web/src/gloak.tsx`). A "not yet" answer is kept in the visitor's browser until the next 08:00 UTC, per network. A found token or launch is kept for good, since it can't change. An open tab only looks at its own clock every 15 minutes to notice the next check time; it doesn't read the chain then.
+
+**Before GLOAK's launch, change the timing.** With a daily check, a visitor who opened the page earlier that day keeps seeing "Coming soon" until the next 08:00 UTC, even after bidding opens. So before the launch is started on a network:
+
+1. Shorten the check: set `GLOAK_CHECK_HOUR_UTC` aside and make `lastGloakCheck()` return a recent time (for example, the start of the current minute or quarter-hour), or call the lookups without the daily cache.
+2. Deploy the site, then start the launch.
+3. Visitors who saw "Coming soon" earlier that day still hold a cached "not yet" until 08:00 UTC. To clear it, rename the cache key in `dailyCache` (for example `cloak.gloak.` to `cloak.gloak2.`) in the same deploy.
+
+Once GLOAK is trading, its stats (meter, burned, pool) are also read on page open and then at the daily check. Shorten that at the same time if the stats should move during the day.
+
 ## Reference
 
 **Reads**
