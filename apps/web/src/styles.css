@@ -1101,3 +1101,4 @@ button.asset-row { cursor: pointer; }
 .gk-thesis li b { color: var(--text); font-weight: 500; }
 .gk-disclaimer { margin: 16px 2px 0; max-width: 760px; line-height: 1.6; }
 .token-card-share .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pill.gk-soon { font-size: 13px; padding: 8px 16px; letter-spacing: 0.04em; }
