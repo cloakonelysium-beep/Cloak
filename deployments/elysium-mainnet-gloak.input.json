@@ -17,12 +17,13 @@
     "numTicks": 256,
     "_prices": "0.0002 to 0.01 HYPE per GLOAK in 256 levels (steps of about 0.0000384 HYPE). Sold out at the lowest price: 58.8 HYPE raised, about 40.5 HYPE in the pool, all GLOAK worth about 100 HYPE. At the top: 2,940 HYPE raised, about 2,027 HYPE in the pool, all GLOAK worth about 5,000 HYPE. Decided Nov 11.",
     "noRevealPenaltyBps": 2000,
-    "commitEnd": "FILL IN: when bidding closes, e.g. 2026-12-01T18:00:00Z. The owner wallet's door call must land before it.",
+    "commitEnd": "2026-12-31T18:00:00Z",
     "revealMinutes": 360,
     "_reveal": "The keeper opens every sealed bid with the drand time-lock key just after bidding closes, and anyone else can too. 6 hours (was 30 minutes, changed after the Nov 13 audit): if no bid at all is opened in time, the launch fails and its supply is burned, so one keeper outage mustn't decide it. Trading starts when it ends and the launch settles.",
     "minRaise": "0",
     "_minRaise": "None: GLOAK opens its pool whatever it raises (decided Nov 11). Its door works once, so a failed launch couldn't be redone.",
-    "metadataURI": ""
+    "metadataURI": "",
+    "_commitEnd": "PLACEHOLDER (Nov 13): only so the maker can be deployed now. The owner call deploy-gloak prints is GLOAK's launch itself: don't sign it. On launch day, set the real close time here and rerun with --maker <the recorded maker> to print the real call."
   },
   "_admin": "Mainnet owner wallet (docs/WALLETS.md): GLOAK's admin and the only key that can use the door, once."
 }
