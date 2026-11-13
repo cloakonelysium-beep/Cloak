@@ -1102,3 +1102,15 @@ button.asset-row { cursor: pointer; }
 .gk-disclaimer { margin: 16px 2px 0; max-width: 760px; line-height: 1.6; }
 .token-card-share .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .pill.gk-soon { font-size: 13px; padding: 8px 16px; letter-spacing: 0.04em; }
+/* the network menu (Elysium Mainnet / Elysium Testnet) */
+.side-net-wrap { position: relative; display: grid; gap: 6px; }
+.side-net-pick { cursor: pointer; }
+.side-net-pick:hover { color: var(--text); }
+.net-logo { width: 18px; height: 18px; border-radius: 50%; flex: none; }
+.net-chev { margin-left: auto; opacity: 0.7; transition: transform 0.15s; }
+.side-net-pick[aria-expanded="true"] .net-chev { transform: rotate(180deg); }
+.net-menu { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--raised); box-shadow: var(--shadow); }
+.net-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--soft); font: 13px var(--font-body); text-align: left; cursor: pointer; }
+.net-item:hover { background: var(--card); color: var(--text); }
+.net-item.on { color: var(--text); }
+.net-tick { margin-left: auto; color: var(--signal); }
