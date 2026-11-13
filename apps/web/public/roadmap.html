@@ -78,6 +78,7 @@
       <li><b>Cloak's own Telegram helper bot.</b> A helper in t.me/cloakdesk that answers questions from Cloak's docs, removes scams and leaked seed phrases, welcomes people, saves bug reports, posts launch and GLOAK activity, and gives the team a daily report. Built as its own service.</li>
       <li><b>A team workspace on Slack.</b> Shared channels with partners like Gloam, and alerts in one place: the keeper's health and gas, site deploys, test runs, and partner changes such as new vault limits.</li>
       <li><b>More chains, one site.</b> When Cloak goes beyond Elysium, every network lives at one address with a network picker in the header, instead of a site per chain.</li>
+      <li><b>A stricter security policy on the claim page.</b> The page that opens a payment link will only be allowed to talk to Cloak's own servers and the chain, so even an injected script couldn't send a claim code anywhere else. Tested with every wallet connection before it goes live.</li>
       <li><b>A multisig for Cloak's owner wallet.</b> Cloak's rules, the vault guards, the trade fee and GLOAK's admin move to a multisig once one runs on Elysium (Safe isn't on the chain yet). Each handover is two steps and never touches users' funds.</li>
       <li><b>Run-your-own keeper and relayer</b>, so anyone can operate the infrastructure.</li>
       <li><b>Compliance tools.</b> Sanctions screening, and proofs that private funds are clean without revealing whose they are.</li>
