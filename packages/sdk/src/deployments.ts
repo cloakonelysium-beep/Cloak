@@ -40,7 +40,7 @@ export interface CloakDeployment {
 
 /** Where Cloak v2 on Gloam lives on a chain (deployments/<chain>-gloam.json). */
 export interface GloamDeployment {
-  /** Gloam's vault, or Cloak's own instance of Gloam's guarded deploy until Gloam's is live on this chain. */
+  /** The main vault: Gloam's on mainnet; on testnet, Cloak's test vault (Cloak's own copy of Gloam's open-source vault). */
   gloamVault: Address;
   memoBoard: Address;
   /** CloakLaunchVault: Gloam's code and keys, launch tokens admitted when their launch settles. */
@@ -79,10 +79,10 @@ export interface GloamDeployment {
 export const deployments: Record<number, CloakDeployment> = {
   // Cloak v2 on Elysium testnet. The factory, hook and config were redeployed on Nov 13 after the GLOAK audit fixes, from
   // the testnet main wallet (docs/TESTNET-REDEPLOY.md, deployments/elysium-testnet-v2-factory.json); the drops are from
-  // Nov 12. Gloam's vault is Cloak's stand-in running Gloam's mainnet vault code (Nov 13,
-  // deployments/elysium-testnet-gloam-standin.json) with HYPE, USDC and a test KNTQ listed, as Gloam's mainnet vault will
-  // have them; Cloak's launch vault and escrows around it were redeployed with the audit fixes the same day
-  // (deployments/elysium-testnet-gloam.json). Gloam's own testnet vault replaces the stand-in with use-gloam-vault.mjs.
+  // Nov 12. `gloamVault` here is Cloak's test vault: Cloak's own copy of Gloam's open-source vault code, testnet only and
+  // run by Cloak, not Gloam's (deployments/elysium-testnet-test-vault.json), with HYPE, USDC and a test KNTQ at mainnet's
+  // limits; Cloak's launch vault and escrows are deployed around it (deployments/elysium-testnet-gloam.json). On mainnet
+  // `gloamVault` is Gloam's own vault.
   99801: {
     chainId: 99801,
     config: "0x716eb18ec96b21a134b8affe0daa6fa968bbb1a3",

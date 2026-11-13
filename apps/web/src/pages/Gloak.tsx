@@ -225,7 +225,7 @@ export function Gloak() {
       </div>
 
       <p className="xs mute gk-disclaimer">
-        <b>Disclaimer.</b> GLOAK is a launch experiment, not an investment. Nothing on this page is financial advice. It has no team share, no roadmap and no promises attached. Moving it to a public address burns 10%. Check that holding it is allowed where you live.
+        <b>Disclaimer.</b> GLOAK is Cloak's token. It isn't Gloam's and has nothing to do with $GLOAM. It is a launch experiment, not an investment. Nothing on this page is financial advice. It has no team share, no roadmap and no promises attached. Moving it to a public address burns 10%. Check that holding it is allowed where you live.
       </p>
     </>
   );

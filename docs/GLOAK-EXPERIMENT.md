@@ -2,6 +2,8 @@
 
 Nov 11. For partners, the token's mechanics are in `docs/GLOAK.md`. This page is the build: what GLOAK is, the rules it follows, every change it needs in Cloak's code, how the owner wallet runs it, and what's tested. GLOAK is a one-time experiment: the first and last of its kind on Cloak. It doesn't touch $CLOAK (`docs/CLOAK.md`) or the ecosystem vault.
 
+> **GLOAK is Cloak's token, not Gloam's.** It has no connection to Gloam's $GLOAM token.
+
 ## In one paragraph
 
 GLOAK is a token meant to live in private vaults. It launches on Cloak like any launch (sealed bids, one price, a v4 pool), but through a one-time door that gives it its own token code. Bringing GLOAK into a vault and trading it privately are free. Taking it out to a public address, or moving it between public addresses, burns 10%. Its pool only serves private routers, so nobody can buy or sell it in public. Other privacy protocols can hold and trade it once the owner wallet approves their vault and router.

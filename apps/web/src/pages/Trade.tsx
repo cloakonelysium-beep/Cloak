@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatUnits, parseAbi, parseEventLogs, parseUnits, toHex, type Address, type Hex } from "viem";
 import { standardSizesFor } from "@cloakely/sdk";
 import { useGloak } from "../gloak";
-import { GLOAM, txLink } from "../config";
+import { GLOAM, MAIN_VAULT_SHORT, txLink } from "../config";
 import { hype, tokens, usd } from "../format";
 import { Link, useRoute } from "../router";
 import { useApp } from "../state";
@@ -369,7 +369,7 @@ export function Trade() {
                 <div className="row"><span>Gas</span><span>Paid by the relayer</span></div>
               </div>
               <div className="more-list">
-                <More title="Fees and how it works">Proofs are generated on this device (a 12 MB circuit downloads on first use, then each trade takes about 4 s). 1% max slippage on instant trades. Fees. {from && feePct !== "no" ? `${feePct} vault fee on the amount sold.` : !from ? `Gloam's vault keeps ${feePct} of the HYPE spent.` : ""} {cloakPct !== "no" ? `Cloak keeps ${cloakPct} of what a sale brings, in ${to ? to.symbol : "HYPE"}.` : ""} The relayer pays the gas, and whatever the trade didn't need comes back to your private balance.</More>
+                <More title="Fees and how it works">Proofs are generated on this device (a 12 MB circuit downloads on first use, then each trade takes about 4 s). 1% max slippage on instant trades. Fees. {from && feePct !== "no" ? `${feePct} vault fee on the amount sold.` : !from ? `${MAIN_VAULT_SHORT[0].toUpperCase()}${MAIN_VAULT_SHORT.slice(1)} keeps ${feePct} of the HYPE spent.` : ""} {cloakPct !== "no" ? `Cloak keeps ${cloakPct} of what a sale brings, in ${to ? to.symbol : "HYPE"}.` : ""} The relayer pays the gas, and whatever the trade didn't need comes back to your private balance.</More>
                 {BATCHER && market.batchable && !base && (
                   <More title="How batch mode works">
                     <ol>

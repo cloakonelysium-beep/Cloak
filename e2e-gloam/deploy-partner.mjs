@@ -259,7 +259,10 @@ try {
   const end = await pub.getBalance({ address: addr });
   const rec = {
     chainId: cfg.chainId,
-    note: "Cloak v2 next to Gloam's vault: Cloak's launch vault under its own VaultOwnerGuard (controller: the Safe, once it accepts) and Cloak's escrows. Gloam's vault, memo board and verifiers are Gloam's.",
+    note:
+      cfg.chainId === 99801
+        ? "Cloak v2 on testnet, next to Cloak's test vault (Cloak's own copy of Gloam's open-source vault code, testnet only, not Gloam's): Cloak's launch vault under its own VaultOwnerGuard and Cloak's escrows."
+        : "Cloak v2 next to Gloam's vault: Cloak's launch vault under its own VaultOwnerGuard (controller: the Safe, once it accepts) and Cloak's escrows. Gloam's vault, memo board and verifiers are Gloam's.",
     block: Number(block),
     // where Gloam's vault starts (apps rebuild its tree from here); `block` above is where Cloak's vaults start
     gloamVaultBlock: cfg.gloamVaultBlock === undefined ? undefined : Number(cfg.gloamVaultBlock),

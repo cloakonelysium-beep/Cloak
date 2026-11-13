@@ -2,6 +2,8 @@
 
 A token that lives in private vaults. This page explains how it works, for privacy protocols on Elysium that may want to hold and trade it, and for anyone checking its rules. Contract addresses are published at deploy.
 
+> **GLOAK is Cloak's token, not Gloam's.** It has no connection to Gloam's $GLOAM token. It's Cloak's inaugural launch: the first sealed-bid launch on Cloak.
+
 ## In one paragraph
 
 GLOAK is an ERC-20 meant to be held and traded privately. Moving it into a private vault and trading it through private routers is free. Taking it out to a public address, or moving it between public addresses, burns 10% of what is sent. Its only Uniswap pool accepts swaps from approved private routers alone, so it can't be bought or sold in public. Any privacy protocol on Elysium can hold and trade it once its vault and router are approved.

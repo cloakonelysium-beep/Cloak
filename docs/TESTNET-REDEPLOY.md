@@ -134,3 +134,24 @@ launched; the stand-in vault, the test KNTQ and the NFT drops untouched.
 - **Cost:** 0.00437 HYPE in all (0.28331 → 0.27894 HYPE).
 - The Nov 12 drops still read the Nov 12 config (`0x3133…a9ba`), as before: they weren't redeployed.
 - SDK entry, `render.yaml` and the Render service's `FACTORY`, `START_BLOCK` and `GLOAM_*` values updated.
+
+## Cloak's test vault, from the main wallet
+
+Gloam agreed (Nov 13) that Cloak runs its own copy of their open-source guarded vault on Elysium testnet, on two
+conditions: **testnet only**, and **never labelled as Gloam's vault anywhere users can see it**. On mainnet Cloak uses
+Gloam's own vault. The site now names it by network (`MAIN_VAULT` in `apps/web/src/config.ts`): "Cloak's test vault" on
+testnet, "Gloam's main vault" on mainnet.
+
+The first copy (`0x3ABB…6370`) was deployed from the tester wallet. It is replaced by one deployed and run by the
+testnet main wallet: `e2e-gloam/deploy-test-vault.mjs` with `deployments/elysium-testnet-test-vault.input.json`. That
+config reuses the test KNTQ, has the same limits and fee, and makes the main wallet both deployer and guard controller;
+the script refuses any other key. Cloak's contracts take the vault at deploy, so the partner contracts are redeployed
+around the new vault. About 0.004 HYPE in all.
+
+```
+NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-test-vault.mjs --config deployments/elysium-testnet-test-vault.input.json --rehearse
+NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-test-vault.mjs --config deployments/elysium-testnet-test-vault.input.json
+NODE_USE_ENV_PROXY=1 node e2e-gloam/use-gloam-vault.mjs --vault <vault> --memo <memo board> --block <block>   # printed by the step above
+NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-partner.mjs --config deployments/elysium-testnet-gloam.input.json
+node scripts/sdk-entry.mjs deployments/elysium-testnet-gloam.json deployments/elysium-testnet-v2-factory.json
+```

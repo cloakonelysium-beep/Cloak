@@ -10,6 +10,14 @@ const env = import.meta.env as unknown as Record<string, string | undefined>;
  */
 export const CHAIN_ID: number = Number(env.VITE_CHAIN_ID ?? chainIdForHost(typeof location === "undefined" ? "" : location.hostname));
 export const IS_MAINNET = CHAIN_ID === MAINNET;
+/**
+ * What the main vault and memo board are called wherever users see them. On mainnet they are Gloam's. On testnet Cloak
+ * runs its own copy of Gloam's open-source vault and memo board: Gloam asked (13 Nov) that it is never called theirs.
+ */
+export const MAIN_VAULT = IS_MAINNET ? "Gloam's main vault" : "Cloak's test vault";
+export const MAIN_VAULT_SHORT = IS_MAINNET ? "Gloam's vault" : "the test vault";
+export const MAIN_VAULT_RUN_BY = IS_MAINNET ? "Gloam" : "Cloak";
+export const MEMO_BOARD = IS_MAINNET ? "Gloam's memo board" : "Cloak's test memo board";
 /** This network's own address, and the other network's when Cloak is deployed there (for the switch in the sidebar). */
 export const SITE: string = SITES[CHAIN_ID] ?? SITES[TESTNET];
 const OTHER = IS_MAINNET ? TESTNET : MAINNET;

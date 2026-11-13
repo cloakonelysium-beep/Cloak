@@ -1,4 +1,4 @@
-// Points Cloak's testnet at a Gloam vault: Cloak's own stand-in (deploy-gloam-standin.mjs) now, Gloam's own testnet
+// Points Cloak's testnet at a vault on Gloam's code: Cloak's test vault (deploy-test-vault.mjs), or Gloam's own testnet
 // vault once it exists. Only the vault's address is needed: its verifiers and Poseidon are read from it, so Cloak's
 // launch vault proves on the same keys, and its memo board and start block come in as flags.
 //
@@ -49,7 +49,7 @@ if (!limitsOn) throw new Error("the vault's deposit limits are off");
 // what it takes (a warning, not a stop: Gloam's own testnet vault may list fewer)
 const standin = (() => {
   try {
-    return JSON.parse(readFileSync(join(REPO, "deployments/elysium-testnet-gloam-standin.json"), "utf8"));
+    return JSON.parse(readFileSync(join(REPO, "deployments/elysium-testnet-test-vault.json"), "utf8"));
   } catch {
     return null;
   }
@@ -62,7 +62,7 @@ for (const [sym, a] of [["HYPE", zeroAddress], ["USDC", "0x7D29d8047B905000459c0
 
 const before = { gloamVault: cfg.gloamVault, memoBoard: cfg.memoBoard };
 Object.assign(cfg, { gloamVault: vault, gloamVaultBlock: Number(block), memoBoard: memo, poseidon, verifier, shieldVerifier });
-cfg._gloamVault = `Set by use-gloam-vault.mjs on ${new Date().toISOString().slice(0, 10)}${standin && standin.gloamVault.toLowerCase() === vault.toLowerCase() ? ": Cloak's stand-in running Gloam's mainnet vault code (deployments/elysium-testnet-gloam-standin.json)" : ""}. Before: ${before.gloamVault}.`;
+cfg._gloamVault = `Set by use-gloam-vault.mjs on ${new Date().toISOString().slice(0, 10)}${standin && standin.gloamVault.toLowerCase() === vault.toLowerCase() ? ": Cloak's test vault on Gloam's open-source code (deployments/elysium-testnet-test-vault.json)" : ""}. Before: ${before.gloamVault}.`;
 writeFileSync(cfgPath, JSON.stringify(cfg, null, 2) + "\n");
 console.log(`\n${cfgPath}: Gloam's vault ${before.gloamVault} -> ${vault}, memo board ${before.memoBoard} -> ${memo}, verifiers ${verifier} / ${shieldVerifier}, Poseidon ${poseidon}`);
 console.log("Next: the partner deploy with this config, then the SDK entry (see the top of this file).");

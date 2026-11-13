@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "../router";
 import { EXPLORER, GITHUB, Icon } from "../ui";
-import { CHAIN_ID, DEPLOYMENT, GLOAM, chain } from "../config";
+import { CHAIN_ID, DEPLOYMENT, GLOAM, IS_MAINNET, MAIN_VAULT, MAIN_VAULT_RUN_BY, MAIN_VAULT_SHORT, MEMO_BOARD, chain } from "../config";
 
 /** Cloak v2 on Gloam: the contracts and rules this build runs on. */
 const G = GLOAM;
@@ -172,8 +172,8 @@ export function Docs() {
           <div className="crumb" style={{ marginTop: 60 }}>Privacy</div>
           <h2 id="private-trading">Private trading</h2>
           <><>
-              <p>Private balances live in shielded vaults that all run Gloam's audited vault code, circuits and final ceremony keys. {G?.router ? <>HYPE, USDC and the tokens Gloam lists sit in <b>Gloam's main vault</b>, which Gloam runs. Cloak launch tokens sit in <b>Cloak's launch vault</b>, and other projects' tokens Cloak lists sit in <b>Cloak's ecosystem vault</b>.</> : <>USDC sits in <b>Gloam's main vault</b>, which Gloam runs. HYPE and launch tokens sit in <b>Cloak's launch vault</b>.</>} A balance is a set of private notes, and your browser proves each spend without saying which notes are yours.</p>
-              <p><b>Which vaults are whose.</b> Cloak's launch vault{G?.ecosystemVault ? " and ecosystem vault are" : " is"} Cloak's own. Cloak deployed {G?.ecosystemVault ? "them" : "it"}, Cloak's wallet controls {G?.ecosystemVault ? "them" : "it"}, and Cloak decides what goes in. Gloam doesn't run {G?.ecosystemVault ? "them" : "it"} and isn't responsible for {G?.ecosystemVault ? "them" : "it"}. {G?.ecosystemVault ? "They use" : "It uses"} Gloam's vault code unchanged, plus one addition that lets in a settled Cloak launch{G?.ecosystemVault ? " or a token Cloak lists" : ""}. Gloam's main vault is Gloam's.</p>
+              <p>Private balances live in shielded vaults that all run Gloam's audited vault code, circuits and final ceremony keys. {G?.router ? <>HYPE, USDC and the tokens {MAIN_VAULT_RUN_BY} lists sit in <b>{MAIN_VAULT}</b>, which {MAIN_VAULT_RUN_BY} runs. Cloak launch tokens sit in <b>Cloak's launch vault</b>, and other projects' tokens Cloak lists sit in <b>Cloak's ecosystem vault</b>.</> : <>USDC sits in <b>{MAIN_VAULT}</b>, which {MAIN_VAULT_RUN_BY} runs. HYPE and launch tokens sit in <b>Cloak's launch vault</b>.</>} A balance is a set of private notes, and your browser proves each spend without saying which notes are yours.</p>
+              <p><b>Which vaults are whose.</b> Cloak's launch vault{G?.ecosystemVault ? " and ecosystem vault are" : " is"} Cloak's own. Cloak deployed {G?.ecosystemVault ? "them" : "it"}, Cloak's wallet controls {G?.ecosystemVault ? "them" : "it"}, and Cloak decides what goes in. Gloam doesn't run {G?.ecosystemVault ? "them" : "it"} and isn't responsible for {G?.ecosystemVault ? "them" : "it"}. {G?.ecosystemVault ? "They use" : "It uses"} Gloam's vault code unchanged, plus one addition that lets in a settled Cloak launch{G?.ecosystemVault ? " or a token Cloak lists" : ""}.{IS_MAINNET ? " Gloam's main vault is Gloam's." : " Cloak's test vault is Cloak's own copy of Gloam's open-source vault, run by Cloak on testnet only. It isn't Gloam's, and Gloam doesn't run it."}</p>
               <ol>
                 <li><b>Unlock</b>. You sign one message and your keys are made from it on this device.</li>
                 <li><b>Shield</b>. You deposit HYPE, USDC or a launch token. It's the only public step.</li>
@@ -204,7 +204,7 @@ export function Docs() {
           </ul>
           <p>Everything sits after the # in the link, which browsers never send to a server, so the details stay between the people who share it. A claim link is like cash: anyone who has it can claim it. The links you make are kept encrypted in your browser, under Your links.</p>
           <h2 id="private-usdc">Private USDC</h2>
-          <><p>USDC lives in Gloam's main vault, shared with everyone who uses Gloam, so it hides in the biggest crowd. Shield it on Portfolio (the first time asks for an approval), then send it privately to any <code>cloak:</code> address or withdraw it to a fresh address. Like every private vault it has caps for now, per deposit and in total. A bigger deposit goes in as several, one signature each. The caps go up as Cloak and Gloam grow.</p></>
+          <><p>USDC lives in {MAIN_VAULT}{IS_MAINNET ? ", shared with everyone who uses Gloam, so it hides in the biggest crowd" : ""}. Shield it on Portfolio (the first time asks for an approval), then send it privately to any <code>cloak:</code> address or withdraw it to a fresh address. Like every private vault it has caps for now, per deposit and in total. A bigger deposit goes in as several, one signature each. The caps go up as Cloak and Gloam grow.</p></>
           <p>Elysium's USDC is bridged from Circle's USDC on HyperEVM. Circle can freeze the USDC held by the bridge, and the bridge operator can upgrade the Elysium USDC contract. That applies to everyone holding USDC on Elysium, inside Cloak or not.</p>
 
           <h2 id="what-stays-private">What stays private</h2>
@@ -275,8 +275,8 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
             <>
               <table>
                 <tbody>
-                  <tr><td>Gloam's main vault, run by Gloam ({G.router ? "HYPE, USDC" : "USDC"})</td><td><a href={A(G.gloamVault)} target="_blank" rel="noreferrer"><code>{G.gloamVault}</code></a></td></tr>
-                  <tr><td>Gloam's memo board (how a payment's recipient finds it)</td><td><a href={A(G.memoBoard)} target="_blank" rel="noreferrer"><code>{G.memoBoard}</code></a></td></tr>
+                  <tr><td>{MAIN_VAULT}, run by {MAIN_VAULT_RUN_BY} ({G.router ? "HYPE, USDC" : "USDC"}{IS_MAINNET ? "" : ", Gloam's open-source code"})</td><td><a href={A(G.gloamVault)} target="_blank" rel="noreferrer"><code>{G.gloamVault}</code></a></td></tr>
+                  <tr><td>{MEMO_BOARD} (how a payment's recipient finds it)</td><td><a href={A(G.memoBoard)} target="_blank" rel="noreferrer"><code>{G.memoBoard}</code></a></td></tr>
                   <tr><td>CloakLaunchVault, Cloak's own, run by Cloak ({G.router ? "launch tokens" : "HYPE and launch tokens"}, on Gloam's code and keys)</td><td><a href={A(G.launchVault)} target="_blank" rel="noreferrer"><code>{G.launchVault}</code></a></td></tr>
                   {G.ecosystemVault && <tr><td>CloakEcosystemVault, Cloak's own, run by Cloak (other projects' tokens Cloak lists, on Gloam's code and keys)</td><td><a href={A(G.ecosystemVault)} target="_blank" rel="noreferrer"><code>{G.ecosystemVault}</code></a></td></tr>}
                   {G.router && <tr><td>CloakRouterV4 (private swaps between the vaults)</td><td><a href={A(G.router)} target="_blank" rel="noreferrer"><code>{G.router}</code></a></td></tr>}
@@ -306,7 +306,7 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
               <table>
                 <tbody>
                   <tr><td>Deposits and private sends</td><td>Free</td></tr>
-                  <tr><td>Withdrawals, private buys, batch orders and bids from Gloam's vault</td><td>0.5% of what leaves the vault (Gloam's vault fee, part of which Gloam shares with Cloak)</td></tr>
+                  <tr><td>Withdrawals, private buys, batch orders and bids from {MAIN_VAULT_SHORT}</td><td>{IS_MAINNET ? "0.5% of what leaves the vault (Gloam's vault fee, part of which Gloam shares with Cloak)" : "0.5% of what leaves the vault (the test vault's fee, the same as Gloam's on mainnet)"}</td></tr>
                   {G?.router && <tr><td>Private sales out of Cloak's vaults</td><td>0.25% of what the sale brings, in HYPE or USDC, to Cloak (Cloak's own vaults charge nothing on the way out)</td></tr>}
                   <tr><td>Launch fee</td><td>1.5% of a successful raise, taken at settlement. Nothing if the launch doesn't fill (hard cap 3%)</td></tr>
                   <tr><td>Relayer</td><td>Free for you. Cloak pays the gas</td></tr>
@@ -332,7 +332,7 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
               <tr><td>Claiming</td><td>Bidders claim tokens and refunds, and creators withdraw their raise, whenever they like. Nothing expires, and the bell in the app shows what's waiting</td><td>App</td></tr>
               <tr><td>Private swap slippage and deadline</td><td>1% and 10 minutes by default</td><td>App</td></tr>
               <tr><td>Batch round</td><td>60 s, priced at the average over at least a round, 4% of the pool per side, 2% price guard, 5% impact guard, refunds after 10 min</td><td>Contract</td></tr>
-              <tr><td>Fees</td><td>0.5% on what leaves Gloam's vault (Gloam's), 0.25% on private sales out of Cloak's vaults (cap 1%), 1.5% of a successful raise (cap 3%), deposits and sends free</td><td>Owner, raising waits 3 days</td></tr>
+              <tr><td>Fees</td><td>0.5% on what leaves {MAIN_VAULT_SHORT}{IS_MAINNET ? " (Gloam's)" : ""}, 0.25% on private sales out of Cloak's vaults (cap 1%), 1.5% of a successful raise (cap 3%), deposits and sends free</td><td>Owner, raising waits 3 days</td></tr>
               <tr><td>Beta caps</td><td>See Fees & caps. Withdrawals never capped</td><td>Config</td></tr>
               <tr><td>Relay fee</td><td>None, Cloak pays the gas</td><td>Keeper</td></tr>
             </tbody>

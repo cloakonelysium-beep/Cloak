@@ -1,0 +1,35 @@
+{
+  "name": "elysium-testnet-test-vault",
+  "chainId": 99801,
+  "rpcUrl": "https://testnet-rpc.elysium.kinetiq.xyz",
+  "_why": "Cloak's test vault on Elysium testnet: Cloak's own copy of Gloam's open-source (MIT) guarded vault, with HYPE, USDC and KNTQ. Gloam agreed to it on Nov 13 on two conditions: testnet only, and never labelled as Gloam's vault anywhere users can see it. Deployed and controlled by the testnet main wallet.",
+  "deployer": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "_deployer": "The testnet main wallet: it deploys the vault and runs its guard. The script checks DEPLOYER_PK is this address.",
+  "poseidon": "0xa404af78405ab37e37958ee4c96870182625440a",
+  "_poseidon": "The PoseidonT3 already on testnet (Cloak's earlier Gloam instance and the launch vault use it). Its code is checked by Gloam's deploy.",
+  "usdc": "0x7D29d8047B905000459c0E80c34a26CeedcB47b2",
+  "_usdc": "Kinetiq's test USDC (6 decimals).",
+  "kntq": {
+    "token": "0x2bd92af06c47a8ad26101a7e2084aff66b5f2c1f"
+  },
+  "_kntq": "The test KNTQ deployed Nov 13 (18 decimals, anyone can mint, no owner). Drop `token` to deploy a fresh one.",
+  "hype": {
+    "perDeposit": "12000000000000000000",
+    "total": "600000000000000000000"
+  },
+  "kntqLimits": {
+    "perDeposit": "1400000000000000000000",
+    "total": "70000000000000000000000"
+  },
+  "_limits": "HYPE and KNTQ at the limits Gloam has queued on its Elysium mainnet vault (12 / 600 HYPE, 1,400 / 70,000 KNTQ), so tests run mainnet's numbers.",
+  "usdcLimits": {
+    "perDeposit": "500000000",
+    "total": "25000000000"
+  },
+  "_usdcLimits": "Gloam's own testnet USDC limits (500 per deposit, 25,000 in total), as in its DeployElysiumTestnet script.",
+  "withdrawFeeBps": 50,
+  "feeRecipient": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "_withdrawFee": "0.5%, Gloam's mainnet cash-out fee, collected by the testnet main wallet.",
+  "controller": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "_controller": "The testnet main wallet runs the guard from the start (it is also the deployer, so nothing waits on an acceptance)."
+}
