@@ -85,8 +85,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/sdk
       '@gloamtrade/sdk':
-        specifier: 0.6.0
-        version: 0.6.0(snarkjs@0.7.5)(typescript@5.6.3)(zod@4.6.7)
+        specifier: 0.7.0
+        version: 0.7.0(snarkjs@0.7.5)(typescript@5.6.3)(zod@4.6.7)
       circomlibjs:
         specifier: 0.1.7
         version: 0.1.7
@@ -122,8 +122,8 @@ importers:
   packages/sdk:
     dependencies:
       '@gloamtrade/sdk':
-        specifier: 0.6.0
-        version: 0.6.0(snarkjs@0.7.5)(typescript@5.6.3)(zod@4.6.7)
+        specifier: 0.7.0
+        version: 0.7.0(snarkjs@0.7.5)(typescript@5.6.3)(zod@4.6.7)
       '@noble/ciphers':
         specifier: 1.0.0
         version: 1.0.0
@@ -493,8 +493,8 @@ packages:
   '@fontsource-variable/jetbrains-mono@5.1.0':
     resolution: {integrity: sha512-Hk2HCSep+EmX6nSPNTS3goN0V0TOigdVWcGdnxTVIZIa89HtZAe/zhzFEM1iBXrBShilPwKEdjANHa5plSi38A==}
 
-  '@gloamtrade/sdk@0.6.0':
-    resolution: {integrity: sha512-MdcJuIOxRjfMvEY/xSPYsorRnabCoK09TBXUCHazY14VF3KEIvu6UbtQyr6U8OSu78ceYB/UyCcEk9gNxSiqtw==}
+  '@gloamtrade/sdk@0.7.0':
+    resolution: {integrity: sha512-lnU5fll3c6Tazid8h5YkOGeMtsO/Wv1HZ9VdiEQYW7mBNvfyMWqFrT8Xpw3hYa41fnEZzksn8YFJuXlAzywYCw==}
     peerDependencies:
       snarkjs: '*'
     peerDependenciesMeta:
@@ -2842,7 +2842,7 @@ snapshots:
 
   '@fontsource-variable/jetbrains-mono@5.1.0': {}
 
-  '@gloamtrade/sdk@0.6.0(snarkjs@0.7.5)(typescript@5.6.3)(zod@4.6.7)':
+  '@gloamtrade/sdk@0.7.0(snarkjs@0.7.5)(typescript@5.6.3)(zod@4.6.7)':
     dependencies:
       circomlibjs: 0.1.7
       viem: 2.55.2(typescript@5.6.3)(zod@4.6.7)

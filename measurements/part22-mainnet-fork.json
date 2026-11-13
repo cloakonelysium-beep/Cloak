@@ -1,16 +1,16 @@
 {
   "deploy": {
-    "partnerCostHype": "0.031034928737450065",
-    "kntq": "KNTQ: HYPE pool 0.3% / 60, 41234.972011134213119266 HYPE in range, 207.0821 KNTQ per HYPE"
+    "partnerCostHype": "0.031176448907168447",
+    "kntq": "KNTQ: HYPE pool 0.3% / 60, 7077.177592462991783348 HYPE in range, 250.4707 KNTQ per HYPE"
   },
   "trades": {
-    "usdc900ToHype": "12.266405590778966991",
+    "usdc900ToHype": "12.263467810893886587",
     "pieces": 2,
-    "hypeToUsdc": "70.708741",
-    "usdcToKntq": "280.186899309541554308",
-    "kntqToUsdc": "47.456224",
-    "usdcToHype": "0.68198603016709342"
+    "hypeToUsdc": "70.64864",
+    "usdcToKntq": "339.115656102425767501",
+    "kntqToUsdc": "47.462346",
+    "usdcToHype": "0.682507476582395326"
   },
-  "forkBlock": 4310205,
-  "seconds": 86
+  "forkBlock": 5897594,
+  "seconds": 98
 }

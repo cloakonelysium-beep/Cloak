@@ -49,6 +49,16 @@ export const GLOAM_MEMO_ABI = parseAbi([
 ]);
 const ERC20_APPROVE = parseAbi(["function approve(address spender, uint256 amount) returns (bool)"]);
 
+/**
+ * A fixed gas limit for a deposit on Elysium (testnet and mainnet), as Gloam's app sets since Nov 10. A token deposit
+ * goes out right after its approval lands, and Elysium makes a block every 100 ms: a wallet that estimates gas on a node
+ * that hasn't seen the approval yet gets a revert on the token pull and shows an RPC error before anything is sent.
+ * With the limit given the wallet skips its estimate. shieldBound uses about 1.15M; 1.9M is Gloam's limit.
+ */
+export function depositGas(chainId: number | undefined): bigint | undefined {
+  return chainId === 99801 || chainId === 99901 ? 1_900_000n : undefined;
+}
+
 /** A Groth16 prover for one circuit: circuit input in, packed proof bytes out (Gloam's Prover shape). */
 export type GloamProver = (input: Record<string, string | string[]>) => Promise<{ proofBytes: Hex }>;
 
@@ -533,9 +543,9 @@ export class GloamCore implements PrivateCore {
     onStatus("Proving the deposit");
     const { proofBytes } = await this.cfg.provers.shield({ commitment: n.commitment.toString(), amount: amount.toString(), asset: assetField(asset).toString(), secret: n.secret.toString() });
     const hashes: Hex[] = [];
-    const send = async (to: Address, data: Hex, value = 0n) => {
+    const send = async (to: Address, data: Hex, value = 0n, gas?: bigint) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const h = await wallet.sendTransaction({ account: wallet.account!, chain: wallet.chain, to, data, value } as any);
+      const h = await wallet.sendTransaction({ account: wallet.account!, chain: wallet.chain, to, data, value, ...(gas ? { gas } : {}) } as any);
       const r = await pub.waitForTransactionReceipt({ hash: h });
       if (r.status !== "success") throw new Error(`deposit step reverted (${h})`);
       hashes.push(h);
@@ -546,7 +556,7 @@ export class GloamCore implements PrivateCore {
     }
     onStatus("Depositing");
     // The deposit itself is public (it comes from the wallet); the memo goes through the relayer like everything else.
-    await send(this.cfg.pool, encodeFunctionData({ abi: GLOAM_POOL_ABI, functionName: "shieldBound", args: [asset, amount, h32(n.commitment), proofBytes] }), asset === zeroAddress ? amount : 0n);
+    await send(this.cfg.pool, encodeFunctionData({ abi: GLOAM_POOL_ABI, functionName: "shieldBound", args: [asset, amount, h32(n.commitment), proofBytes] }), asset === zeroAddress ? amount : 0n, depositGas(wallet.chain?.id));
     const tickets = [await this.selfTicket(n)];
     let memo: Hex | null = null;
     try {

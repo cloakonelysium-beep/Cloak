@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { formatEther, parseAbi } from "viem";
-import { ANVIL_KEYS, REPO, clients, sendAndLog, startAnvil } from "./lib.mjs";
+import { ANVIL_KEYS, REPO, clients, refuseRedeploy, sendAndLog, startAnvil } from "./lib.mjs";
 
 const REHEARSE = process.argv.includes("--rehearse");
 const i = process.argv.indexOf("--config");
@@ -44,6 +44,7 @@ const addr = me.account.address;
 try {
   if ((await pub.getChainId()) !== cfg.chainId) throw new Error(`the RPC is chain ${await pub.getChainId()}, the config says ${cfg.chainId}`);
   if (!REHEARSE && addr.toLowerCase() !== cfg.deployer.toLowerCase()) throw new Error(`DEPLOYER_PK is ${addr}, the config expects ${cfg.deployer}`);
+  await refuseRedeploy(pub, join(REPO, `deployments/${cfg.name}.json`), ["dropFactory", "spotBook", "escrowDropFactory"], REHEARSE);
   // the config must be v2's: a live CloakConfig with an owner
   const owner = await pub.readContract({ address: cfg.config, abi: parseAbi(["function owner() view returns (address)"]), functionName: "owner" });
   const start = await pub.getBalance({ address: addr });

@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, isAbsolute } from "node:path";
 import { formatEther } from "viem";
-import { REPO, clients, sendAndLog } from "./lib.mjs";
+import { REPO, clients, refuseRedeploy, sendAndLog } from "./lib.mjs";
 import { checkMaker, deployMaker, doorCall, planGloak, preflight, printPlan, readLaunch, zoneOf } from "./gloak.mjs";
 
 const arg = (k) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : null);
@@ -35,6 +35,8 @@ if (!pk && !PLAN_ONLY) throw new Error("set DEPLOYER_PK (a fresh key that pays f
 const me = clients(rpcUrl, pk ?? "0x" + "11".repeat(32), cfg.chainId);
 const pub = me.pub;
 if ((await pub.getChainId()) !== cfg.chainId) throw new Error(`the RPC is chain ${await pub.getChainId()}, the config says ${cfg.chainId}`);
+// GLOAK's door works once anyway; this also stops a second maker on mainnet (reusing the recorded one with --maker is fine)
+await refuseRedeploy(pub, arg("--out") ? path(arg("--out")) : join(REPO, `deployments/${cfg.name}.json`), ["maker", "token", "auction"], PLAN_ONLY || Boolean(arg("--maker")));
 
 const zone = zoneOf(partner);
 const treasury = fac.treasury;

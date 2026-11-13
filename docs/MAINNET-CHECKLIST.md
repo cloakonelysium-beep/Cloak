@@ -61,6 +61,9 @@ Four wallets. Each is created fresh, never reused from v1 or testnet, and never 
 ## 4. Deploy (private, in this order)
 
 Each step prints what it deployed and reads it back.
+Each step also runs once: on Elysium mainnet the factory, partner, GLOAK and drops scripts stop before sending anything
+if their record in `deployments/` already names contracts with code on chain (`refuseRedeploy` in `e2e-gloam/lib.mjs`,
+after Gloam's own guard of Nov 10). `CLOAK_ALLOW_REDEPLOY=1` deploys a second set on purpose; fork rehearsals aren't checked.
 - [ ] **Memo board** (Monday Nov 16): Gloam's `GloamPayMemo`, unchanged, from the deployer. Record its address and deploy
   block in the mainnet config (`memoBoard`), then send both to Gloam so they can match the bytecode and use the same board.
 - [ ] **Launch factory and hook:**

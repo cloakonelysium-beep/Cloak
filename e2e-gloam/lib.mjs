@@ -141,6 +141,26 @@ export async function deployPoseidon({ pub, wallet }) {
 }
 
 /** Runs a forge script from Gloam's own project root, so their contracts compile exactly as upstream. */
+/**
+ * A mainnet deploy runs once per chain, as Gloam's own deploys do since Nov 10 (their script/RedeployGuard.sol): a
+ * second run would put a second set of contracts next to the live ones, and the site, the keeper and users would then
+ * disagree about which is real. On Elysium mainnet (99901), before anything is sent, this stops when the record the
+ * script would write already exists and any of `fields` in it has code on chain. CLOAK_ALLOW_REDEPLOY=1 deploys again
+ * on purpose (a new set after an incident). Testnets and fork rehearsals (`skip`) are never checked.
+ */
+export async function refuseRedeploy(pub, recordPath, fields, skip = false) {
+  if (skip || process.env.CLOAK_ALLOW_REDEPLOY === "1") return;
+  if ((await pub.getChainId()) !== 99901 || !existsSync(recordPath)) return;
+  const rec = JSON.parse(readFileSync(recordPath, "utf8"));
+  for (const f of fields) {
+    const a = rec[f];
+    if (!/^0x[0-9a-fA-F]{40}$/.test(a ?? "")) continue;
+    if (((await pub.getCode({ address: a })) ?? "0x") !== "0x") {
+      throw new Error(`already deployed on Elysium mainnet: ${f} ${a} in ${recordPath} has code. Nothing was sent. Set CLOAK_ALLOW_REDEPLOY=1 only to deploy a second set on purpose.`);
+    }
+  }
+}
+
 export function forgeGloam(scriptPath, contract, rpcUrl, env) {
   const out = execFileSync(
     "forge",
@@ -183,7 +203,9 @@ export async function deployGloamStack({ rpcUrl, pk, poseidon, assets, feeBps = 
     FEE_RECIPIENT: feeRecipient,
     GUARD_CONTROLLER: controller,
     GUARD_CONTROLLER_EOA: "1",
-    ...(standinOnMainnetFork ? { STANDIN_ON_MAINNET_FORK: "1" } : {}),
+    // on a fork of mainnet, Gloam's deploy refuses a second vault where its record names one (script/RedeployGuard.sol):
+    // the stand-in there is on purpose
+    ...(standinOnMainnetFork ? { STANDIN_ON_MAINNET_FORK: "1", GLOAM_ALLOW_REDEPLOY: "1" } : {}),
   };
   const t = performance.now();
   const out = forgeGloam(join(OUR_CONTRACTS, "gloam-root/DeployCloakGloam.s.sol"), "DeployCloakGloam", rpcUrl, env);
