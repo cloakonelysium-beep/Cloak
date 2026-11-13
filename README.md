@@ -34,7 +34,7 @@ Around the vaults sit small escrows that turn a Gloam proof into an action:
 | **CloakFundsGate**, **CloakReceiptCheck** | Allocation gates and receipts, proved with Gloam's own holder circuit |
 | **CloakWHYPE** | The routers' own fixed WHYPE (Elysium's is upgradeable) |
 
-**Community:** [t.me/cloakdesk](https://t.me/cloakdesk) on Telegram, [@cloakonelysium](https://x.com/cloakonelysium) on X.
+**Community:** [t.me/cloakdesk](https://t.me/cloakdesk) on Telegram, [@cloakonelysium](https://x.com/cloakonelysium) on X, [Cloak](https://www.linkedin.com/company/oncloak) on LinkedIn.
 
 ## Mainnet (Elysium, chain `99901`): coming, in stages
 
