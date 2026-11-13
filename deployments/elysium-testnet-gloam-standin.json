@@ -1,6 +1,6 @@
 {
  "chainId": 99801,
- "note": "Cloak's stand-in for Gloam's vault on Elysium testnet: Gloam's mainnet vault code, unmodified, deployed by Gloam's own guarded mainnet deploy. HYPE, test USDC and test KNTQ listed. Replaced by Gloam's own testnet vault with use-gloam-vault.mjs once there is one.",
+ "note": "Cloak's first test vault on Elysium testnet (Nov 13, from the tester wallet): Cloak's own copy of Gloam's open-source vault code, unmodified. Testnet only, run by Cloak, not Gloam's vault. To be replaced by deployments/elysium-testnet-test-vault.json from the testnet main wallet.",
  "deployer": "0xE184Cd85DdDBcbaFE742bC241a383654eCBD04E4",
  "gloamVault": "0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370",
  "gloamVaultBlock": 28255692,

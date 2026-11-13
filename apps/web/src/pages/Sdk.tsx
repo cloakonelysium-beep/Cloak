@@ -76,7 +76,7 @@ const API: [string, [string, string][]][] = [
     ["getAuction · demandCurve · bidsOf · listLaunches", "Read state: phase, clearing price, the revealed demand per price level, a bidder's bids."],
   ]],
   ["GloamPrivate · private balances", [
-    ["GloamPrivate.unlock(wallet, config)", "Open the private account from one EIP-712 signature bound to this chain only, on every vault: Gloam's main vault and Cloak's own. The same wallet always restores it."],
+    ["GloamPrivate.unlock(wallet, config)", "Open the private account from one EIP-712 signature bound to this chain only, on every vault: the main vault (Gloam's, on mainnet) and Cloak's own. The same wallet always restores it."],
     ["claimPrivately(wallet, auction, bidId)", "Claim a won sealed bid to the wallet and shield it, so what you do with the tokens next can't be linked to the bid."],
     ["bidPrivately(auction, …) · finishPrivateBids(auction)", "A sealed bid paid from the private balance, and its tokens and refund back into it once the launch settles."],
     ["shieldHype · shieldToken(wallet, …, amount)", "Public HYPE or a token → a private note."],

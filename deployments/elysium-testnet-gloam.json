@@ -1,6 +1,6 @@
 {
   "chainId": 99801,
-  "note": "Cloak v2 next to Gloam's vault: Cloak's launch vault under its own VaultOwnerGuard (controller: the Safe, once it accepts) and Cloak's escrows. Gloam's vault, memo board and verifiers are Gloam's.",
+  "note": "Cloak v2 on testnet, next to Cloak's test vault (Cloak's own copy of Gloam's open-source vault code, testnet only, not Gloam's): Cloak's launch vault under its own VaultOwnerGuard and Cloak's escrows.",
   "block": 28280687,
   "gloamVaultBlock": 28255692,
   "gloamVault": "0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370",
