@@ -7,8 +7,9 @@
  "_gloamVaultBlock": "The block just before the vault's deploy: apps rebuild its tree from here.",
  "guard": "0x5851D76992Cbc23DE75c675bEe581CbfA9Dc5F97",
  "guardController": {
-  "now": "0xE184Cd85DdDBcbaFE742bC241a383654eCBD04E4",
-  "pending": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6"
+  "now": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "pending": "0x0000000000000000000000000000000000000000",
+  "_acceptedAt": "Nov 13, the main wallet's acceptController(): tx 0x9ab4bc9e6876c4b13e19078187efe9fcbfe2f6b1d3f042882dbbd7ed08b30f5c, block 28286241"
  },
  "memoBoard": "0x0ffd9BC4767b5082409615e842CD7F0adC570B44",
  "poseidon": "0xa404af78405ab37e37958ee4c96870182625440a",

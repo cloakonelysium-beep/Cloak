@@ -82,10 +82,14 @@ The testnet keeper, the same job as mainnet's.
 - Funding: about 0.3 testnet HYPE from the testnet main wallet. Anything left is sent back to the main wallet after the test.
 - Nov 12: 0.2785 HYPE sent back to the main wallet (tx `0x6db0cf5e…25db3e8`); 0.005 kept for gas.
 - Nov 13: deployed the testnet stand-in for Gloam's vault (`0x3ABB…6370`), a test KNTQ (`0x2bd9…2c1f`) and the partner
-  contracts around them, for 0.0038 HYPE in all (docs/TESTNET-REDEPLOY.md). **Until the main wallet accepts**, it is
-  the controller of three guards: the stand-in's `0x5851…5F97`, the launch vault's `0x7d6b…3d12` and the ecosystem
-  vault's `0x5324…91ea`. Control is already offered to the main wallet; once it calls `acceptController()` on each,
-  the tester holds no role again. About 0.001 HYPE left.
+  contracts around them, for 0.0038 HYPE in all (docs/TESTNET-REDEPLOY.md). It was left as the controller of three
+  guards:
+  - The stand-in's guard `0x5851…5F97`: **no longer.** The main wallet accepted control on Nov 13 (tx
+    `0x9ab4bc9e6876c4b13e19078187efe9fcbfe2f6b1d3f042882dbbd7ed08b30f5c`, block 28286241), so the tester holds no role
+    there.
+  - The launch vault's guard `0x7d6b…3d12` and the ecosystem vault's `0x5324…91ea`: their contracts were replaced the
+    same day by the redeploy after the GLOAK audit and are no longer used, so their control wasn't taken over.
+  - About 0.001 HYPE left.
 
 ## Not Cloak's
 
