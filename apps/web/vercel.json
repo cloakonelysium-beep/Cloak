@@ -3,7 +3,7 @@
   "buildCommand": "cd ../.. && pnpm --filter @cloakely/sdk build && pnpm --filter @cloakely/mcp build && pnpm --filter @cloakely/web build",
   "outputDirectory": "dist",
   "framework": null,
-  "ignoreCommand": "case \"$VERCEL_GIT_COMMIT_REF\" in claude/*) exit 0;; esac; cd ../.. && P=\"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" && git cat-file -e \"$P\" 2>/dev/null || exit 1; git diff --quiet \"$P\" HEAD -- apps/web packages pnpm-lock.yaml package.json pnpm-workspace.yaml deployments",
+  "ignoreCommand": "sh scripts/vercel-ignore.sh",
   "rewrites": [
     {
       "source": "/claim",
