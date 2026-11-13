@@ -28,7 +28,7 @@ import { join } from "node:path";
 import { encodeAbiParameters, encodeFunctionData, formatEther, keccak256, parseAbi, toHex, zeroAddress } from "viem";
 import { createGloamLoop } from "../services/keeper/gloamLoop.mjs";
 import { LV_ABI, checkLaunchVault } from "./stack.mjs";
-import { ANVIL_KEYS, ELYSIUM_TESTNET_RPC, REPO, clients, gloamArtifact, ourArtifact, sendAndLog, startAnvil } from "./lib.mjs";
+import { ANVIL_KEYS, ELYSIUM_TESTNET_RPC, REPO, clients, gloamArtifact, ourArtifact, refuseRedeploy, sendAndLog, startAnvil } from "./lib.mjs";
 
 const REHEARSE = process.argv.includes("--rehearse");
 const cfgPath = process.argv[process.argv.indexOf("--config") + 1];
@@ -117,6 +117,7 @@ async function plainPool(pub, poolManager, key) {
 try {
   // checks before anything is sent
   if ((await pub.getChainId()) !== cfg.chainId) throw new Error(`the RPC is chain ${await pub.getChainId()}, the config says ${cfg.chainId}`);
+  await refuseRedeploy(pub, OUT ?? join(REPO, `deployments/${cfg.name}.json`), ["launchVault", "router", "batcherV4"], REHEARSE);
   for (const k of ["gloamVault", "memoBoard", "poseidon", "verifier", "shieldVerifier", "factory", "poolManager", "v4Hook", ...(DEPLOY_WHYPE ? [] : ["whype"])]) {
     if (((await pub.getCode({ address: cfg[k] })) ?? "0x") === "0x") throw new Error(`config: ${k} (${cfg[k]}) has no code on this chain`);
   }

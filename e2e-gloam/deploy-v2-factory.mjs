@@ -23,7 +23,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { formatEther } from "viem";
 import { deployV2Factory } from "./v2factory.mjs";
-import { ANVIL_KEYS, ELYSIUM_TESTNET_RPC, REPO, clients, startAnvil } from "./lib.mjs";
+import { ANVIL_KEYS, ELYSIUM_TESTNET_RPC, REPO, clients, refuseRedeploy, startAnvil } from "./lib.mjs";
 
 const REHEARSE = process.argv.includes("--rehearse");
 const cfgPath = process.argv.includes("--config") ? process.argv[process.argv.indexOf("--config") + 1] : null;
@@ -63,6 +63,7 @@ try {
   console.log(`Cloak v2's launch factory, from ${addr} (${formatEther(start)} HYPE)${REHEARSE ? " on a fork" : ""}`);
 
   if ((await pub.getChainId()) !== CHAIN_ID) throw new Error(`the RPC is chain ${await pub.getChainId()}, the config says ${CHAIN_ID}`);
+  await refuseRedeploy(pub, join(REPO, `deployments/${cfg?.name ?? "elysium-testnet-v2-factory"}.json`), ["factory", "config", "v4Hook"], REHEARSE);
   const { config, factory, factoryBlock, hook, vestingDeployer: vd, launchFeeBps, perBid, total, capsOn, hookFees, owner, launchFloors } = await deployV2Factory({
     pub,
     wallet: me.wallet,
