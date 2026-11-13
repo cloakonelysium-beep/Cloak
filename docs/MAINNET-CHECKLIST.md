@@ -214,6 +214,14 @@ Test with a team wallet and 1 to 5 HYPE. For each step, check the result on chai
 
 ## After public launch
 
+- **Migration from v1 to v2**, so v1 users see their HYPE has a clear way across and nobody thinks it went missing:
+  a "Move to v2" flow on the site that finds a user's v1 private balance, withdraws it from the v1 vault and shields it
+  into v2 in one guided step, plus a notice on v1's pages and in the docs. Withdrawals from v1 never close, so nothing
+  is at risk meanwhile; this is about making the way across obvious.
+- **Testnet: a migrate step for redeploys.** Each testnet redeploy points the site at new vaults, so private balances in
+  the old ones stop showing (Nov 13: about 0.5 HYPE of Bob's test HYPE). Add a "balances in earlier vaults" check that
+  lists them and withdraws them, reusing the v1 to v2 flow.
+
 - The audit of Cloak's own contracts (Gloam is asking their reviewer for a quote), then higher bid caps.
 - HYPE caps rising with Gloam, with real usage numbers.
 - $CLOAK (`docs/CLOAK.md`), then `CloakBuyback`.
