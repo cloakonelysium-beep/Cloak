@@ -6,7 +6,7 @@
  * Two ways in, both read at build time:
  *   - a creator wallet (the team's): every drop it creates is verified;
  *   - a drop address: one approved drop, made by anyone.
- * Add to the lists below, or set VITE_VERIFIED_CREATORS / VITE_VERIFIED_DROPS (comma-separated) in the host's settings.
+ * Add to the lists below, or set VITE_VERIFIED_CREATORS_<chain id> / VITE_VERIFIED_DROPS_<chain id> (comma-separated) in the host's settings.
  */
 import { CHAIN_ID } from "./config";
 
@@ -26,8 +26,9 @@ const DROPS: Record<number, string[]> = {
 
 const set = (list: string[], extra?: string) =>
   new Set([...list, ...(extra ?? "").split(",")].map((a) => a.trim().toLowerCase()).filter((a) => /^0x[0-9a-f]{40}$/.test(a)));
-const creators = set(CREATORS[CHAIN_ID] ?? [], env.VITE_VERIFIED_CREATORS);
-const drops = set(DROPS[CHAIN_ID] ?? [], env.VITE_VERIFIED_DROPS);
+// per network (VITE_VERIFIED_CREATORS_99901 / _99801), so one network's list never shows on the other
+const creators = set(CREATORS[CHAIN_ID] ?? [], env[`VITE_VERIFIED_CREATORS_${CHAIN_ID}`]);
+const drops = set(DROPS[CHAIN_ID] ?? [], env[`VITE_VERIFIED_DROPS_${CHAIN_ID}`]);
 
 /** Why a drop is verified ("team" listed it, or it was "approved"), or null. */
 export function verifiedBy(drop: string, creator: string): "team" | "approved" | null {
