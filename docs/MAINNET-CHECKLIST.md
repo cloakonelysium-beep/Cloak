@@ -11,7 +11,7 @@ Who does it: **Bob**, **Claude**, or **Gloam**. The rehearsal of every deploy st
 - [ ] **Bob:** send the reply to Gloam, with the treasury address filled in (from step 2).
 - [x] **Gloam:** the memo board. Gloam's CEO (Nov 12): Cloak deploys `GloamPayMemo` unchanged on Monday Nov 16 and sends
   Gloam the address and deploy block; Gloam checks the bytecode and points their app at the same board (MAINNET-DECISIONS H3).
-- [ ] **Gloam:** HYPE and KNTQ open in their vault on Thursday Nov 12 (HYPE 12 / 600, KNTQ 1,400 / 70,000). **Claude** checks on chain that it happened.
+- [x] **Gloam:** HYPE and KNTQ open in their vault (HYPE 12 / 600, KNTQ 1,400 / 70,000). Executed the morning of Nov 13; checked on chain.
 - [x] **Bob:** a backup RPC endpoint (Nov 12): Alchemy, for mainnet (99901) and testnet (99801). Set on Vercel as
   `VITE_RPC_BACKUP_99901` / `VITE_RPC_BACKUP_99801` and on the testnet keeper as `RPC_BACKUP` (dashboard only, it
   carries a key). The mainnet keeper gets the mainnet URL the same way.
@@ -56,7 +56,12 @@ Four wallets. Each is created fresh, never reused from v1 or testnet, and never 
   - `feeRecipient` and `tradeFee.treasury` = the treasury wallet;
   - `memoBoard` = Gloam's, or ours from step 4.
   - Already set: Gloam's vault, verifiers and Poseidon; the trade fee 0.25%; vault fees 0; USDC and KNTQ in Gloam's vault; the ecosystem rules and floors.
-- [ ] **Claude:** rerun part 22 with the final configs on a fork, right before deploying.
+- [x] **Claude:** the final rehearsal (Nov 13), on one fork of mainnet with the real configs and wallet addresses: memo
+  board (code matches Gloam's build), launch factory (0.016 HYPE; the owner wallet accepts its rules), partner deploy
+  (0.031 HYPE; checked against Gloam's real vault, verifiers and pools; the owner wallet takes both guards), then GLOAK's
+  maker and the owner wallet's door call (born with its zone, admin the owner wallet, the router treats it as
+  private-only). About 0.05 HYPE in all. Part 22 (real proofs, trades on the real pools) also passed the same day.
+  `factory` and `v4Hook` now come from the factory record (`factoryRecord`), so nothing is edited by hand between steps.
 
 ## 4. Deploy (private, in this order)
 
@@ -64,8 +69,12 @@ Each step prints what it deployed and reads it back.
 Each step also runs once: on Elysium mainnet the factory, partner, GLOAK and drops scripts stop before sending anything
 if their record in `deployments/` already names contracts with code on chain (`refuseRedeploy` in `e2e-gloam/lib.mjs`,
 after Gloam's own guard of Nov 10). `CLOAK_ALLOW_REDEPLOY=1` deploys a second set on purpose; fork rehearsals aren't checked.
-- [ ] **Memo board** (Monday Nov 16): Gloam's `GloamPayMemo`, unchanged, from the deployer. Record its address and deploy
-  block in the mainnet config (`memoBoard`), then send both to Gloam so they can match the bytecode and use the same board.
+- [ ] **Memo board** (moved up from Monday to the mainnet deploy, Nov 13): Gloam's `GloamPayMemo`, unchanged, from the
+  deployer. `deploy-memo.mjs` checks the code against Gloam's build and writes `memoBoard` into the partner config; send
+  Gloam the address, block and code hash it prints so they can match it and use the same board.
+  ```bash
+  node e2e-gloam/deploy-memo.mjs --config deployments/elysium-mainnet-gloam.input.json --deployer 0xBCB87773362387812532a1403d8F75D4E13F259d
+  ```
 - [ ] **Launch factory and hook:**
   ```bash
   node e2e-gloam/deploy-v2-factory.mjs --config deployments/elysium-mainnet-v2-factory.input.json
