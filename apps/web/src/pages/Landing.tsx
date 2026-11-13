@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "../router";
 import { EXPLORER, Footer, GITHUB, Icon, Logo, Nav, Section } from "../ui";
-import { FACTORY, IS_MAINNET } from "../config";
+import { FACTORY } from "../config";
 
 // each public card has a sealed twin; it turns into it as it crosses the Cloak line
 const PAIRS = [
@@ -53,7 +53,7 @@ function Demos() {
   return (
     <div className="live-panel">
       <div className="center statement">
-        <h2 className="display-2">Private by default, live on {IS_MAINNET ? "Elysium" : "testnet"}</h2>
+        <h2 className="display-2">Private by default, live on Elysium</h2>
         <p className="lede">Seal a bid, trade from a private balance, hide your size in a batch. These are real contracts on Elysium, and proofs are made in your browser.</p>
         <div style={{ marginTop: 28 }}>
           <div className="seg">
@@ -61,7 +61,7 @@ function Demos() {
             <button className={chain ? "on" : ""} onClick={() => setView("chain")}>What the chain sees</button>
           </div>
         </div>
-        <p className="xs mute" style={{ marginTop: 12 }}>Try the controls. The buttons open the real app{IS_MAINNET ? "" : " on testnet"}.</p>
+        <p className="xs mute" style={{ marginTop: 12 }}>Try the controls. The buttons open the real app.</p>
       </div>
       <div className="demo-grid">
         <div>

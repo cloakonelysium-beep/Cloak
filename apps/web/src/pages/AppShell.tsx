@@ -13,9 +13,9 @@ function Welcome({ onClose }: { onClose: () => void }) {
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <Logo size={34} />
-        <div className="eyebrow" style={{ marginTop: 18 }}>{IS_MAINNET ? "Cloak on Elysium" : "Cloak testnet"}</div>
+        <div className="eyebrow" style={{ marginTop: 18 }}>Cloak on Elysium</div>
         <h2>Welcome to Cloak</h2>
-        <p className="mute small">{IS_MAINNET ? "Fair launches and private trading on Elysium. This is real money, so start with small amounts while the vault caps are low." : "Fair launches and private trading on Elysium testnet. This is test software with play money, so don't use real funds."}</p>
+        <p className="mute small">Fair launches and private trading on Elysium. Start with small amounts while the vault caps are low.</p>
         <div className="qs">
           <div><span className="n">1</span><span>Connect a wallet. Cloak adds the <b>{chain.name}</b> network for you.</span></div>
           {IS_MAINNET ? (
@@ -247,7 +247,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         <Suspense fallback={<div className="skel" style={{ height: 240 }} aria-busy="true" />}>{children}</Suspense>
         <footer className="app-foot">
-          <span>{IS_MAINNET ? "Cloak on Elysium. Not investment advice." : "Cloak on Elysium testnet. Play money only. Not investment advice."}</span>
+          <span>Cloak on Elysium. Not investment advice.</span>
           <span className="row-flex" style={{ gap: 16 }}>
             <Link to="/docs">Docs</Link>
             <Link to="/demo">Demo</Link>

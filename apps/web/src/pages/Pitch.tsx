@@ -68,7 +68,7 @@ export function Pitch() {
             <div className="brand" style={{ fontSize: 22 }}><Logo inverse size={34} />Cloak</div>
             <h1 className="p-title">Private launches and trades for Elysium.</h1>
             <p className="p-lede">Sealed-bid launches nobody can snipe, and private trading nobody can trace. Built by Bob Labs.</p>
-            <div className="hero-actions"><Link to="/app" className="btn btn-primary btn-lg">Try it on testnet</Link><span className="xs" style={{ color: "var(--deep-soft)" }}>Press ↓ or scroll</span></div>
+            <div className="hero-actions"><Link to="/app" className="btn btn-primary btn-lg">Try it</Link><span className="xs" style={{ color: "var(--deep-soft)" }}>Press ↓ or scroll</span></div>
           </div>
         </Slide>
 
@@ -129,7 +129,7 @@ export function Pitch() {
         </Slide>
 
         <Slide i={6}>
-          <h2 className="p-h">It's live on Elysium testnet</h2>
+          <h2 className="p-h">It's live on Elysium</h2>
           <div className="p-stats">
             <div><b>360+</b><span>contract tests passing, fuzzing included</span></div>
             <div><b>~4 s</b><span>to prove a private trade in the browser</span></div>
@@ -202,7 +202,7 @@ export function Pitch() {
           <img className="close-art" src="/hero/cloaked.webp" alt="" />
           <div className="close-copy">
             <h2 className="p-title">Launch sealed.<br />Trade unseen.</h2>
-            <p className="p-lede">Try a sealed bid, a private swap and a batch order on Elysium testnet. It takes about two minutes.</p>
+            <p className="p-lede">Try a sealed bid, a private swap and a batch order on Elysium. It takes about two minutes.</p>
             <div className="hero-actions" style={{ justifyContent: "center" }}>
               <Link to="/app" className="btn btn-primary btn-lg">Open the app</Link>
               <Link to="/docs" className="btn btn-ghost btn-lg">Read the docs</Link>

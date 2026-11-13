@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { every } from "../every";
 import { erc20Abi, formatEther, formatUnits, isAddress, parseUnits, type Address, type Hex } from "viem";
 import { checkPayee } from "@cloakely/sdk";
-import { ASSETS, CHAIN_ID, GLOAM, IS_MAINNET, txLink } from "../config";
+import { ASSETS, CHAIN_ID, GLOAM, txLink } from "../config";
 import { publicClient } from "../wallet";
 import { hype, tokens, usd } from "../format";
 import { useApp } from "../state";
@@ -146,7 +146,7 @@ export function Portfolio() {
         <div className="row-flex"><span className="soft">Private balance</span><span className="pill ok"><Icon.lock size={12} />Only you</span></div>
         <div className="wallet-total">{!loaded || (px === null && held.some((h) => h.a.kind !== "stable")) ? <Skel w="5.5ch" /> : <span className="fade-in" key={dollars(total)}>{dollars(total)}</span>}</div>
         <p className="xs mute" style={{ margin: 0 }}>
-          {!loaded ? "Syncing your private balance. The first time on a device can take a minute." : !synced ? <span className="updating">Updating from the chain</span> : held.length ? `${held.length} asset${held.length > 1 ? "s" : ""}, valued at HYPE's market price${unpriced ? " (some without a price yet)" : ""}.${IS_MAINNET ? "" : " Testnet balances are play money."}` : "Nothing private yet. Shield HYPE, USDC or CLOAK to start."}
+          {!loaded ? "Syncing your private balance. The first time on a device can take a minute." : !synced ? <span className="updating">Updating from the chain</span> : held.length ? `${held.length} asset${held.length > 1 ? "s" : ""}, valued at HYPE's market price${unpriced ? " (some without a price yet)" : ""}.` : "Nothing private yet. Shield HYPE, USDC or CLOAK to start."}
         </p>
         <div className="wallet-actions">
           <Link to="/app/portfolio/shield" className="btn btn-ink"><Icon.plus size={16} />Shield</Link>
