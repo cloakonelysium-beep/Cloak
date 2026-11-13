@@ -81,7 +81,8 @@ export const deployments: Record<number, CloakDeployment> = {
   // the testnet main wallet (docs/TESTNET-REDEPLOY.md, deployments/elysium-testnet-v2-factory.json); the drops are from
   // Nov 12. `gloamVault` here is Cloak's test vault: Cloak's own copy of Gloam's open-source vault code, testnet only and
   // run by Cloak, not Gloam's (deployments/elysium-testnet-test-vault.json), with HYPE, USDC and a test KNTQ at mainnet's
-  // limits; Cloak's launch vault and escrows are deployed around it (deployments/elysium-testnet-gloam.json). On mainnet
+  // limits; Cloak's launch vault and escrows are deployed around it (deployments/elysium-testnet-gloam.json). Since Nov 13 the test
+  // vault is the one the testnet main wallet deployed and controls; the tester's first copy (0x3ABB…6370) is retired. On mainnet
   // `gloamVault` is Gloam's own vault.
   99801: {
     chainId: 99801,
@@ -106,22 +107,21 @@ export const deployments: Record<number, CloakDeployment> = {
       { symbol: "KNTQ", token: "0x2bd92af06c47a8ad26101a7e2084aff66b5f2c1f", decimals: 18 },
     ],
     gloam: {
-      gloamVault: "0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370",
-      memoBoard: "0x0ffd9BC4767b5082409615e842CD7F0adC570B44",
-      block: 28255692n,
-      launchVault: "0x30d8857a6d988577ab0206c0a782958e22cbcd3c",
-      launchVaultBlock: 28280687n,
-      launchSwapV4: "0xb8a7d9956c8c6af1829a6f61e30928ed52bd9a52",
-      // set since Nov 13: the stand-in takes HYPE, so HYPE is held in Gloam's vault and buys and sells go through the
-      // router, as on mainnet
-      router: "0x987e7deca86081e459e1a86a31695bf9f917f4c8",
-      ecosystemVault: "0x4ed9b20cd16a0de1c94c056eb709de0c1a866bd9",
-      ecosystemVaultBlock: 28280687n,
-      batcherV4: "0x9b58c5365d79fb65ab8cb8796616d80c7e6ae903",
-      receive: "0x5b67d9b3ea70d8d4da158af28772428d4cadc1f2",
-      bids: "0x7ee58219cf84b5a378279d5f10fc1369e13795c3",
-      fundsGate: "0x45bdb2ff14325342639cea193a7f92c87fa14019",
-      receiptCheck: "0x1d27fd681756fe9c72fd0ec4d6b4a18cf312f64d",
+      gloamVault: "0xA5ebd1F2e1F90d957C0459BA0dC892b0189B1678",
+      memoBoard: "0x7612118bDE6e371a79A909dF6abCD981e5320cbC",
+      block: 28358841n,
+      launchVault: "0x0b7b1b12fb05fa433ec157d0d097f20fe1270f56",
+      launchVaultBlock: 28359290n,
+      launchSwapV4: "0x3a100249a9cd1757fedf7740ffa583cb0300c218",
+      // Cloak's test vault takes HYPE, so HYPE is held there and buys and sells go through the router, as on mainnet
+      router: "0x79da9a53d719e420b13d260e13061d85b6edc867",
+      ecosystemVault: "0x5235f1e5a1c3f284f67ba6361846b71e9f3ea336",
+      ecosystemVaultBlock: 28359290n,
+      batcherV4: "0x5f96d587364b90da6ef03704c19f688f43759baf",
+      receive: "0x11ef5ff51002f7dc1adb7d60b8c569d61486c9f6",
+      bids: "0xf356b11b723a2a497b4ffaf83ba2548dbc92bcfb",
+      fundsGate: "0xe2e5c9531348197e7913a0464961c7fdd2a23deb",
+      receiptCheck: "0xa25ad83921e85d4a6490fb1fc82eeffcaa1162d4",
       whype: "0xe44b27113D4b947c0B1bDf4a93878D0e115f4bdD",
     },
   },

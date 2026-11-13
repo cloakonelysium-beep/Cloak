@@ -66,6 +66,9 @@ Owner, treasury and deployer in one, since testnet money isn't real.
   That includes v2's own NFT drop contracts (`e2e-gloam/deploy-drops.mjs`), which have no owner role.
 - Every owner and treasury role in `deployments/elysium-testnet-*.input.json`: config owner and treasury, guard
   controller, pauser, fee recipient, trade-fee treasury, GLOAK admin. Accepts the roles after the deploy.
+- Nov 13: deployed **Cloak's test vault** `0xA5eb…1678` and controls its guard `0x8660…1cCD` (nothing pending),
+  then redeployed the partner contracts around it, for 0.00379 HYPE in all (docs/TESTNET-REDEPLOY.md). It replaces the
+  tester's first copy `0x3ABB…6370`, which is retired.
 - Funding: testnet HYPE from the faucet (elysium.kinetiq.xyz).
 
 ### Keeper `0x04B6…B474`
@@ -81,7 +84,7 @@ The testnet keeper, the same job as mainnet's.
   session ends. It holds no role in any contract.
 - Funding: about 0.3 testnet HYPE from the testnet main wallet. Anything left is sent back to the main wallet after the test.
 - Nov 12: 0.2785 HYPE sent back to the main wallet (tx `0x6db0cf5e…25db3e8`); 0.005 kept for gas.
-- Nov 13: deployed the testnet stand-in for Gloam's vault (`0x3ABB…6370`), a test KNTQ (`0x2bd9…2c1f`) and the partner
+- Nov 13: deployed the first copy of Cloak's test vault (`0x3ABB…6370`, **retired** the same day for one the main wallet deployed), a test KNTQ (`0x2bd9…2c1f`) and the partner
   contracts around them, for 0.0038 HYPE in all (docs/TESTNET-REDEPLOY.md). It was left as the controller of three
   guards:
   - The stand-in's guard `0x5851…5F97`: **no longer.** The main wallet accepted control on Nov 13 (tx
@@ -96,5 +99,5 @@ The testnet keeper, the same job as mainnet's.
 Addresses in the configs that belong to others, for reference:
 - Gloam's mainnet vault `0x89d3…2164`, owned by Gloam's guard; Gloam's verifiers and Poseidon.
 - Uniswap's mainnet v4 PoolManager `0xe2e1…23f1`.
-- On testnet, the old stand-in Gloam vault `0x8D15…cB44` (replaced Nov 13 by Cloak's own stand-in `0x3ABB…6370`, above), controlled by an earlier test wallet `0x1302…BFE5` that nothing
+- On testnet, the old stand-in Gloam vault `0x8D15…cB44` (replaced Nov 13 by Cloak's test vault, above), controlled by an earlier test wallet `0x1302…BFE5` that nothing
   in the redeploy needs.
