@@ -1,0 +1,43 @@
+{
+ "chainId": 99801,
+ "note": "Cloak's test vault on Elysium testnet: Cloak's own copy of Gloam's open-source (MIT) vault, unmodified, deployed by Gloam's own guarded deploy routine. Testnet only and run by Cloak; not Gloam's vault. HYPE, test USDC and test KNTQ listed.",
+ "deployer": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+ "gloamVault": "0xA5ebd1F2e1F90d957C0459BA0dC892b0189B1678",
+ "gloamVaultBlock": 28358841,
+ "_gloamVaultBlock": "The block just before the vault's deploy: apps rebuild its tree from here.",
+ "guard": "0x8660964d071B9FD6f8aB3E63b368bd8aab911cCD",
+ "guardController": {
+  "now": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6",
+  "pending": "0x0000000000000000000000000000000000000000"
+ },
+ "memoBoard": "0x7612118bDE6e371a79A909dF6abCD981e5320cbC",
+ "poseidon": "0xa404af78405ab37e37958ee4c96870182625440a",
+ "verifier": "0xBCb6264989b3589e5353260322EF2625ABac95ea",
+ "shieldVerifier": "0x01E2B17B945822a8c5f29475B4A2B4b57b138321",
+ "withdrawFee": {
+  "bps": 50,
+  "recipient": "0xA650a2f878b15d1202bA3AF3E7dAFd959DA168d6"
+ },
+ "assets": [
+  {
+   "symbol": "HYPE",
+   "token": "0x0000000000000000000000000000000000000000",
+   "perDeposit": "12000000000000000000",
+   "total": "600000000000000000000"
+  },
+  {
+   "symbol": "USDC",
+   "token": "0x7D29d8047B905000459c0E80c34a26CeedcB47b2",
+   "perDeposit": "500000000",
+   "total": "25000000000"
+  },
+  {
+   "symbol": "KNTQ",
+   "token": "0x2bd92af06c47a8ad26101a7e2084aff66b5f2c1f",
+   "perDeposit": "1400000000000000000000",
+   "total": "70000000000000000000000"
+  }
+ ],
+ "kntqIsTest": false,
+ "costHype": "0.000744129445650737"
+}

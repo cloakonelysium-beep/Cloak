@@ -80,6 +80,28 @@ NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-partner.mjs --config deployments/elys
 node scripts/sdk-entry.mjs deployments/elysium-testnet-gloam.json deployments/elysium-testnet-v2-factory.json
 ```
 
+**Done Nov 13**, from the testnet main wallet `0xA650…68d6`, built with forge 1.5.1 (rehearsed on a fork first; every
+check ok). The factory, the NFT drops and the test KNTQ untouched.
+
+- **Cloak's test vault** (deployed after block 28358841, 0.00074 HYPE): vault `0xA5ebd1F2e1F90d957C0459BA0dC892b0189B1678`, its guard
+  `0x8660964d071B9FD6f8aB3E63b368bd8aab911cCD` (controller `0xA650…68d6`, nothing pending), memo board
+  `0x7612118bDE6e371a79A909dF6abCD981e5320cbC`; verifier `0xBCb6264989b3589e5353260322EF2625ABac95ea`, shield verifier
+  `0x01E2B17B945822a8c5f29475B4A2B4b57b138321`, Poseidon `0xa404…440a`. HYPE 12 / 600, USDC 500 / 25,000, KNTQ
+  1,400 / 70,000 per deposit / in total; 0.5% cash-out fee to `0xA650…68d6`.
+- **Partner** (block 28359290, 0.00305 HYPE), on the new test vault:
+  - launch vault `0x0b7b1b12fb05fa433ec157d0d097f20fe1270f56`, its guard `0x84ec184502aad6db28c18f1c3fcf00c551885680`;
+  - ecosystem vault `0x5235f1e5a1c3f284f67ba6361846b71e9f3ea336`, its guard `0x84a5d21941b8777860ae4c148ee93971faf05827`;
+  - launch swap `0x3a100249a9cd1757fedf7740ffa583cb0300c218`, router `0x79da9a53d719e420b13d260e13061d85b6edc867`;
+  - batcher `0x5f96d587364b90da6ef03704c19f688f43759baf`, bids `0xf356b11b723a2a497b4ffaf83ba2548dbc92bcfb`, receive
+    `0x11ef5ff51002f7dc1adb7d60b8c569d61486c9f6`;
+  - funds gate `0xe2e5c9531348197e7913a0464961c7fdd2a23deb` (verifier `0xde2019e813698e0cfbcfa11a128d89900e308e2c`),
+    receipt check `0xa25ad83921e85d4a6490fb1fc82eeffcaa1162d4` (verifier `0x7c8613fe66ad3131ca318454c27879878839a0a9`);
+  - trade fee `0x55bf468538eeeb4e422bca8f5abf3da8a104f08c` (0.25% to `0xA650…68d6`).
+  - Both guards' controller is `0xA650…68d6`; the pending controller is the same wallet (a no-op offer to itself).
+- **Cost:** 0.00379 HYPE in all (0.27894 → 0.27514 HYPE).
+- The first copy `0x3ABB…6370` and the partner contracts around it are retired.
+- SDK entry, `render.yaml` and the Render service's `GLOAM_*` values updated.
+
 The first command reads the vault's verifiers and Poseidon from the chain, checks it is out of setup with limits on,
 reports which of HYPE, USDC and KNTQ it takes, and writes the partner config. Then put the SDK entry in
 `packages/sdk/src/deployments.ts` and the `GLOAM_*` values in `render.yaml` (and on the Render service). Cloak's
