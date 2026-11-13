@@ -55,24 +55,26 @@ The rest:
 
 ## Live on Elysium testnet (chain `99801`)
 
-v2 has **its own launch factory** (Nov 9), apart from Cloak v1's. Its rules are copied from v1's: launch fee 1.5%, auctions capped at 100 HYPE per bid and 10,000 HYPE in total. The launch vault and every escrow were redeployed on it, and the first launch, **GLOAK**, is admitted and registered for batch rounds.
+v2 has **its own launch factory** (redeployed Nov 12), apart from Cloak v1's. Its rules are copied from v1's: launch fee 1.5%, auctions capped at 100 HYPE per bid and 10,000 HYPE in total. Gloam has no vault on Elysium testnet yet, so testnet runs **Cloak's stand-in: Gloam's mainnet vault code, unmodified** (Nov 13), taking HYPE, USDC and a test KNTQ as Gloam's mainnet vault will. Cloak's launch vault and escrows are deployed around it, and `e2e-gloam/use-gloam-vault.mjs` swaps in Gloam's own testnet vault once it exists.
 
 | Contract | Address |
 |---|---|
-| CloakConfig (v2) | `0xfedf1050af9e96dcfef9c098fcbc122d907f4f1e` |
-| CloakFactory (v2), from block 26707681 | `0x59d2cd703747a47288518c7380efa95879295784` |
-| CloakV4Hook (v2) | `0xC6296320cDFAB6074Fc650f1d788608b16fa2A80` |
-| Gloam's vault (Cloak's instance, USDC) | `0x8D15BA46071D5AB2e59d746c22d51C906281cB44` |
-| Memo board | `0xf6816854b68CC4B67213289927d8e44050BA62D3` |
-| CloakLaunchVault, from block 26707908 | `0x13050b9a0abece56f80d30da107c3f3fad33288f` |
-| CloakLaunchSwapV4 | `0xc4b6ce66f12733e6737cda6cc1a882ea05bf99ce` |
-| CloakGloamBatcherV4 | `0xbd4a41301b3c0ba2ca07677fd9ba3ba4640d28f8` |
-| CloakGloamBids | `0xb3f6f2142439f1b4f088ea24569cc73726dcea32` |
-| CloakGloamReceive | `0xa462e810b985029b28b5cee49866760a7f8767bb` |
-| CloakFundsGate / CloakReceiptCheck | `0x79aafd041a283c334421a17c781b12e353093210` / `0xb0a8fcbd75f4d6d2ce5a0121e8607aa353990304` |
+| CloakConfig (v2) | `0x31337213cab071c28eed8b2256c5658c9de8a9ba` |
+| CloakFactory (v2), from block 27930789 | `0xb9060dc9c5dcd49d424b0257b3a8b1a2939271d7` |
+| CloakV4Hook (v2) | `0x822c91E71BC5a63Ef2C38bc37cea6ff443CD2a80` |
+| Gloam's vault (Cloak's stand-in, Gloam's mainnet code), from block 28255692 | `0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370` |
+| Its guard / memo board | `0x5851D76992Cbc23DE75c675bEe581CbfA9Dc5F97` / `0x0ffd9BC4767b5082409615e842CD7F0adC570B44` |
+| Test KNTQ (anyone can mint) | `0x2bd92af06c47a8ad26101a7e2084aff66b5f2c1f` |
+| CloakLaunchVault, from block 28256098 | `0xe3847f0140bdc06629b2b30a770f393e080f30b2` |
+| CloakLaunchSwapV4 / CloakRouterV4 | `0xa022edbe332f433ab8bc081b228c8a1d9bad98b6` / `0x6f67078181752ed9f312d51e2fd7f787564a86bf` |
+| CloakEcosystemVault | `0x95d9073ec1840dabe4de4b9cbebdfe6bdc86706f` |
+| CloakGloamBatcherV4 | `0xc2c642bfbd0ad192df272c7e7486696de2355e1f` |
+| CloakGloamBids | `0x83430908906887d4b9ec920b0a90193b479b15f6` |
+| CloakGloamReceive | `0x88eb84e9d8f2e59a73c41b198d32eeac84c5c7e4` |
+| CloakFundsGate / CloakReceiptCheck | `0xccbd5f8fe8b3a796f2eaedc010189349e61278f6` / `0xe57a30d49842966605912dd9ed76a08635cdaf32` |
 | PoolManager (Uniswap v4 on testnet) | `0x51027076df8416e42ea8438b27a0c433d9662e68` |
 
-The full record: [`deployments/elysium-testnet-gloam.json`](deployments/elysium-testnet-gloam.json) and [`deployments/elysium-testnet-v2-factory.json`](deployments/elysium-testnet-v2-factory.json). The SDK carries the same addresses (`deploymentFor(99801)`). Every rule, with its number: [`docs/RULES.md`](docs/RULES.md). On testnet, HYPE and launch tokens share the launch vault. Mainnet uses the three-vault model above.
+The full record: [`deployments/elysium-testnet-gloam.json`](deployments/elysium-testnet-gloam.json) and [`deployments/elysium-testnet-v2-factory.json`](deployments/elysium-testnet-v2-factory.json). The SDK carries the same addresses (`deploymentFor(99801)`). Every rule, with its number: [`docs/RULES.md`](docs/RULES.md). As on mainnet, HYPE (and USDC, KNTQ) sit in Gloam's vault and launch tokens in Cloak's launch vault, with the router trading between them, plus the ecosystem vault for outside tokens.
 
 ## Layout
 

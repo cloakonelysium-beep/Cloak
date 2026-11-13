@@ -81,11 +81,16 @@ The testnet keeper, the same job as mainnet's.
   session ends. It holds no role in any contract.
 - Funding: about 0.3 testnet HYPE from the testnet main wallet. Anything left is sent back to the main wallet after the test.
 - Nov 12: 0.2785 HYPE sent back to the main wallet (tx `0x6db0cf5e…25db3e8`); 0.005 kept for gas.
+- Nov 13: deployed the testnet stand-in for Gloam's vault (`0x3ABB…6370`), a test KNTQ (`0x2bd9…2c1f`) and the partner
+  contracts around them, for 0.0038 HYPE in all (docs/TESTNET-REDEPLOY.md). **Until the main wallet accepts**, it is
+  the controller of three guards: the stand-in's `0x5851…5F97`, the launch vault's `0x7d6b…3d12` and the ecosystem
+  vault's `0x5324…91ea`. Control is already offered to the main wallet; once it calls `acceptController()` on each,
+  the tester holds no role again. About 0.001 HYPE left.
 
 ## Not Cloak's
 
 Addresses in the configs that belong to others, for reference:
 - Gloam's mainnet vault `0x89d3…2164`, owned by Gloam's guard; Gloam's verifiers and Poseidon.
 - Uniswap's mainnet v4 PoolManager `0xe2e1…23f1`.
-- On testnet, the stand-in Gloam vault `0x8D15…cB44`, controlled by an earlier test wallet `0x1302…BFE5` that nothing
+- On testnet, the old stand-in Gloam vault `0x8D15…cB44` (replaced Nov 13 by Cloak's own stand-in `0x3ABB…6370`, above), controlled by an earlier test wallet `0x1302…BFE5` that nothing
   in the redeploy needs.

@@ -46,28 +46,28 @@ services:
         value: "1"
       - key: TRUSTED_PROXY_HOPS
         value: "1"
-      # Gloam's vault (Cloak's instance on testnet) and Cloak's launch vault
+      # Gloam's vault (Cloak's stand-in on testnet, Gloam's mainnet code, since Nov 13) and Cloak's launch vault
       - key: GLOAM_VAULT
-        value: "0x8D15BA46071D5AB2e59d746c22d51C906281cB44"
+        value: "0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370"
       - key: GLOAM_VAULT_BLOCK
-        value: "26230337"
+        value: "28255692"
       - key: GLOAM_LAUNCH_VAULT
-        value: "0xef42cf8f73b43764cd4c3ad97fb8c276975c84e7"
+        value: "0xe3847f0140bdc06629b2b30a770f393e080f30b2"
       - key: GLOAM_LAUNCH_VAULT_BLOCK
-        value: "27931042"
+        value: "28256098"
       # Cloak's ecosystem vault (outside tokens), for the public leaf list
       - key: GLOAM_ECOSYSTEM_VAULT
-        value: "0xaa0647ff29eb093627a7ab5c765b08888ad15cbf"
+        value: "0x95d9073ec1840dabe4de4b9cbebdfe6bdc86706f"
       - key: GLOAM_ECOSYSTEM_VAULT_BLOCK
-        value: "27931042"
+        value: "28256098"
       - key: GLOAM_MEMO
-        value: "0xf6816854b68CC4B67213289927d8e44050BA62D3"
-      # Cloak's escrows the relay sends for: launch swap v4, batcher v4, bids, receive, funds gate (graduation removed for the beta)
+        value: "0x0ffd9BC4767b5082409615e842CD7F0adC570B44"
+      # Cloak's escrows the relay sends for: launch swap v4, router v4, batcher v4, bids, receive, funds gate (graduation removed for the beta)
       - key: GLOAM_ESCROWS
-        value: "0x285c456ce62369bdf439376e1a66b262a0122e84,0x1ea4da6c117ebe0886b13517363d1a1fede72249,0x270c5401b97b1cd97c83dfbecc5ebb4534fa81ae,0xbc5e58de65e4877c53d74cde3d76d702210568c9,0x3d2fd839cfe760242c1d26b41944c809c0be60fc"
+        value: "0xa022edbe332f433ab8bc081b228c8a1d9bad98b6,0x6f67078181752ed9f312d51e2fd7f787564a86bf,0xc2c642bfbd0ad192df272c7e7486696de2355e1f,0x83430908906887d4b9ec920b0a90193b479b15f6,0x88eb84e9d8f2e59a73c41b198d32eeac84c5c7e4,0xccbd5f8fe8b3a796f2eaedc010189349e61278f6"
       - key: GLOAM_BATCHER_V4
-        value: "0x1ea4da6c117ebe0886b13517363d1a1fede72249"
+        value: "0xc2c642bfbd0ad192df272c7e7486696de2355e1f"
       - key: GLOAM_BATCHER_V4_BLOCK
-        value: "27931042"
+        value: "28256098"
       - key: GLOAM_FUNDS_GATE
-        value: "0x3d2fd839cfe760242c1d26b41944c809c0be60fc"
+        value: "0xccbd5f8fe8b3a796f2eaedc010189349e61278f6"
