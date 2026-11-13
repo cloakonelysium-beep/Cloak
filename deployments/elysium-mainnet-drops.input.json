@@ -1,0 +1,12 @@
+{
+  "name": "elysium-mainnet-drops",
+  "chainId": 99901,
+  "rpcUrl": "https://rpc.elysium.kinetiq.xyz",
+  "_why": "Cloak v2's NFT drop contracts on mainnet: sealed NFT drops, WL spot sales and escrow drops, on v2's mainnet CloakConfig (drop fees to the treasury). None of them has an owner or admin.",
+  "factoryRecord": "deployments/elysium-mainnet-v2-factory.json",
+  "_factoryRecord": "v2's mainnet CloakConfig is read from the factory record (deploy-v2-factory.mjs writes it).",
+  "defaultBaseURI": "https://oncloak.xyz/api/nft/",
+  "_defaultBaseURI": "Metadata for drops that set none: the site's /api/nft route on the mainnet address.",
+  "deployer": "0xBCB87773362387812532a1403d8F75D4E13F259d",
+  "_deployer": "The mainnet deployer (docs/WALLETS.md). It gets no role: none of the three contracts has an owner."
+}

@@ -2,7 +2,17 @@
 
 Nov 10. Everything to do from now until the public launch, in order. **Private mainnet** means it's real and live on Elysium mainnet, but only the team knows the URL and uses it, with small amounts. Public goes live only when every box above "Public launch" is ticked.
 
-Who does it: **Bob**, **Claude**, or **Gloam**. The rehearsal of every deploy step is `e2e-gloam/part22-mainnet-fork.mjs`. It runs on a fork of mainnet against Gloam's real vault and passes.
+Who does it: **Bob**, **Claude**, or **Gloam**.
+
+**Mainnet sweep (Nov 13).** Checked on chain: Uniswap's PoolManager, Universal Router and Permit2, Multicall3, Gloam's
+vault, guard, verifiers and Poseidon (all as our config names them), USDC, KNTQ and WHYPE, and Gloam's live limits
+(HYPE 12 / 600, USDC 500 / 25,000, KNTQ 1,400 / 70,000). Pools: the deepest hookless HYPE/KNTQ pool is 0.3% / 60 (about
+33,900 HYPE in range) and the deepest hookless HYPE/USDC pool is 0.3% / 60 (about 7,260 HYPE), both already in the
+config. Deeper HYPE/USDC and USDC/KNTQ pools exist but use other projects' hooks, which Cloak's router refuses by
+design, so USDC to KNTQ goes USDC → HYPE → KNTQ in one private swap (tested in part 22). Fixed in the sweep: the
+keeper's network (it always signed for testnet), the mainnet explorer (missing from the SDK's chain), the wallet menu's
+explorer link, every testnet-only line on the site (wallet setup, faucet links, play-money notes, the app's welcome,
+the Docs quickstart and samples), and the hosted MCP, which now answers for mainnet once the SDK has its deployment. The rehearsal of every deploy step is `e2e-gloam/part22-mainnet-fork.mjs`. It runs on a fork of mainnet against Gloam's real vault and passes.
 
 ---
 
@@ -90,6 +100,11 @@ after Gloam's own guard of Nov 10). `CLOAK_ALLOW_REDEPLOY=1` deploys a second se
   - USDC's and KNTQ's real pools;
   - Cloak's own WHYPE, the launch vault, the ecosystem vault, the trade-fee settings, the router, batch rounds, bids, receive addresses, the funds gate and the receipt check.
 - [ ] **Owner wallet:** accept control of both vault guards (`acceptController()` on each; the script prints both calls).
+- [ ] **NFT drops** (rehearsed Nov 13 on a mainnet fork, 0.013 HYPE): drop factory, WL spot book and escrow drops on v2's
+  mainnet config, no owner on any. Reads the config from the factory record.
+  ```bash
+  node e2e-gloam/deploy-drops.mjs --config deployments/elysium-mainnet-drops.input.json
+  ```
 - [ ] **Deployer:** send what's left to the treasury, then retire the key.
 - [ ] **Claude:** check every role on chain:
   - the guards' controller, the config's owner and the trade fee's owner are the owner wallet;
@@ -102,6 +117,9 @@ after Gloam's own guard of Nov 10). `CLOAK_ALLOW_REDEPLOY=1` deploys a second se
 ## 5. Hosting (private)
 
 - [ ] **Bob:** a new Render service for the mainnet keeper, from `render.yaml` with mainnet values.
+  - `node scripts/keeper-env.mjs mainnet` prints every setting from the deploy records, `CHAIN_ID=99901` included. The
+    keeper now picks its network from `CHAIN_ID` and refuses to start if the RPC is a different chain (until Nov 13 it
+    always signed for testnet, so a mainnet keeper would have failed every transaction).
   - **Claude** prepares the mainnet block: `FACTORY`, `START_BLOCK`, `GLOAM_VAULT` and its block, `GLOAM_LAUNCH_VAULT`, `GLOAM_ECOSYSTEM_VAULT`, `GLOAM_MEMO`, `GLOAM_ESCROWS`, `GLOAM_BATCHER_V4`, `GLOAM_FUNDS_GATE`, `RPC_URL`.
   - **Bob** sets the secrets in the dashboard only: `KEEPER_PK` and `RPC_BACKUP`.
   - Also `TRUSTED_PROXY_HOPS=1`, `CORS_ORIGINS` (the mainnet site's domain) and `DROPS` (step 1).

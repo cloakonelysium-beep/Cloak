@@ -27,6 +27,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # the network: 99801 (testnet). The mainnet keeper is a separate service with 99901 (scripts/keeper-env.mjs mainnet)
+      - key: CHAIN_ID
+        value: "99801"
       # the keeper and relayer key: set in Render's dashboard, never in the repo
       - key: KEEPER_PK
         sync: false

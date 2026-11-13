@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { createPublicClient, defineChain, http, parseEther, parseUnits, type Address, type Chain, type Hex, type PublicClient } from "viem";
-import { deploymentFor, elysiumTestnet, type CloakDeployment, type GloamDeployment } from "@cloakely/sdk";
+import { deploymentFor, deployments, elysium, elysiumTestnet, type CloakDeployment, type GloamDeployment } from "@cloakely/sdk";
 
 /** The agent wallet's key file that `setup` creates and the server uses when no key is configured. */
 export const defaultKeyFile = () => join(homedir(), ".cloak-agent-key");
@@ -33,6 +33,7 @@ export interface Limits {
 
 const NETWORKS: Record<string, { chain: Chain }> = {
   testnet: { chain: elysiumTestnet },
+  mainnet: { chain: elysium },
 };
 
 /** A deployment file (`CLOAK_DEPLOYMENT_FILE`) for a local chain or a private test deployment. */
@@ -50,10 +51,10 @@ export function loadSettings(env: NodeJS.ProcessEnv = process.env): Settings {
   let deployment: CloakDeployment;
   let launchesFromBlock: bigint;
   let rpcUrl: string;
-  if (network === "mainnet") {
-    if (env.CLOAK_ALLOW_MAINNET !== "1") throw new Error("CLOAK_NETWORK=mainnet needs CLOAK_ALLOW_MAINNET=1 as well. Mainnet moves real money.");
-    throw new Error("Cloak mainnet isn't live yet. Use CLOAK_NETWORK=testnet.");
-  } else if (network === "custom") {
+  if (network === "mainnet" && env.CLOAK_ALLOW_MAINNET !== "1") throw new Error("CLOAK_NETWORK=mainnet needs CLOAK_ALLOW_MAINNET=1 as well. Mainnet moves real money.");
+  // mainnet is live for the server as soon as the SDK carries Cloak's mainnet deployment
+  if (network === "mainnet" && !deployments[elysium.id]) throw new Error("Cloak mainnet isn't live yet. Use CLOAK_NETWORK=testnet.");
+  if (network === "custom") {
     if (!env.CLOAK_DEPLOYMENT_FILE) throw new Error("CLOAK_NETWORK=custom needs CLOAK_DEPLOYMENT_FILE");
     const f = JSON.parse(readFileSync(env.CLOAK_DEPLOYMENT_FILE, "utf8")) as DeploymentFile;
     rpcUrl = f.rpcUrl;
@@ -67,7 +68,7 @@ export function loadSettings(env: NodeJS.ProcessEnv = process.env): Settings {
     };
   } else {
     const n = NETWORKS[network];
-    if (!n) throw new Error(`unknown CLOAK_NETWORK "${network}" (use testnet)`);
+    if (!n) throw new Error(`unknown CLOAK_NETWORK "${network}" (use testnet or mainnet)`);
     chain = n.chain;
     deployment = deploymentFor(chain.id);
     launchesFromBlock = deployment.factoryBlock;

@@ -5,14 +5,9 @@ import { MAINNET, chainIdForHost } from "./_net.js";
 
 export const config = { maxDuration: 30 };
 
-// The MCP server knows testnet only for now (packages/mcp/src/config.ts refuses mainnet), so on the mainnet address it
-// says so instead of answering for testnet.
-const notOnMainnet = () =>
-  new Response(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32000, message: "Cloak's hosted MCP server isn't on mainnet yet. Use https://testnet.oncloak.xyz/mcp for testnet." } }), {
-    status: 503,
-    headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
-  });
-const handle = (req) => (chainIdForHost(new URL(req.url).hostname) === MAINNET && req.method !== "OPTIONS" ? notOnMainnet() : handleMcpRequest(req));
+// Each address answers for its own network: oncloak.xyz/mcp for mainnet (once the SDK carries Cloak's mainnet deployment;
+// until then it says mainnet isn't live yet), testnet.oncloak.xyz/mcp for testnet.
+const handle = (req) => handleMcpRequest(req, { network: chainIdForHost(new URL(req.url).hostname) === MAINNET ? "mainnet" : "testnet" });
 
 export const GET = handle;
 export const POST = handle;

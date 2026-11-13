@@ -3,7 +3,10 @@ import { createPortal } from "react-dom";
 import { Link, useRoute } from "./router";
 import { useApp, type Theme } from "./state";
 import { addElysium } from "./wallet";
-import { chain } from "./config";
+import { EXPLORER, IS_MAINNET, chain } from "./config";
+
+/** The explorer for this network (from the chain), re-exported for pages that link to it. */
+export { EXPLORER };
 import { useTokenMeta } from "./tokenMeta";
 import { FAUCET_URL } from "./walletModal";
 import { Who } from "./who";
@@ -105,7 +108,6 @@ export const SocialIcon = {
     </svg>
   ),
 };
-export const EXPLORER = "https://elysium.kinetiq.xyz/testnet-explorer";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useApp();
@@ -139,7 +141,7 @@ export function WalletButton({ up }: { up?: boolean }) {
             <button onClick={() => { navigator.clipboard?.writeText(addr).catch(() => {}); toast("Address copied"); }}><Icon.copy size={15} />Copy address</button>
             {EXPLORER && <a href={`${EXPLORER}/address/${addr}`} target="_blank" rel="noreferrer"><Icon.eye size={15} />View on explorer</a>}
             {provider && <button onClick={() => addElysium(provider).then(() => toast(`${chain.name} added to your wallet`)).catch(() => toast("Your wallet didn't add the network"))}><Icon.plus size={15} />Add {chain.name}</button>}
-            <a href={FAUCET_URL} target="_blank" rel="noreferrer"><Icon.wallet size={15} />Get testnet HYPE</a>
+            {!IS_MAINNET && <a href={FAUCET_URL} target="_blank" rel="noreferrer"><Icon.wallet size={15} />Get testnet HYPE</a>}
             <button onClick={disconnect}><Icon.arrowDown size={15} />Disconnect</button>
           </div>
         </>
@@ -329,7 +331,7 @@ export function Footer() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© 2026 Cloak. Testnet software with play money. Not investment advice. Built by Bob Labs on Elysium.</span>
+          <span>{IS_MAINNET ? "© 2026 Cloak. Not investment advice. Built by Bob Labs on Elysium." : "© 2026 Cloak. Testnet software with play money. Not investment advice. Built by Bob Labs on Elysium."}</span>
           <div className="theme-seg">
             {T.map((t) => (
               <button key={t} className={theme === t ? "on" : ""} onClick={() => setTheme(t)}>{t[0].toUpperCase() + t.slice(1)}</button>
