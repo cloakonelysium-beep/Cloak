@@ -1,0 +1,35 @@
+{
+  "chainId": 99901,
+  "note": "Cloak v2's own launch factory (v2's launches, apart from Cloak v1's). CloakConfig v2 holds the launch fee, treasury and bid caps; its verifier field names Gloam's verifier and is unused (v2 has no Cloak vaults).",
+  "config": "0xbf9d133d2be0572c9ab94adcdb2d00ac8f0e3080",
+  "factory": "0x01BbBA502E4a9bef60F261Cf04d8D04e48F2fB12",
+  "factoryBlock": 6033579,
+  "v4Hook": "0x0df8E5771Cad0DEb29b7544b3bDe5A993D342a80",
+  "poolManager": "0xe2e105d3f7209a9da11f83ccf3e7398a753823f1",
+  "vestingDeployer": "0x65083F6834a4B65a6B8d1451F4A0D35136BDEA69",
+  "launchFeeBps": 150,
+  "auctionLimit": {
+    "perBid": "100000000000000000000",
+    "total": "10000000000000000000000",
+    "on": true
+  },
+  "launchFloors": {
+    "minRaise": "0",
+    "minLpBps": 5000
+  },
+  "treasury": "0xBB5Df281F605B886C3a4E73ECD6560847719936b",
+  "hookFees": {
+    "baseFee": 3000,
+    "startFee": 100000,
+    "decaySecs": 300
+  },
+  "owner": "0x430c0A8547674ac2Fc09ad55eaF71FaAfB6bDf16",
+  "ownerAccepts": {
+    "to": "0xbf9d133d2be0572c9ab94adcdb2d00ac8f0e3080",
+    "data": "0x79ba5097",
+    "call": "acceptOwnership()"
+  },
+  "hookAdmin": "0xBCB87773362387812532a1403d8F75D4E13F259d",
+  "costHype": "0.0066",
+  "_recovered": "Every transaction of deploy-v2-factory.mjs landed; its read-back hit a failed RPC read, so this record was rebuilt from the chain by recover-v2-factory.mjs with the same checks."
+}

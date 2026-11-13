@@ -57,9 +57,41 @@ export function chainFor(rpcUrl, id = ELYSIUM_TESTNET_ID) {
 export function clients(rpcUrl, pk, id) {
   const chain = chainFor(rpcUrl, id);
   const account = privateKeyToAccount(pk);
-  const pub = createPublicClient({ chain, transport: http(rpcUrl), pollingInterval: 50 });
+  const pub = createPublicClient({ chain, transport: http(rpcUrl, { retryCount: 5, retryDelay: 1000 }), pollingInterval: 50 });
   const wallet = createWalletClient({ chain, account, transport: http(rpcUrl) });
+  steady(pub);
   return { chain, account, pub, wallet };
+}
+
+/**
+ * Public RPCs sit behind load balancers, and a node a block or two behind answers "no code" or "reverted" for a
+ * contract that was just deployed (Nov 13, mainnet: the factory deploy's read-back failed this way after every
+ * transaction had landed). Reads are asked again before a failure counts, and an empty getCode is asked again before
+ * it counts as empty. Only reads: nothing is ever sent twice.
+ */
+function steady(pub) {
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const read = pub.readContract.bind(pub);
+  pub.readContract = async (args) => {
+    for (let i = 0; ; i++) {
+      try {
+        return await read(args);
+      } catch (e) {
+        if (i >= 5) throw e;
+        await wait(1500);
+      }
+    }
+  };
+  const code = pub.getCode.bind(pub);
+  pub.getCode = async (args) => {
+    let c = await code(args);
+    for (let i = 0; i < 3 && (c ?? "0x") === "0x" && args.blockNumber === undefined; i++) {
+      await wait(1500);
+      c = await code(args);
+    }
+    return c;
+  };
+  return pub;
 }
 
 /** Starts anvil as Elysium testnet (chain id 99801). Returns { rpcUrl, stop }. */
