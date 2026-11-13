@@ -4,7 +4,7 @@ import type { AuctionState } from "@cloakely/sdk";
 import { Link } from "../router";
 import { Icon } from "../ui";
 import { FACTORY, addrLink } from "../config";
-import { useGloak } from "../gloak";
+import { gloakAddress, useGloak } from "../gloak";
 import { hype, short, tokens } from "../format";
 import { useApp } from "../state";
 import { publicClient, readCloak } from "../wallet";
@@ -12,7 +12,12 @@ import { useMarkets } from "./markets";
 
 /**
  * The GLOAK experiment (docs/GLOAK.md): a token that only lives in private vaults. Before its launch the page shows the
- * token and a Bid button (live once the launch is created); after it, the numbers from its pool and its own meter().
+ * token, the thesis and "Coming soon"; while bidding is open, a Bid button; after it, the numbers from its pool and its
+ * own meter().
+ *
+ * Every state is read from the chain of the network this site serves (FACTORY and publicClient come from config, which
+ * picks the network by hostname), so mainnet and testnet never affect each other: a launch on testnet opens bidding on
+ * testnet.oncloak.xyz only, and mainnet shows "Coming soon" until GLOAK's launch exists on mainnet's own factory.
  */
 
 const DESCRIPTION =
@@ -109,21 +114,31 @@ export function Gloak() {
   const market = token ? markets?.find((x) => x.token.toLowerCase() === token.toLowerCase()) : undefined;
   const [auction, setAuction] = useState<Address | null>(null);
   const [launch, setLaunch] = useState<AuctionState | null>(null);
+  const [checked, setChecked] = useState(false); // the first look for GLOAK's launch has finished
 
-  // GLOAK's launch: the Bid button opens it while bidding is open, and its Uniswap pool is linked once it trades
+  // GLOAK's launch on this network: the Bid button opens it while bidding is open, and its Uniswap pool is linked once it
+  // trades. Read again every minute, so the page follows the launch from bidding to reveal to trading without a reload.
   useEffect(() => {
-    if (!token) return;
     let alive = true;
-    findAuction(token)
-      .then(async (a) => {
-        if (!alive || !a) return;
+    const load = async () => {
+      try {
+        const t = token ?? (await gloakAddress());
+        const a = t ? await findAuction(t) : null;
+        const s = a ? await readCloak.getAuction(a) : null;
+        if (!alive) return;
         setAuction(a);
-        const s = await readCloak.getAuction(a);
-        if (alive) setLaunch(s);
-      })
-      .catch(() => {});
+        setLaunch(s);
+      } catch {
+        // a failed read keeps what was shown
+      } finally {
+        if (alive) setChecked(true);
+      }
+    };
+    load();
+    const id = setInterval(load, 60_000);
     return () => {
       alive = false;
+      clearInterval(id);
     };
   }, [token]);
 
@@ -133,6 +148,7 @@ export function Gloak() {
   const cap = (price * live) / 10n ** 18n;
   const trading = !!market && !!info && !!m;
   const bidOpen = !!auction && launch?.phase === "commit";
+  const settling = !!auction && !!launch && !trading && launch.phase !== "commit"; // bids closed, not trading yet
 
   return (
     <>
@@ -158,10 +174,12 @@ export function Gloak() {
           {trading ? (
             <Link to={`/app/trade?token=${token}`} className="btn btn-ink">Get GLOAK privately</Link>
           ) : bidOpen ? (
-            <Link to={`/app/launch/${auction}`} className="btn btn-ghost">Bid</Link>
-          ) : (
-            <button className="btn btn-ghost" disabled title="Bidding opens with GLOAK's launch">Bid</button>
-          )}
+            <Link to={`/app/launch/${auction}`} className="btn btn-ink">Bid</Link>
+          ) : settling ? (
+            <Link to={`/app/launch/${auction}`} className="btn btn-ghost">Bidding closed · see results</Link>
+          ) : checked ? (
+            <span className="pill gk-soon" title="GLOAK's sealed-bid launch hasn't opened yet">Coming soon</span>
+          ) : null}
         </div>
       </div>
 
