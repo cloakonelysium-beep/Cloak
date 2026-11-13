@@ -46,3 +46,42 @@ config `0x3133…a9ba`, launch vault `0xef42…84e7` and the escrows from block 
 - Vercel: root `apps/web`, `VITE_KEEPER_URL` and `VITE_RELAYER_URL` = the keeper's onrender.com URL, domain
   `testnet.oncloak.xyz`.
 - GLOAK on testnet (`deployments/elysium-testnet-gloak.input.json`, short bidding window): see `docs/GLOAK-EXPERIMENT.md`.
+
+## Nov 13: a stand-in for Gloam's vault, with HYPE, USDC and KNTQ
+
+Gloam has no vault on Elysium testnet, and the earlier stand-in (`0x8D15…2164`) took only USDC and is run by an old
+test wallet. So testnet now runs a new stand-in that matches mainnet:
+
+- **Gloam's mainnet vault code, unmodified.** `ShieldPoolPayments` on freshly deployed final-key verifiers, behind
+  Gloam's key gate, born under a `VaultOwnerGuard`, deployed by Gloam's own `MainnetDeploy._deployMainnetGuarded`
+  (`contracts-gloam/gloam-root/DeployCloakGloam.s.sol`), with Gloam's memo board.
+- **Assets.** HYPE at 12 / 600 and KNTQ at 1,400 / 70,000 (the limits Gloam has queued on its mainnet vault), and
+  Kinetiq's test USDC at 500 / 25,000 (Gloam's own testnet values). The cash-out fee is 0.5%, Gloam's mainnet fee.
+- **KNTQ.** It has no contract on testnet (Kinetiq's mainnet address is empty there), so a test KNTQ was deployed:
+  `0x2bd9…2c1f`, 18 decimals, anyone can mint.
+- **Control.** The guard's control is offered to the testnet main wallet. Until it accepts, the deploy wallet (the
+  tester, `0xE184…04E4`) holds it. To accept, from `0xA650…68d6` send a call to the guard `0x5851…5F97` with value 0
+  and data `0x9bc21c0c` (`acceptController()`). The same goes for the new launch vault guard `0x7d6b…3d12` and the
+  ecosystem vault guard `0x5324…91ea`.
+- **Around it.** A new partner deploy (launch vault, launch swap, router, batch rounds, bids, receive, funds gate,
+  receipt check, ecosystem vault), as on mainnet. HYPE now sits in Gloam's vault and trades through the router; the
+  SDK sets `router` for testnet. Private balances in the Nov 12 launch vault (`0xef42…84e7`) stay withdrawable from
+  that contract, but the site no longer shows them.
+- **Cost.** 0.0008 HYPE for the stand-in and 0.0030 HYPE for the partner deploy, from the tester wallet.
+- **Records.** `deployments/elysium-testnet-gloam-standin.json` (the stand-in) and
+  `deployments/elysium-testnet-gloam.json` (Cloak around it). The Nov 12 record is in git history.
+
+**Switching to Gloam's own testnet vault** when Gloam deploys one. Only its address, memo board and start block are
+needed:
+
+```
+node e2e-gloam/use-gloam-vault.mjs --vault <Gloam's vault> --memo <its memo board> --block <its deploy block>
+NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-partner.mjs --config deployments/elysium-testnet-gloam.input.json
+node scripts/sdk-entry.mjs deployments/elysium-testnet-gloam.json deployments/elysium-testnet-v2-factory.json
+```
+
+The first command reads the vault's verifiers and Poseidon from the chain, checks it is out of setup with limits on,
+reports which of HYPE, USDC and KNTQ it takes, and writes the partner config. Then put the SDK entry in
+`packages/sdk/src/deployments.ts` and the `GLOAM_*` values in `render.yaml` (and on the Render service). Cloak's
+contracts take the vault at deploy and nobody can repoint them later, so the switch is a redeploy (about 0.003 HYPE),
+not a setting.

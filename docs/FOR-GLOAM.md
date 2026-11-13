@@ -24,7 +24,9 @@ Cloak v2 runs on Gloam's vault, circuits and final ceremony keys, all unchanged.
 
 ## 2. Our contracts on Elysium testnet (for vetting)
 
-From `deployments/elysium-testnet-gloam.json`. Gloam's vault from block 26230337; the launch vault and escrows were redeployed on Cloak v2's own launch factory on Nov 9 (block 26707908). Today the deploy wallet stands in for our multisig (guard controller, pauser, fee recipient).
+> **Out of date since Nov 12–13.** Testnet was redeployed, and since Nov 13 it runs a new stand-in for your vault (your mainnet vault code, unmodified, with HYPE, USDC and a test KNTQ). The current addresses are in the README's testnet table and `deployments/elysium-testnet-gloam*.json`. The table below is the Nov 9 set.
+
+From `deployments/elysium-testnet-gloam.json` (as of Nov 9). Gloam's vault from block 26230337; the launch vault and escrows were redeployed on Cloak v2's own launch factory on Nov 9 (block 26707908). Today the deploy wallet stands in for our multisig (guard controller, pauser, fee recipient).
 
 | Contract | Address |
 |---|---|

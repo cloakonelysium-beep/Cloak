@@ -31,7 +31,7 @@ interface Asset {
   /** For the icon: launch tokens only (HYPE and USDC use built-in marks). */
   iconToken?: Address;
   decimals: number;
-  kind: "hype" | "stable" | "launch";
+  kind: "hype" | "stable" | "token" | "launch"; // token: an outside token in Gloam's vault with no price here (test KNTQ)
   market?: Market;
 }
 
@@ -78,7 +78,7 @@ function useAssets(): Asset[] {
   const { markets } = useMarkets();
   return [
     { key: "HYPE", symbol: "HYPE", name: "Hyperliquid", decimals: 18, kind: "hype" },
-    ...ASSETS.map((x): Asset => ({ key: x.token, symbol: x.symbol, name: x.symbol === "USDC" ? "USD Coin" : x.symbol, decimals: x.decimals, kind: "stable" })),
+    ...ASSETS.map((x): Asset => ({ key: x.token, symbol: x.symbol, name: x.symbol === "USDC" ? "USD Coin" : x.symbol, decimals: x.decimals, kind: x.symbol === "USDC" ? "stable" : "token" })),
     // USDC is listed above; its market is only for trading
     ...(markets ?? []).filter((m) => m.kind !== "asset").map((m): Asset => ({ key: m.token, symbol: m.symbol, name: m.name, iconToken: m.token, decimals: m.decimals, kind: "launch", market: m })),
   ];
@@ -92,7 +92,7 @@ function valueUsd(a: Asset, amount: bigint, px: number | null): number | null {
   return a.market ? Number(formatEther(amount)) * Number(formatEther(a.market.price)) * px : null;
 }
 const dollars = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const amountOf = (a: Asset, x: bigint) => (a.kind === "hype" ? hype(x) : a.kind === "stable" ? usd(x, a.decimals) : tokens(x));
+const amountOf = (a: Asset, x: bigint) => (a.kind === "hype" ? hype(x) : a.kind === "stable" ? usd(x, a.decimals) : a.kind === "token" ? tokens(x * 10n ** BigInt(18 - a.decimals)) : tokens(x));
 
 function Locked({ title, sub, back }: { title: string; sub?: string; back?: boolean }) {
   const { wallet, connect, unlock, unlocking } = useApp();
@@ -264,7 +264,7 @@ export function PortfolioAction({ kind }: { kind: Kind }) {
   const [asset, setAsset] = useState<Key | undefined>((query.get("token") as Key | null) ?? (kind === "shield" ? "HYPE" : undefined));
   // the fee of the vault this asset sits in (HYPE and USDC in Gloam's once the router is live, tokens in their own)
   const sel = assets.find((x) => x.key === asset);
-  const feePct = useFeePct(sel?.kind === "stable" ? GLOAM?.gloamVault : vaultOf(sel?.market ?? null));
+  const feePct = useFeePct(sel?.kind === "stable" || sel?.kind === "token" ? GLOAM?.gloamVault : vaultOf(sel?.market ?? null));
   const [amt, setAmt] = useState("");
   const [to, setTo] = useState("");
   // withdraw in pieces over time

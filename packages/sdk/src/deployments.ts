@@ -77,9 +77,11 @@ export interface GloamDeployment {
 }
 
 export const deployments: Record<number, CloakDeployment> = {
-  // Cloak v2 on Elysium testnet, redeployed Nov 12, 2026 with the new testnet wallets (docs/WALLETS.md,
-  // docs/TESTNET-REDEPLOY.md): deployments/elysium-testnet-v2-factory.json and deployments/elysium-testnet-gloam.json.
-  // Gloam's vault and memo board are the earlier stand-in for Gloam's own; everything else is new.
+  // Cloak v2 on Elysium testnet. The factory, hook and drops are from Nov 12 (docs/WALLETS.md, docs/TESTNET-REDEPLOY.md,
+  // deployments/elysium-testnet-v2-factory.json). Gloam's vault is Cloak's stand-in running Gloam's mainnet vault code
+  // (Nov 13, deployments/elysium-testnet-gloam-standin.json) with HYPE, USDC and a test KNTQ listed, as Gloam's mainnet
+  // vault will have them; Cloak's launch vault and escrows around it are from the same day
+  // (deployments/elysium-testnet-gloam.json). Gloam's own testnet vault replaces the stand-in with use-gloam-vault.mjs.
   99801: {
     chainId: 99801,
     config: "0x31337213cab071c28eed8b2256c5658c9de8a9ba",
@@ -95,25 +97,30 @@ export const deployments: Record<number, CloakDeployment> = {
     dropFactoryBlock: 28037996n,
     spotBook: "0x8da43271d9fd55c6bebc03372f17dc0d021175f7",
     escrowDropFactory: "0xac4cc1fe9dd62a9a8101fa763a11f3a4530a3ec3",
-    // Elysium testnet USDC (bridged from Circle's USDC on HyperEVM), in Gloam's vault
-    assets: [{ symbol: "USDC", token: "0x7D29d8047B905000459c0E80c34a26CeedcB47b2", decimals: 6 }],
+    // in Gloam's vault: Elysium testnet USDC (bridged from Circle's USDC on HyperEVM) and a test KNTQ (KNTQ has no
+    // contract on testnet; anyone can mint this one). Neither has a HYPE pool on testnet, so both are held, sent and
+    // withdrawn privately but not traded.
+    assets: [
+      { symbol: "USDC", token: "0x7D29d8047B905000459c0E80c34a26CeedcB47b2", decimals: 6 },
+      { symbol: "KNTQ", token: "0x2bd92af06c47a8ad26101a7e2084aff66b5f2c1f", decimals: 18 },
+    ],
     gloam: {
-      gloamVault: "0x8D15BA46071D5AB2e59d746c22d51C906281cB44",
-      memoBoard: "0xf6816854b68CC4B67213289927d8e44050BA62D3",
-      block: 26230337n,
-      launchVault: "0xef42cf8f73b43764cd4c3ad97fb8c276975c84e7",
-      launchVaultBlock: 27931042n,
-      launchSwapV4: "0x285c456ce62369bdf439376e1a66b262a0122e84",
-      // CloakRouterV4 0x043f5a420ad1131cf6a9067e05474749f39191f6 is deployed but left unset here: the stand-in Gloam vault
-      // takes no HYPE (limit 0, checked Nov 12), so HYPE stays in the launch vault and trades through launchSwapV4.
-      // Mainnet sets router (Gloam's vault lists HYPE).
-      ecosystemVault: "0xaa0647ff29eb093627a7ab5c765b08888ad15cbf",
-      ecosystemVaultBlock: 27931042n,
-      batcherV4: "0x1ea4da6c117ebe0886b13517363d1a1fede72249",
-      receive: "0xbc5e58de65e4877c53d74cde3d76d702210568c9",
-      bids: "0x270c5401b97b1cd97c83dfbecc5ebb4534fa81ae",
-      fundsGate: "0x3d2fd839cfe760242c1d26b41944c809c0be60fc",
-      receiptCheck: "0x2c149f9de5f9d6d1b07ce1237be2654c9ca7a495",
+      gloamVault: "0x3ABB2f659c1d203E18C8E8FeEf914D0DAc946370",
+      memoBoard: "0x0ffd9BC4767b5082409615e842CD7F0adC570B44",
+      block: 28255692n,
+      launchVault: "0xe3847f0140bdc06629b2b30a770f393e080f30b2",
+      launchVaultBlock: 28256098n,
+      launchSwapV4: "0xa022edbe332f433ab8bc081b228c8a1d9bad98b6",
+      // set now (unset before Nov 13): the stand-in takes HYPE, so HYPE is held in Gloam's vault and buys and sells go
+      // through the router, as on mainnet
+      router: "0x6f67078181752ed9f312d51e2fd7f787564a86bf",
+      ecosystemVault: "0x95d9073ec1840dabe4de4b9cbebdfe6bdc86706f",
+      ecosystemVaultBlock: 28256098n,
+      batcherV4: "0xc2c642bfbd0ad192df272c7e7486696de2355e1f",
+      receive: "0x88eb84e9d8f2e59a73c41b198d32eeac84c5c7e4",
+      bids: "0x83430908906887d4b9ec920b0a90193b479b15f6",
+      fundsGate: "0xccbd5f8fe8b3a796f2eaedc010189349e61278f6",
+      receiptCheck: "0xe57a30d49842966605912dd9ed76a08635cdaf32",
       whype: "0xe44b27113D4b947c0B1bDf4a93878D0e115f4bdD",
     },
   },
