@@ -227,7 +227,7 @@ export function Docs() {
           <table>
             <tbody>
               <tr><td>Supply</td><td>500,000 GLOAK, minted once, all to its launch. Nothing is ever minted after, so supply only falls. No team share, no proxy</td></tr>
-              <tr><td>Private sells</td><td>A private sell passes through a one-time escrow the token can't recognise in advance, so the vault's payment to it is charged 10%. The token holds that 10% instead of burning it, and passes it on to the router in the same transaction, so the sell is free. A real withdrawal never reaches a router: its 10% burns with the next transfer of GLOAK, or when anyone calls <code>burnHeld()</code></td></tr>
+              <tr><td>Private sells</td><td>A private sell passes through a one-time escrow the token can't recognise in advance, so the vault's payment to it is charged 10%. The token holds that 10% as owed to the escrow, and passes it on to the router when the escrow hands everything over, so the sell is free, even if someone sends the withdrawal ahead of it. A real withdrawal's 10% burns at its owner's first move, or after 14 days via <code>releaseOwed</code></td></tr>
               <tr><td>Launch</td><td>One sealed-bid launch: 294,000 for sale, 206,000 paired with HYPE in the pool, 70% of the raise into the pool (locked forever), from 0.0002 to 0.01 HYPE per GLOAK</td></tr>
               <tr><td>How it's born</td><td>Through a one-time door in the launch factory that only Cloak's owner wallet can use, once. Nobody else can make a GLOAK</td></tr>
               <tr><td>Admin</td><td>Can approve vaults and routers (3 days in public), remove approvals at once, lower the surcharge or renounce. Can't move anyone's GLOAK or exempt a wallet</td></tr>

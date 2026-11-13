@@ -12,6 +12,15 @@ interface IMarketSeeder {
         returns (address market, address uniPair, uint256 shares, uint256 hypeUsed, uint256 tokensUsed);
 }
 
+/// The factory's token deployer and its one-time door (CloakVestingDeployer), as far as a failed launch needs them.
+interface IAuctionFactoryDoor {
+    function vestingDeployer() external view returns (address);
+}
+
+interface IAuctionDoor {
+    function doorToken() external view returns (address);
+}
+
 interface ILPToken {
     function transfer(address to, uint256 value) external returns (bool);
     function approve(address spender, uint256 value) external returns (bool);
@@ -336,6 +345,19 @@ contract CloakAuction {
 
     // ───────────────────────────── settle ─────────────────────────────
 
+    /// @dev Where a failed launch's tokens go: back to the creator, except the one-time door's token (GLOAK), which is
+    ///      burned. Its door can't be used again, and it must never reach a public wallet without its surcharge.
+    function _unsoldTo(address creator) internal view returns (address) {
+        try IAuctionFactoryDoor(factory).vestingDeployer() returns (address d) {
+            if (d.code.length != 0) {
+                try IAuctionDoor(d).doorToken() returns (address t) {
+                    if (t != address(0) && t == address(token)) return DEAD;
+                } catch {}
+            }
+        } catch {}
+        return creator;
+    }
+
     function settle() external {
         require(block.timestamp >= params.revealEnd, "reveal open");
         require(!settled, "settled");
@@ -344,7 +366,7 @@ contract CloakAuction {
 
         if (totalDemand == 0) {
             failed = true;
-            require(token.transfer(p.creator, p.saleSupply + p.lpReserve), "t");
+            require(token.transfer(_unsoldTo(p.creator), p.saleSupply + p.lpReserve), "t");
             emit Failed();
             return;
         }
@@ -388,7 +410,7 @@ contract CloakAuction {
         // comes back in full (no penalty) and the tokens go back to the creator.
         if (raised < p.minRaise) {
             failed = true;
-            require(token.transfer(p.creator, p.saleSupply + p.lpReserve), "t");
+            require(token.transfer(_unsoldTo(p.creator), p.saleSupply + p.lpReserve), "t");
             emit Failed();
             return;
         }

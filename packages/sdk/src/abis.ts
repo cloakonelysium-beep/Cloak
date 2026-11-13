@@ -13004,6 +13004,19 @@ export const gloakTokenAbi = [
   },
   {
     "type": "function",
+    "name": "OWED_WINDOW",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "PAYEE",
     "inputs": [],
     "outputs": [
@@ -13031,6 +13044,19 @@ export const gloakTokenAbi = [
   {
     "type": "function",
     "name": "ROLE_DELAY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ROLE_GRACE",
     "inputs": [],
     "outputs": [
       {
@@ -13373,6 +13399,30 @@ export const gloakTokenAbi = [
   },
   {
     "type": "function",
+    "name": "owed",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "amount",
+        "type": "uint192",
+        "internalType": "uint192"
+      },
+      {
+        "name": "since",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "pendingAdmin",
     "inputs": [],
     "outputs": [
@@ -13439,6 +13489,38 @@ export const gloakTokenAbi = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "queuedCodehash",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "releaseOwed",
+    "inputs": [
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -13567,6 +13649,19 @@ export const gloakTokenAbi = [
   },
   {
     "type": "function",
+    "name": "totalOwed",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "totalSupply",
     "inputs": [],
     "outputs": [
@@ -13675,6 +13770,25 @@ export const gloakTokenAbi = [
       },
       {
         "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwedReleased",
+    "inputs": [
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -13886,6 +14000,16 @@ export const gloakTokenAbi = [
   },
   {
     "type": "error",
+    "name": "CodeChanged",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "Expired",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "NotAdmin",
     "inputs": []
   },
@@ -13897,6 +14021,11 @@ export const gloakTokenAbi = [
   {
     "type": "error",
     "name": "NotQueued",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotYet",
     "inputs": []
   },
   {

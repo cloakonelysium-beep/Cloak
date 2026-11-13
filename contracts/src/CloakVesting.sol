@@ -49,6 +49,13 @@ interface IDoorMaker {
     function make(string calldata name, string calldata symbol, address[] calldata to, uint256[] calldata amounts)
         external
         returns (address token);
+    /// @notice The token deployer the maker answers to (it refuses any other caller).
+    function door() external view returns (address);
+}
+
+/// The launch factory, as far as the door checks it: which token deployer it uses.
+interface IDoorFactory {
+    function vestingDeployer() external view returns (address);
 }
 
 /// @notice Deploys launch tokens and vesting contracts for CloakFactory (kept separate so the factory stays under the
@@ -105,6 +112,10 @@ contract CloakVestingDeployer {
         require(doorAdmin != address(0) && msg.sender == doorAdmin, "door admin");
         require(!doorUsed, "door used");
         require(maker != address(0) && factory != address(0), "zero");
+        // a factory and a maker built for this deployer: a wrong address (a typo, an old deploy, a fake factory that
+        // doesn't use this deployer) fails here instead of spending the one-time door on it
+        require(factory.code.length != 0 && IDoorFactory(factory).vestingDeployer() == address(this), "door factory");
+        require(maker.code.length != 0 && IDoorMaker(maker).door() == address(this), "door maker");
         doorUsed = true;
         _armedMaker = maker;
         _armedFactory = factory;

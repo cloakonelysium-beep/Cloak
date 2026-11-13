@@ -85,3 +85,30 @@ reports which of HYPE, USDC and KNTQ it takes, and writes the partner config. Th
 `packages/sdk/src/deployments.ts` and the `GLOAM_*` values in `render.yaml` (and on the Render service). Cloak's
 contracts take the vault at deploy and nobody can repoint them later, so the switch is a redeploy (about 0.003 HYPE),
 not a setting.
+
+## Nov 13: redeploy after the GLOAK audit (main testnet wallet)
+
+The audit fixes (docs/REVIEW-RESPONSES.md, report 3) changed the auction and the token deployer (so the factory, its
+hook and its config are new) and the router and market adapter (so the partner contracts are new). Gloam's vault
+stand-in and the NFT drops stay as they are. GLOAK itself isn't launched on testnet yet, so nothing is lost.
+
+Rehearsed on a fork of testnet, all three steps chained (factory, partner, GLOAK's maker and the owner wallet's door
+call): about 0.0045 HYPE at testnet gas prices.
+
+From a session with the **testnet main wallet's** key as `DEPLOYER_PK` (`0xA650…68d6`):
+
+```
+cd contracts && forge build && cd ../contracts-v4 && forge build && cd ../contracts-gloam && forge build && cd ..
+NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-v2-factory.mjs --config deployments/elysium-testnet-v2-factory.input.json
+NODE_USE_ENV_PROXY=1 node e2e-gloam/deploy-partner.mjs --config deployments/elysium-testnet-gloam.input.json
+node scripts/sdk-entry.mjs deployments/elysium-testnet-gloam.json deployments/elysium-testnet-v2-factory.json
+```
+
+- The partner deploy reads the new factory and hook from `deployments/elysium-testnet-v2-factory.json`
+  (`factoryRecord` in its config), so there is nothing to edit between the steps.
+- The deployer is the owner, so the config needs no `acceptOwnership()`, and the guards' control stays with the main wallet.
+- Then: the SDK entry into `packages/sdk/src/deployments.ts` (keep the drops lines and `assets` with KNTQ),
+  `render.yaml` and the Render service's `FACTORY`, `START_BLOCK` and `GLOAM_*` values (the router in `GLOAM_ESCROWS`),
+  the README table, then push. Delete `DEPLOYER_PK` from the environment afterwards.
+- GLOAK on testnet, when wanted: put a `commitEnd` in `deployments/elysium-testnet-gloak.input.json` (its reveal window
+  is now 6 hours) and run `deploy-gloak.mjs`; it prints the owner wallet's one door call.

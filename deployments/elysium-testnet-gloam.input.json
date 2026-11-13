@@ -11,6 +11,8 @@
   "verifier": "0xdf37aab12d125fF81E5d800607C804C392e0f61F",
   "shieldVerifier": "0x30f27b91bb56EddCe1Df720687Be336fAa43240e",
   "factory": "0xb9060dc9c5dcd49d424b0257b3a8b1a2939271d7",
+  "factoryRecord": "deployments/elysium-testnet-v2-factory.json",
+  "_factoryRecord": "The factory and hook are read from this record (deploy-v2-factory.mjs writes it), over `factory` and `v4Hook` here.",
   "poolManager": "0x51027076df8416e42ea8438b27a0c433d9662e68",
   "v4Hook": "0x822c91E71BC5a63Ef2C38bc37cea6ff443CD2a80",
   "whype": "0xe44b27113D4b947c0B1bDf4a93878D0e115f4bdD",

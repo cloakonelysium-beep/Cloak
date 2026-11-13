@@ -39,7 +39,8 @@ export function zoneOf(partner) {
   const z = [
     [partner.launchVault, ROLES.RECEIVE | ROLES.VAULT, "launch vault"],
     [partner.router, ROLES.RECEIVE | ROLES.FEED | ROLES.SWAP | ROLES.PAYEE, "router (CloakRouterV4)"],
-    [partner.batcherV4, ROLES.RECEIVE | ROLES.FEED | ROLES.PAYEE, "batch rounds (CloakGloamBatcherV4)"],
+    // Swap too: the pool's market adapter serves only callers GLOAK lets swap (audit, Nov 13)
+    [partner.batcherV4, ROLES.RECEIVE | ROLES.FEED | ROLES.SWAP | ROLES.PAYEE, "batch rounds (CloakGloamBatcherV4)"],
     [partner.bids, ROLES.RECEIVE, "private bids (CloakGloamBids)"],
   ];
   for (const [a, , what] of z) if (!/^0x[0-9a-fA-F]{40}$/.test(a ?? "")) throw new Error(`the partner record has no ${what}`);

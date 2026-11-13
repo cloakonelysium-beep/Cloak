@@ -46,16 +46,21 @@ Every address has a set of roles, empty by default. A transfer is checked in thi
 | Send | 2 | Transfers from this address are free. Only the launch auction and Cloak's hook have it, from the start; nobody can grant it |
 | Feed | 4 | May transfer GLOAK into Uniswap's PoolManager. Contracts only |
 | Swap | 8 | May swap in GLOAK's pool (Cloak's hook asks `canSwap`). Contracts only |
-| Vault | 16 | A private vault: its withdrawals are charged, held until the transaction ends (below) |
+| Vault | 16 | A private vault: its withdrawals are charged, and the charge is held until the recipient's first move (below) |
 | Payee | 32 | A router that one-time escrows pay; it receives the held surcharge |
 
 ### Why private sells are free (and nothing is ever minted)
 
-Private routers on Elysium usually spend a note by withdrawing it to a one-time escrow address, which in the same transaction hands everything to the router. GLOAK can't recognise the escrow in advance: its address is new for every swap and has no code yet when the vault pays it. So the vault's payment to it is charged 10% like any withdrawal.
+Private routers on Elysium usually spend a note by withdrawing it to a one-time escrow address, which then hands everything to the router. GLOAK can't recognise the escrow in advance: its address is new for every swap and has no code yet when the vault pays it. So the vault's payment to it is charged 10% like any withdrawal.
 
-That 10% isn't burned on the spot. The token holds it in its own balance and remembers, in transient storage (EIP-1153), who it was charged on. If that recipient then sends its whole balance to a **Payee** in the same transaction, the token moves the held 10% on to the Payee as an ordinary transfer, and the swap has the full amount.
+That 10% isn't burned on the spot. The token holds it in its own balance and records it as **owed** to the withdrawal's recipient (`owed(recipient)`). The recipient's first outgoing transfer settles it:
+- **It sends its whole balance to a Payee** (the escrow handing off to the router): the token moves the held 10% on to the Payee as an ordinary transfer, and the swap has the full amount.
+- **It sends GLOAK anywhere else** (a real withdrawal's owner moving their GLOAK): the held 10% burns.
+- **It never moves:** after 14 days anyone can call `releaseOwed(recipient)`, and the held 10% burns.
 
-A real withdrawal never reaches a Payee. Once its transaction ends, its 10% is no longer owed to anyone, and the next transfer of GLOAK burns it. Anyone can also burn it at once with `burnHeld()`. A burn inside the transaction can never take what that transaction is still owed.
+What's owed is kept in storage, so the hand-off doesn't have to happen in the withdrawal's own transaction. If someone copies a pending sell's proof and sends the withdrawal alone (front-running it), the 10% stays owed to the escrow, and the sell still gets the full amount, whether it then goes through or is rescued after its deadline. A zero-value transfer never settles anything, since it needs no allowance. Only surcharges owed to nobody can be burned (`heldForBurn()`, `burnHeld()`).
+
+Until Nov 13 this record lived only for the withdrawal's transaction (transient storage), so a withdrawal sent alone lost its 10%. The Nov 13 audit flagged it, and it was changed before GLOAK's launch.
 
 Other surcharges (sends between public addresses, a public exit from the router) burn at once.
 
@@ -118,7 +123,7 @@ Your protocol needs two approvals:
 - **It always delivers swap output into a vault.** Never to a public address, never as Uniswap v4 claims (ERC-6909). Swap opens GLOAK's pool to it, so this keeps the pool private.
 - **It never lets a user pay GLOAK into Uniswap outside a swap** (adding liquidity, settling for claims).
 - **It supports hooked, dynamic-fee v4 pools.**
-- **For free private sells, it withdraws through a one-time escrow that hands its whole balance to the router in the same transaction.** Any other design works, but its sells pay 10%.
+- **For free private sells, it withdraws through a one-time escrow that hands its whole balance to the router.** Any other design works, but its sells pay 10%.
 - **Leftovers paid out to a public address pay 10%**, like any exit.
 
 **Treat GLOAK as fee-on-transfer outside your vault and router.** A transfer to an address without Receive delivers 90% of the amount.
@@ -139,13 +144,14 @@ Usually nothing. GLOAK doesn't ask a protocol to work a particular way: Cloak ap
 | Users deposit (shield) GLOAK into your pool | Your vault gets Receive and Vault | None |
 | Private transfers inside your pool | Nothing: no tokens move | None |
 | A withdrawal to a wallet | Nothing: it pays 10%, as intended | None |
-| A private swap through a one-time escrow that hands everything to your router in the same transaction (Gloam's design) | Your router gets Payee (plus Receive, Feed, Swap) | None: the token handles any escrow, whatever its address |
+| A private swap through a one-time escrow that hands everything to your router (Gloam's design), in the same transaction or a later one | Your router gets Payee (plus Receive, Feed, Swap) | None: the token handles any escrow, whatever its address |
 | A private swap where your vault pays your router directly | Your router gets Receive (plus Feed, Swap) | None |
-| A private swap where the escrow hands off in a later transaction | Nothing helps | Its sells pay 10% unless the flow changes |
+| A private swap whose escrow moves only part of its balance first | Nothing helps | That sell pays 10% unless the flow changes |
 
 Two things may need a setting, not new code:
 - **Your router must trade on Uniswap v4 directly, in GLOAK's own pool.** Uniswap's Universal Router and aggregators are refused on purpose: that's what keeps GLOAK out of public trading.
 - **If your router keeps a list of allowed v4 hooks or pools**, it must allow Cloak's hook, since GLOAK's only pool uses it.
+- **Your router should never route GLOAK through a pool with no hook.** Anyone can open one, and Uniswap's claims (ERC-6909) would then carry GLOAK around in public without the surcharge. Cloak's router refuses it; a router that only uses pools it lists (Gloam's) is fine as long as no such pool is listed.
 
 What it costs: every approval after GLOAK's setup waits 3 days in public, and the swap and Uniswap roles (Swap, Feed) go only to contracts.
 
@@ -169,7 +175,7 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 ## Who controls what
 
 **Cloak's owner wallet (GLOAK's admin) can:**
-- **Add roles.** Instant until it ends setup, which it does once the pool is open and the pool's batch-round adapter is approved; after that, each addition waits 3 days in public.
+- **Add roles.** Instant until it ends setup, which it does once the pool is open and the pool's batch-round adapter is approved; after that, each addition waits 3 days in public. A queued addition must be applied within 14 days after that, or it expires; and if the account's code changed since it was queued, it can't be applied.
 - **Remove roles at once.**
 - **Lower the surcharge.**
 - **Hand the admin to another address**, in two steps.
@@ -179,18 +185,20 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 - mint, move, freeze or confiscate anyone's GLOAK;
 - raise the surcharge;
 - grant Send to anyone;
-- grant Feed or Swap to a wallet.
+- grant Feed or Swap to a wallet, including one delegating to code (EIP-7702);
+- give the token's own address a role.
 
-**At launch, GLOAK is born with Cloak's private zone approved:** Cloak's launch vault (Receive, Vault), Cloak's router (Receive, Feed, Swap, Payee), Cloak's batch rounds (Receive, Feed, Payee) and Cloak's private bids (Receive). The auction and the hook have Receive and Send, and the hook also has Feed.
+**At launch, GLOAK is born with Cloak's private zone approved:** Cloak's launch vault (Receive, Vault), Cloak's router (Receive, Feed, Swap, Payee), Cloak's batch rounds (Receive, Feed, Swap, Payee) and Cloak's private bids (Receive). The pool's batch-round adapter gets Swap after the launch settles, and serves only callers GLOAK itself lets swap, so it never opens the pool to the public. The auction and the hook have Receive and Send, and the hook also has Feed.
 
 **Cloak's contracts changed only once for GLOAK:**
-- **The launch-token deployer has a one-time door.** The owner wallet used it once, to launch GLOAK with this token, and it can never be used again.
+- **The launch-token deployer has a one-time door.** The owner wallet used it once, to launch GLOAK with this token, and it can never be used again. It only accepts a factory and a maker built for it.
+- **A failed GLOAK launch burns its supply.** If no bid at all is revealed (or a minimum raise isn't met), an ordinary launch returns its tokens to its creator. For the door's token they go to 0x…dEaD instead, so they can never reach a public wallet without the surcharge. GLOAK's reveal window is 6 hours, and anyone can reveal a bid.
 - **Cloak's hook records the door's token's pool as its single private pool**, set at that pool's opening and never changeable. For every other pool, the hook behaves exactly as before.
 
 ## Known limits
 
-- **A sell's withdrawal sent alone pays 10%.** If someone submits a private sell's withdrawal in its own transaction, away from the router, the held 10% can't go on to the router, and it burns. The seller recovers 90% after the swap's deadline.
-- **Hookless pools.** Someone could open their own hookless GLOAK pool, sell GLOAK into it privately, and keep the result as v4 claims. That makes a small, isolated market reachable only by custom contracts. Turning claims back into GLOAK costs 10%, and GLOAK's own pool stays closed to it.
+- **One owner key.** The admin is Cloak's owner wallet, a single key, until Elysium supports a multisig (on the roadmap). It ends setup as soon as GLOAK's pool and adapter are approved, after which every new role waits 3 days in public.
+- **A withdrawal's 10% can sit held for a while.** It burns at the recipient's first move, or after 14 days via `releaseOwed`. Until then it's out of circulation (the meter and the page count it as burned), but `totalSupply()` still includes it.
 - **Public bids are possible.** A public winner gets public GLOAK, free at the claim.
 - **A thin pool moves a lot.** The pool's depth is fixed at launch: with about 1.5 HYPE in it, a 0.2 HYPE buy moves the price by roughly a quarter.
 - **Exchanges and public DEXs can't really hold it.** Every move to a public address pays 10%.
@@ -203,7 +211,9 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 - `surchargeOn(from, to, value) → uint256` (what a transfer would charge, ignoring a private sell's same-transaction hand-on)
 - `surchargeBps()`, `MAX_SURCHARGE_BPS` (1,000)
 - `surchargeBurned()`
-- `heldForBurn()` (withdrawal surcharges waiting for the next transfer to burn them)
+- `heldForBurn()` (held surcharges owed to nobody, burned by the next transfer)
+- `owed(recipient) → (amount, since)`, `totalOwed()` (withdrawal surcharges held for their recipients)
+- `queuedCodehash(id)`, `ROLE_GRACE` (14 days), `OWED_WINDOW` (14 days)
 - `meter()`
 - `members(i)`, `membersCount()`
 - `admin()`, `pendingAdmin()`, `setupMode()`
@@ -216,11 +226,12 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 - `endSetup()`, `lowerSurcharge(bps)`, `offerAdmin(to)` / `acceptAdmin()`, `renounceAdmin()`
 
 **Anyone**
-- `burnHeld()`: burn the held surcharges now
+- `burnHeld()`: burn the held surcharges owed to nobody now
+- `releaseOwed(recipient)`: 14 days after a recipient was last owed, make its held surcharge burnable and burn it
 
 **Events**
 - `Transfer`, `Approval`
-- `Surcharged(from, to, burned)`, `SurchargeHeld(from, to, amount)`, `SurchargeRefunded(escrow, payee, amount)`
+- `Surcharged(from, to, burned)`, `SurchargeHeld(from, to, amount)`, `SurchargeRefunded(escrow, payee, amount)`, `OwedReleased(recipient, amount)`
 - `RolesSet`, `RolesQueued`, `RolesCancelled`
 - `SetupEnded`, `SurchargeLowered`
 - `AdminOffered`, `AdminChanged`
@@ -228,7 +239,7 @@ Only a note's owner can move it. Neither Cloak nor any vault owner can move anyo
 **Errors**
 - `NotPrivate` (paying into Uniswap without Feed)
 - `RoleNotGrantable` (Send, or Feed/Swap to a wallet)
-- `TimelockRequired`, `TooEarly`, `NotQueued`
+- `TimelockRequired`, `TooEarly`, `NotQueued`, `Expired`, `CodeChanged`, `NotYet`, `BadRoles`
 - `BadSurcharge`, `NotAdmin`
 
 **Source:** `contracts-v4/src/experiment/GloakToken.sol` (`GloakToken`, `GloakMaker`); the hook's private pool is in `contracts-v4/src/CloakV4Hook.sol`.

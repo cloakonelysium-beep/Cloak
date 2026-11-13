@@ -172,8 +172,10 @@ contract GloakOnGloam is Test {
         GVAULT.unshield(hex"00", GVAULT.currentRoot(), _nullifier(), address(gloak), bob, 10_000e18);
         uint256 sent = 10_000e18 - fee;
         assertEq(gloak.balanceOf(bob), sent - sent / 10, "bob gets what Gloam pays out, less GLOAK's 10%");
-        assertEq(gloak.heldForBurn(), sent / 10, "the 10% waits to burn");
-        gloak.burnHeld();
+        (uint192 owedBob,) = gloak.owed(bob);
+        assertEq(owedBob, sent / 10, "the 10% is held, owed to bob until his first move");
+        vm.prank(bob);
+        gloak.transfer(address(GVAULT), 1e18); // bob's first move (back into Gloam's vault, free) settles it: it burns
         assertEq(gloak.totalSupply(), supply - sent / 10, "and burns: supply only falls");
         console.log("Withdrawal of 10,000 GLOAK from Gloam's vault: Gloam's fee", fee / 1e18, "| burned", sent / 10 / 1e18);
     }
