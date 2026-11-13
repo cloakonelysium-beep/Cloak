@@ -84,6 +84,41 @@ export const deployments: Record<number, CloakDeployment> = {
   // limits; Cloak's launch vault and escrows are deployed around it (deployments/elysium-testnet-gloam.json). Since Nov 13 the test
   // vault is the one the testnet main wallet deployed and controls; the tester's first copy (0x3ABB…6370) is retired. On mainnet
   // `gloamVault` is Gloam's own vault.
+  // Cloak v2 on Elysium mainnet (Nov 13): deployed from the mainnet deployer, every role with the owner wallet
+  // (deployments/elysium-mainnet-*.json). Next to Gloam's vault, on the memo board shared with Gloam.
+  99901: {
+    chainId: 99901,
+    config: "0xbf9d133d2be0572c9ab94adcdb2d00ac8f0e3080",
+    factory: "0x01BbBA502E4a9bef60F261Cf04d8D04e48F2fB12",
+    factoryBlock: 6033579n,
+    poolManager: "0xe2e105d3f7209a9da11f83ccf3e7398a753823f1",
+    v4Hook: "0x0df8E5771Cad0DEb29b7544b3bDe5A993D342a80",
+    whype: "0x6521f9729d6c65e5e743de144f5546f334ea7d15",
+    relayerUrl: "https://cloak-mainnet-keeper.onrender.com",
+    // v2's own NFT drop contracts on mainnet (Nov 13, deployments/elysium-mainnet-drops.json), on v2's config, no owner
+    dropFactory: "0x6b10a7c9873a99d69a68456bfc34b204b85c0ca3",
+    dropFactoryBlock: 6039074n,
+    spotBook: "0x6c3e17b589c5514b8db61d6533231612f5b012d7",
+    escrowDropFactory: "0xa995207204e79459caed54f26580ed3676b0d7d9",
+    assets: [{ symbol: "USDC", token: "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65", decimals: 6, pool: { fee: 3000, tickSpacing: 60 } }, { symbol: "KNTQ", token: "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0", decimals: 18, pool: { fee: 3000, tickSpacing: 60 } }],
+    gloam: {
+      gloamVault: "0x89d3042390204f57b8b4F8949D3c2203E4002164",
+      memoBoard: "0xb99db19cdeaf3779013a75f2cb7a13d0eecd075a",
+      block: 3248495n,
+      launchVault: "0x849097aa6081aa9977ceaf30b6d1cd8467b01726",
+      launchVaultBlock: 6038202n,
+      launchSwapV4: "0xa0aed21d694809ade5b001d413c826ca63247818",
+      router: "0x13de29b8801fcaba9d476c68869a4286cf3203b3",
+      ecosystemVault: "0x5ab0ecc7cc6654cf1bfc7247cfeee1ab2887046d",
+      ecosystemVaultBlock: 6038202n,
+      batcherV4: "0xabc13cb154e5c708600d54622bc37fb4ec14b16a",
+      receive: "0xe2a8af9c67e63b7be92c3d1cc308496ba5c8ef9e",
+      bids: "0x03344099637832bb26922dca9178675244271758",
+      fundsGate: "0xdcd44b68626d5b9c6cff317e2f41992481997d91",
+      receiptCheck: "0x3909ec2f2e4d1625b4c4348c561eae8cf5b5efb9",
+      whype: "0x6521f9729d6c65e5e743de144f5546f334ea7d15",
+    },
+  },
   99801: {
     chainId: 99801,
     config: "0x716eb18ec96b21a134b8affe0daa6fa968bbb1a3",

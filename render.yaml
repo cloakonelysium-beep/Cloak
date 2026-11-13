@@ -74,3 +74,72 @@ services:
         value: "28359290"
       - key: GLOAM_FUNDS_GATE
         value: "0xe2e5c9531348197e7913a0464961c7fdd2a23deb"
+
+  # Cloak v2 MAINNET keeper (Elysium 99901, Nov 13). Every value from the deploy records (node scripts/keeper-env.mjs mainnet).
+  # Secrets in Render's dashboard only: KEEPER_PK (the mainnet keeper wallet 0x4039…5442) and RPC_BACKUP (the keyed mainnet backup RPC).
+  - type: web
+    name: cloak-mainnet-keeper
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cloakely/sdk build
+    startCommand: node services/keeper/index.mjs
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - services/keeper/**
+        - packages/sdk/**
+        - deployments/**
+        - pnpm-lock.yaml
+        - package.json
+        - pnpm-workspace.yaml
+        - render.yaml
+    envVars:
+      - key: KEEPER_PK
+        sync: false
+      - key: RPC_BACKUP
+        sync: false
+      - key: NODE_VERSION
+        value: "22"
+      - key: CHAIN_ID
+        value: "99901"
+      - key: RPC_URL
+        value: "https://rpc.elysium.kinetiq.xyz"
+      - key: FACTORY
+        value: "0x01BbBA502E4a9bef60F261Cf04d8D04e48F2fB12"
+      - key: START_BLOCK
+        value: "6033579"
+      - key: CORS_ORIGINS
+        value: "https://oncloak.xyz,https://www.oncloak.xyz"
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+      - key: DROPS
+        value: "1"
+      - key: DROP_FACTORY
+        value: "0x6b10a7c9873a99d69a68456bfc34b204b85c0ca3"
+      - key: DROP_FACTORY_BLOCK
+        value: "6039074"
+      - key: ESCROW_DROP_FACTORY
+        value: "0xa995207204e79459caed54f26580ed3676b0d7d9"
+      - key: GLOAM_VAULT
+        value: "0x89d3042390204f57b8b4F8949D3c2203E4002164"
+      - key: GLOAM_VAULT_BLOCK
+        value: "3248495"
+      - key: GLOAM_LAUNCH_VAULT
+        value: "0x849097aa6081aa9977ceaf30b6d1cd8467b01726"
+      - key: GLOAM_LAUNCH_VAULT_BLOCK
+        value: "6038202"
+      - key: GLOAM_ECOSYSTEM_VAULT
+        value: "0x5ab0ecc7cc6654cf1bfc7247cfeee1ab2887046d"
+      - key: GLOAM_ECOSYSTEM_VAULT_BLOCK
+        value: "6038202"
+      - key: GLOAM_MEMO
+        value: "0xb99db19cdeaf3779013a75f2cb7a13d0eecd075a"
+      - key: GLOAM_ESCROWS
+        value: "0xa0aed21d694809ade5b001d413c826ca63247818,0x13de29b8801fcaba9d476c68869a4286cf3203b3,0xabc13cb154e5c708600d54622bc37fb4ec14b16a,0x03344099637832bb26922dca9178675244271758,0xe2a8af9c67e63b7be92c3d1cc308496ba5c8ef9e,0xdcd44b68626d5b9c6cff317e2f41992481997d91"
+      - key: GLOAM_BATCHER_V4
+        value: "0xabc13cb154e5c708600d54622bc37fb4ec14b16a"
+      - key: GLOAM_BATCHER_V4_BLOCK
+        value: "6038202"
+      - key: GLOAM_FUNDS_GATE
+        value: "0xdcd44b68626d5b9c6cff317e2f41992481997d91"

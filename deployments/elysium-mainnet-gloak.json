@@ -1,0 +1,21 @@
+{
+  "chainId": 99901,
+  "note": "GLOAK, the one private-only token (docs/GLOAK.md). Only the maker is deployed (Nov 13). The owner wallet's door call creates its launch: not made yet. On launch day, set the real commitEnd in elysium-mainnet-gloak.input.json and rerun deploy-gloak.mjs with --maker 0x50641e779c30bcf2512cc21d4afdcf13c14f3777 to print it.",
+  "factory": "0x01BbBA502E4a9bef60F261Cf04d8D04e48F2fB12",
+  "vestingDeployer": "0x65083F6834a4B65a6B8d1451F4A0D35136BDEA69",
+  "v4Hook": "0x0df8E5771Cad0DEb29b7544b3bDe5A993D342a80",
+  "poolManager": "0xe2e105d3f7209a9da11f83ccf3e7398a753823f1",
+  "admin": "0x430c0A8547674ac2Fc09ad55eaF71FaAfB6bDf16",
+  "treasury": "0xBB5Df281F605B886C3a4E73ECD6560847719936b",
+  "maker": "0x50641e779c30bcf2512cc21d4afdcf13c14f3777",
+  "zone": [
+    { "what": "launch vault", "address": "0x849097aa6081aa9977ceaf30b6d1cd8467b01726", "roles": 17 },
+    { "what": "router (CloakRouterV4)", "address": "0x13de29b8801fcaba9d476c68869a4286cf3203b3", "roles": 45 },
+    { "what": "batch rounds (CloakGloamBatcherV4)", "address": "0xabc13cb154e5c708600d54622bc37fb4ec14b16a", "roles": 45 },
+    { "what": "private bids (CloakGloamBids)", "address": "0x03344099637832bb26922dca9178675244271758", "roles": 1 }
+  ],
+  "launchVault": "0x849097aa6081aa9977ceaf30b6d1cd8467b01726",
+  "batcherV4": "0xabc13cb154e5c708600d54622bc37fb4ec14b16a",
+  "ownerCall": null,
+  "_ownerCall": "Left out on purpose: the call printed on Nov 13 carried a placeholder close date (Dec 31) and must never be signed."
+}
