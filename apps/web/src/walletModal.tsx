@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { chain } from "./config";
+import { IS_MAINNET, chain } from "./config";
 import { friendly } from "./errors";
 import { addElysium, installedWallets, onWalletsChanged, WC_PROJECT_ID, type WalletOption } from "./wallet";
 
@@ -49,10 +49,10 @@ export function WalletModal({ onPick, onClose }: { onPick: (o: WalletOption | "w
     setErr("");
     setNote("");
     const w = wallets[0];
-    if (!w) return setErr("Install a browser wallet first, then you can add Elysium testnet to it.");
+    if (!w) return setErr(`Install a browser wallet first, then you can add ${chain.name} to it.`);
     try {
       await addElysium(w.provider);
-      setNote(`Elysium testnet is now in ${w.name}.`);
+      setNote(`${chain.name} is now in ${w.name}.`);
     } catch (e) {
       setErr(friendly(e));
     }
@@ -103,7 +103,11 @@ export function WalletModal({ onPick, onClose }: { onPick: (o: WalletOption | "w
           <div className="eyebrow">New to Elysium?</div>
           <div className="wm-steps">
             <button className="btn btn-ghost btn-sm" onClick={addNetwork}>Add {chain.name}</button>
-            <a className="btn btn-ghost btn-sm" href={FAUCET_URL} target="_blank" rel="noreferrer">Get testnet HYPE ↗</a>
+            {IS_MAINNET ? (
+              <a className="btn btn-ghost btn-sm" href="/app/bridge">Bring HYPE or USDC over</a>
+            ) : (
+              <a className="btn btn-ghost btn-sm" href={FAUCET_URL} target="_blank" rel="noreferrer">Get testnet HYPE ↗</a>
+            )}
           </div>
           <p className="xs mute">Network: {chain.name} · Chain ID {chain.id} · Gas token HYPE</p>
         </div>

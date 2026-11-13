@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "../router";
 import { GITHUB } from "../ui";
+import { CHAIN_ID } from "../config";
 
 const EX: Record<string, string> = {
   Launchpad: `import { Cloak, elysiumTestnet } from "@cloakely/sdk";
@@ -28,10 +29,10 @@ await cloak.settle(auction);
 await cloak.claimAll(auction);`,
   "Private trading": `import { GloamPrivate, deployments, gloamProvers, gloamRelaySubmitter } from "@cloakely/sdk";
 
-const g = deployments[99801].gloam;
+const g = deployments[${CHAIN_ID}].gloam;
 // one signature opens both vaults (Gloam's and Cloak's launch vault): the same account on every device
 const priv = await GloamPrivate.unlock(walletClient, {
-  publicClient, chainId: 99801, payMemo: g.memoBoard, whype: g.whype,
+  publicClient, chainId: ${CHAIN_ID}, payMemo: g.memoBoard, whype: g.whype,
   gloamVault: { pool: g.gloamVault, poolBlock: g.block }, launchVault: { pool: g.launchVault, poolBlock: g.launchVaultBlock ?? g.block },
   launchSwapV4: g.launchSwapV4, batcherV4: g.batcherV4, receive: g.receive, bids: g.bids,
   provers: gloamProvers(), submit: gloamRelaySubmitter(KEEPER_URL),
@@ -136,7 +137,7 @@ export function Sdk() {
                 </div>
                 <pre>{EX[tab]}</pre>
               </div>
-              <p className="xs" style={{ color: "var(--deep-soft)", marginTop: 12 }}>Install it with <code>npm install @cloakely/sdk viem</code>. It's on <a href="https://www.npmjs.com/package/@cloakely/sdk" target="_blank" rel="noreferrer">npm</a>, published with provenance from this repo. Addresses come built in: <code>deploymentFor(99801)</code>.</p>
+              <p className="xs" style={{ color: "var(--deep-soft)", marginTop: 12 }}>Install it with <code>npm install @cloakely/sdk viem</code>. It's on <a href="https://www.npmjs.com/package/@cloakely/sdk" target="_blank" rel="noreferrer">npm</a>, published with provenance from this repo. Addresses come built in: <code>deploymentFor({CHAIN_ID})</code>.</p>
             </div>
           </div>
         </section>

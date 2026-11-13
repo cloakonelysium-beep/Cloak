@@ -77,12 +77,20 @@ export function Docs() {
 
           <h2 id="quickstart">Quickstart (2 minutes)</h2>
           <ol>
-            <li>Open the <Link to="/app">app</Link> and connect a wallet. Cloak adds <b>Elysium testnet</b> (chain 99801) for you.</li>
-            <li>Get testnet HYPE from the <a href="https://elysium.kinetiq.xyz/testnet-faucet" target="_blank" rel="noreferrer">Elysium faucet</a>.</li>
+            <li>Open the <Link to="/app">app</Link> and connect a wallet. Cloak adds <b>{chain.name}</b> (chain {CHAIN_ID}) for you.</li>
+            {IS_MAINNET ? (
+              <li>Have some HYPE on Elysium, or <Link to="/app/bridge">bring HYPE or USDC over</Link> from another chain or an exchange.</li>
+            ) : (
+              <li>Get testnet HYPE from the <a href="https://elysium.kinetiq.xyz/testnet-faucet" target="_blank" rel="noreferrer">Elysium faucet</a>.</li>
+            )}
             <li><b>Bid</b> in a launch: pick a max price and quantity, then click <i>Seal bid</i>. You can close the tab, because the bid reveals itself.</li>
             <li><b>Trade privately</b>: go to <Link to="/app/portfolio">Portfolio</Link>, unlock your private account (one free signature) and shield some HYPE. Then use <Link to="/app/trade">Trade</Link>.</li>
           </ol>
-          <div className="callout">Everything here is <b>testnet</b> with play money. Proofs already use Gloam's final ceremony keys, the same as mainnet. Don't use real funds.</div>
+          {IS_MAINNET ? (
+            <div className="callout">This is <b>mainnet</b>: real money. The vaults cap deposits for now, so start small. Proofs use Gloam's final ceremony keys.</div>
+          ) : (
+            <div className="callout">Everything here is <b>testnet</b> with play money. Proofs already use Gloam's final ceremony keys, the same as mainnet. Don't use real funds.</div>
+          )}
 
           <h2 id="what-works">What works today</h2>
           <ul>
@@ -242,14 +250,14 @@ export function Docs() {
             <div className="code-head"><span>launch + private trading</span><span>TypeScript</span></div>
             <pre>{`import { Cloak, GloamPrivate, deployments, gloamProvers, gloamRelaySubmitter } from "@cloakely/sdk";
 
-const d = deployments[99801];
+const d = deployments[${CHAIN_ID}];
 const cloak = new Cloak(publicClient, walletClient, d.factory);
 const { auction } = await cloak.createLaunch({ name, symbol, saleSupply, minPrice, tickSize, commitEnd, revealEnd });
 await cloak.bid(auction, { maxPrice, quantity });
 
 const g = d.gloam;
 const priv = await GloamPrivate.unlock(walletClient, {
-  publicClient, chainId: 99801, payMemo: g.memoBoard, whype: g.whype,
+  publicClient, chainId: ${CHAIN_ID}, payMemo: g.memoBoard, whype: g.whype,
   gloamVault: { pool: g.gloamVault, poolBlock: g.block }, launchVault: { pool: g.launchVault, poolBlock: g.launchVaultBlock ?? g.block },
   launchSwapV4: g.launchSwapV4, batcherV4: g.batcherV4, provers: gloamProvers(), submit: gloamRelaySubmitter(KEEPER),
 });

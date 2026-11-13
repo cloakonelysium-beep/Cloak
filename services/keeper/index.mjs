@@ -20,10 +20,18 @@ import { createGloamRelay } from "./gloam.mjs";
 import { createGloamLoop } from "./gloamLoop.mjs";
 import { createPublicClient, createWalletClient, encodeFunctionData, fallback, http, keccak256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { Cloak, CloakDrops, anvilLocal, deploymentFor, elysiumTestnet, drandRoundTime, cloakAuctionAbi, cloakDropFactoryAbi, cloakFactoryAbi } from "@cloakely/sdk";
+import { Cloak, CloakDrops, anvilLocal, deploymentFor, elysium, elysiumTestnet, drandRoundTime, cloakAuctionAbi, cloakDropFactoryAbi, cloakFactoryAbi } from "@cloakely/sdk";
 
-const RPC = process.env.RPC_URL ?? elysiumTestnet.rpcUrls.default.http[0];
-const chain = RPC.includes("127.0.0.1") || RPC.includes("localhost") ? anvilLocal : elysiumTestnet;
+// CHAIN_ID picks the network: 99901 for Elysium mainnet, 99801 (the default) for its testnet. A local RPC is anvil.
+// The RPC's own chain id is checked at start, so a keeper never signs for one network while talking to the other.
+const CHAIN_ID = Number(process.env.CHAIN_ID ?? elysiumTestnet.id);
+if (CHAIN_ID !== elysium.id && CHAIN_ID !== elysiumTestnet.id) {
+  console.error(`CHAIN_ID must be ${elysium.id} (mainnet) or ${elysiumTestnet.id} (testnet), not ${process.env.CHAIN_ID}`);
+  process.exit(1);
+}
+const NETWORK = CHAIN_ID === elysium.id ? elysium : elysiumTestnet;
+const RPC = process.env.RPC_URL ?? NETWORK.rpcUrls.default.http[0];
+const chain = RPC.includes("127.0.0.1") || RPC.includes("localhost") ? anvilLocal : NETWORK;
 const PK = process.env.KEEPER_PK;
 const POLL_MS = Number(process.env.POLL_MS ?? 3000);
 const CLAIM_DELAY = Number(process.env.CLAIM_DELAY ?? 3600); // seconds after the reveal window before public claims
@@ -52,6 +60,13 @@ const transport = BACKUPS.length
 // Elysium's public RPC rate-limits busy callers, so reads made together go out as one multicall and receipts are polled
 // once a second: a relay must never fail because the keeper's own polling used up the limit.
 const publicClient = createPublicClient({ chain, transport, pollingInterval: 1000, batch: { multicall: { wait: 16 } } });
+if (chain !== anvilLocal) {
+  const rpcChain = await publicClient.getChainId().catch(() => null);
+  if (rpcChain !== null && rpcChain !== chain.id) {
+    console.error(`the RPC is chain ${rpcChain}, but this keeper is set up for ${chain.id} (${chain.name}): set CHAIN_ID and RPC_URL to the same network`);
+    process.exit(1);
+  }
+}
 
 /** Per auction: sealed bids whose drand ciphertext didn't open to their commitment (from the last reveal pass). */
 const unopenable = new Map();

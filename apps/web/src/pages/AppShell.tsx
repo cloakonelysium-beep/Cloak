@@ -13,12 +13,16 @@ function Welcome({ onClose }: { onClose: () => void }) {
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <Logo size={34} />
-        <div className="eyebrow" style={{ marginTop: 18 }}>Cloak testnet</div>
+        <div className="eyebrow" style={{ marginTop: 18 }}>{IS_MAINNET ? "Cloak on Elysium" : "Cloak testnet"}</div>
         <h2>Welcome to Cloak</h2>
-        <p className="mute small">Fair launches and private trading on Elysium testnet. This is test software with play money, so don't use real funds.</p>
+        <p className="mute small">{IS_MAINNET ? "Fair launches and private trading on Elysium. This is real money, so start with small amounts while the vault caps are low." : "Fair launches and private trading on Elysium testnet. This is test software with play money, so don't use real funds."}</p>
         <div className="qs">
-          <div><span className="n">1</span><span>Connect a wallet. Cloak adds the <b>Elysium testnet</b> network for you.</span></div>
-          <div><span className="n">2</span><span>Get testnet HYPE from the <a className="link" href="https://elysium.kinetiq.xyz/testnet-faucet" target="_blank" rel="noreferrer">Elysium faucet</a>.</span></div>
+          <div><span className="n">1</span><span>Connect a wallet. Cloak adds the <b>{chain.name}</b> network for you.</span></div>
+          {IS_MAINNET ? (
+            <div><span className="n">2</span><span>Have some HYPE on Elysium, or <a className="link" href="/app/bridge">bring HYPE or USDC over</a> from another chain or an exchange.</span></div>
+          ) : (
+            <div><span className="n">2</span><span>Get testnet HYPE from the <a className="link" href="https://elysium.kinetiq.xyz/testnet-faucet" target="_blank" rel="noreferrer">Elysium faucet</a>.</span></div>
+          )}
           <div><span className="n">3</span><span><b>Shield</b> HYPE or USDC and trade launch tokens privately, or <b>bid</b> in a sealed launch.</span></div>
         </div>
         <div className="summary" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>

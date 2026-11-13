@@ -77,12 +77,12 @@ const elysiumParams = () => ({
   blockExplorerUrls: chain.blockExplorers ? [chain.blockExplorers.default.url] : undefined,
 });
 
-/** Adds Elysium testnet to the wallet (wallets ignore this if it's already there). */
+/** Adds this site's Elysium network to the wallet (wallets ignore this if it's already there). */
 export async function addElysium(eth: Eip1193) {
   await eth.request({ method: "wallet_addEthereumChain", params: [elysiumParams()] });
 }
 
-/** Puts the wallet on Elysium testnet, adding the network first if the wallet doesn't know it. */
+/** Puts the wallet on this site's Elysium network, adding the network first if the wallet doesn't know it. */
 export async function ensureElysium(eth: Eip1193) {
   try {
     await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: numberToHex(chain.id) }] });

@@ -43,12 +43,14 @@ function limited(ip: string): number {
   return h.n > REQUESTS_PER_MINUTE ? Math.ceil((h.start + 60_000 - now) / 1000) : 0;
 }
 
-let settings: Promise<Settings> | undefined;
-let settingsAt = 0;
+const settingsBy = new Map<string, { s: Promise<Settings>; at: number }>();
 const SETTINGS_TTL = 10 * 60_000; // re-read the registry every 10 minutes
 
-/** `settings` defaults to Elysium testnet, without a key (tests pass their own). */
-export async function handleMcpRequest(req: Request, opts: { settings?: Settings } = {}): Promise<Response> {
+/**
+ * `network` is the site's network for this request (testnet unless the site says mainnet); `settings` overrides it
+ * (tests pass their own). Never a key: the hosted server reads and plans, it never signs, on either network.
+ */
+export async function handleMcpRequest(req: Request, opts: { settings?: Settings; network?: "testnet" | "mainnet" } = {}): Promise<Response> {
   if (req.method === "OPTIONS") return withHeaders(new Response(null, { status: 204 }));
   if (req.method === "GET") {
     const accept = req.headers.get("accept") ?? "";
@@ -79,11 +81,22 @@ export async function handleMcpRequest(req: Request, opts: { settings?: Settings
   const forward = new Request(req.url, { method: "POST", headers });
 
   // never a key here, whatever the environment says
-  if (!opts.settings && (!settings || Date.now() - settingsAt > SETTINGS_TTL)) {
-    settingsAt = Date.now();
-    settings = Promise.resolve(loadSettings({ CLOAK_NETWORK: "testnet", CLOAK_RPC_URL: process.env.CLOAK_RPC_URL, CLOAK_RELAYER_URL: process.env.CLOAK_RELAYER_URL }));
+  const network = opts.network ?? "testnet";
+  let cached = settingsBy.get(network);
+  if (!opts.settings && (!cached || Date.now() - cached.at > SETTINGS_TTL)) {
+    const env = network === "mainnet"
+      ? { CLOAK_NETWORK: "mainnet", CLOAK_ALLOW_MAINNET: "1", CLOAK_RPC_URL: process.env.CLOAK_RPC_URL_MAINNET, CLOAK_RELAYER_URL: process.env.CLOAK_RELAYER_URL_MAINNET }
+      : { CLOAK_NETWORK: "testnet", CLOAK_RPC_URL: process.env.CLOAK_RPC_URL, CLOAK_RELAYER_URL: process.env.CLOAK_RELAYER_URL };
+    cached = { s: Promise.resolve().then(() => loadSettings(env)), at: Date.now() };
+    settingsBy.set(network, cached);
   }
-  const s = opts.settings ?? (await settings!);
+  let s: Settings;
+  try {
+    s = opts.settings ?? (await cached!.s);
+  } catch (e) {
+    settingsBy.delete(network);
+    return rpcError(503, -32000, (e as Error).message);
+  }
   const server = createCloakServer(s, { hosted: true });
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   try {

@@ -20,6 +20,8 @@ const REHEARSE = process.argv.includes("--rehearse");
 const i = process.argv.indexOf("--config");
 if (i < 0) throw new Error("--config <file> is required");
 const cfg = JSON.parse(readFileSync(process.argv[i + 1], "utf8"));
+// "factoryRecord": v2's config comes from the record deploy-v2-factory.mjs wrote, so mainnet needs no hand edit
+if (cfg.factoryRecord) cfg.config = JSON.parse(readFileSync(join(REPO, cfg.factoryRecord), "utf8")).config;
 const isAddr = (v) => /^0x[0-9a-fA-F]{40}$/.test(v ?? "");
 for (const k of ["config", "deployer"]) if (!isAddr(cfg[k])) throw new Error(`config: ${k} must be an address`);
 if (!/^https:\/\/.+\/$/.test(cfg.defaultBaseURI ?? "")) throw new Error("config: defaultBaseURI must be an https URL ending in /");

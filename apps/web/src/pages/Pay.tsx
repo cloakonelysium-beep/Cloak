@@ -3,7 +3,7 @@ import { normalizeLinkAmount, parseRequestLink, type LinkToken, type PaymentRequ
 import { erc20Abi, formatUnits, parseUnits, type Address, type Hex } from "viem";
 import { friendly, Hint, linkProblem, checked } from "../errors";
 import { tokenOf, TOKEN_DECIMALS } from "../links";
-import { ASSETS, txLink } from "../config";
+import { ASSETS, IS_MAINNET, txLink } from "../config";
 import { Link } from "../router";
 import { useApp } from "../state";
 import { Icon } from "../ui";
@@ -187,7 +187,7 @@ export function Pay() {
         )}
         {err && <div className="err">{err}</div>}
       </div>
-      <p className="xs mute" style={{ textAlign: "center", marginTop: 14 }}>Cloak on Elysium testnet. Play money only.</p>
+      {!IS_MAINNET && <p className="xs mute" style={{ textAlign: "center", marginTop: 14 }}>Cloak on Elysium testnet. Play money only.</p>}
     </div>
   );
 }
