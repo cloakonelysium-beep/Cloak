@@ -5,7 +5,7 @@
   "gloamVault": "0x89d3042390204f57b8b4F8949D3c2203E4002164",
   "_gloamVault": "Gloam's Elysium mainnet vault (Gloam, Nov 10), deployed at block 3248495, owned by their VaultOwnerGuard 0x268D7CAd645282D1e77461b5B2dd997bd54eFAf5 (controller 0x76b7...D4D8). 0.5% withdrawal fee to their treasury 0xB390...30B8. Checked on chain Nov 10.",
   "gloamVaultBlock": 3248495,
-  "memoBoard": "FILL IN: e2e-gloam/deploy-memo.mjs writes it (Cloak deploys Gloam's GloamPayMemo unchanged and sends Gloam the address and block)",
+  "memoBoard": "0xb99db19cdeaf3779013a75f2cb7a13d0eecd075a",
   "poseidon": "0x62c435CE6886fa91e3b0e91500c6dC9219723457",
   "verifier": "0x29053A713E3a7D37053374446869a6f55858FcEf",
   "shieldVerifier": "0xAEB8cb99B3BB43eB230F9fEB7293fB5E39080016",
@@ -70,5 +70,7 @@
   "_assets_caps": "Gloam's caps on Elysium (Nov 10): USDC 500 per deposit / 25,000 total (live); HYPE 12 / 600 from Thursday Nov 12; KNTQ 1,400 / 70,000 from Thursday. Kept as Gloam set them (decided Nov 10): the SDK splits deposits, trades and bids to fit, and the caps rise with Gloam.",
   "_safe": "Mainnet owner wallet (docs/WALLETS.md): guard controller and ecosystem approver. Calls acceptController() after the deploy.",
   "_pauser": "Mainnet owner wallet: launch pauser.",
-  "_feeRecipient": "Mainnet treasury wallet (docs/WALLETS.md)."
+  "_feeRecipient": "Mainnet treasury wallet (docs/WALLETS.md).",
+  "memoBoardBlock": 6033047,
+  "_memoBoard": "GloamPayMemo, Gloam's code unchanged, deployed by Cloak's deployer 0xBCB87773362387812532a1403d8F75D4E13F259d at block 6033047 (deploy-memo.mjs); shared with Gloam's app."
 }
