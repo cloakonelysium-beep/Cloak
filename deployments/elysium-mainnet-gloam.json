@@ -1,0 +1,73 @@
+{
+  "chainId": 99901,
+  "note": "Cloak v2 next to Gloam's vault: Cloak's launch vault under its own VaultOwnerGuard (controller: the Safe, once it accepts) and Cloak's escrows. Gloam's vault, memo board and verifiers are Gloam's.",
+  "block": 6038202,
+  "gloamVaultBlock": 3248495,
+  "gloamVault": "0x89d3042390204f57b8b4F8949D3c2203E4002164",
+  "memoBoard": "0xb99db19cdeaf3779013a75f2cb7a13d0eecd075a",
+  "poseidon": "0x62c435CE6886fa91e3b0e91500c6dC9219723457",
+  "verifier": "0x29053A713E3a7D37053374446869a6f55858FcEf",
+  "shieldVerifier": "0xAEB8cb99B3BB43eB230F9fEB7293fB5E39080016",
+  "launchVault": "0x849097aa6081aa9977ceaf30b6d1cd8467b01726",
+  "launchVaultGuard": "0x025b3a8e880b1413feba153800239764b3087a51",
+  "guardController": {
+    "now": "0xBCB87773362387812532a1403d8F75D4E13F259d",
+    "pending": "0x430c0A8547674ac2Fc09ad55eaF71FaAfB6bDf16"
+  },
+  "pauser": "0x430c0A8547674ac2Fc09ad55eaF71FaAfB6bDf16",
+  "feeRecipient": "0xBB5Df281F605B886C3a4E73ECD6560847719936b",
+  "ecosystemFeeRecipient": "0xBB5Df281F605B886C3a4E73ECD6560847719936b",
+  "launchFactory": "0x01BbBA502E4a9bef60F261Cf04d8D04e48F2fB12",
+  "launchSwapV4": "0xa0aed21d694809ade5b001d413c826ca63247818",
+  "router": "0x13de29b8801fcaba9d476c68869a4286cf3203b3",
+  "tradeFee": {
+    "address": "0xb6aaad4f8ff44a17ccbdde955af6f79e3a5d5094",
+    "bps": 25,
+    "treasury": "0xBB5Df281F605B886C3a4E73ECD6560847719936b"
+  },
+  "assets": [
+    {
+      "symbol": "USDC",
+      "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+      "decimals": 6,
+      "pool": {
+        "fee": 3000,
+        "tickSpacing": 60
+      }
+    },
+    {
+      "symbol": "KNTQ",
+      "token": "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0",
+      "decimals": 18,
+      "pool": {
+        "fee": 3000,
+        "tickSpacing": 60
+      }
+    }
+  ],
+  "ecosystemVault": "0x5ab0ecc7cc6654cf1bfc7247cfeee1ab2887046d",
+  "ecosystemVaultGuard": "0xcea11c29b77734ee712996ad6fd6481cd548fa41",
+  "ecosystemRules": {
+    "minHypeLiquidity": "250000000000000000000",
+    "minMcapHype": "50000000000000000000000",
+    "maxPerDepositBps": 10,
+    "maxTotalBps": 100
+  },
+  "batcherV4": "0xabc13cb154e5c708600d54622bc37fb4ec14b16a",
+  "batcherV4Rounds": {
+    "roundSecs": 60,
+    "maxSlippageBps": 200,
+    "refundAfter": 600
+  },
+  "receive": "0xe2a8af9c67e63b7be92c3d1cc308496ba5c8ef9e",
+  "bids": "0x03344099637832bb26922dca9178675244271758",
+  "fundsGate": "0xdcd44b68626d5b9c6cff317e2f41992481997d91",
+  "receiptCheck": "0x3909ec2f2e4d1625b4c4348c561eae8cf5b5efb9",
+  "fundsVerifier": "0x28ee0b482ebeaddd6646c28f8a61328821bd3881",
+  "receiptVerifier": "0x284d356954c27de05bf08b18a75e74db9eab3d71",
+  "whype": "0x6521f9729d6c65e5e743de144f5546f334ea7d15",
+  "poolManager": "0xe2e105d3f7209a9da11f83ccf3e7398a753823f1",
+  "v4Hook": "0x0df8E5771Cad0DEb29b7544b3bDe5A993D342a80",
+  "admittedAtDeploy": 0,
+  "costHype": "0.01545297400575"
+}
