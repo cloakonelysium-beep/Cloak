@@ -411,12 +411,21 @@ export class GloamPrivate {
   }
 
   /**
-   * The vault a deposit of `asset` goes into: the launch vault when it takes the asset (HYPE and launch tokens, so they
-   * can trade, since a swap spends from the launch vault and nothing moves privately between vaults), else Gloam's.
+   * The vault a deposit of `asset` goes into: the vault the asset trades from when that one takes it (with the router,
+   * HYPE trades, bids and batch orders spend from Gloam's vault; without it, from the launch vault), since nothing moves
+   * privately between vaults. Otherwise the launch vault when it takes the asset, else Gloam's.
    */
   private async depositCore(asset: Address, amount: bigint): Promise<GloamCore> {
     const LIMIT = parseAbi(["function depositLimit(address) view returns (uint128 perDeposit, uint128 total)", "function deposited(address) view returns (uint256)"]);
-    for (const c of [...this.cores].reverse()) {
+    let first: GloamCore | undefined;
+    try {
+      first = this.tradeCore(asset);
+    } catch {
+      first = undefined; // not a market token: no preference
+    }
+    const order = [...this.cores].reverse();
+    if (first) order.sort((a, b) => (a === first ? -1 : b === first ? 1 : 0));
+    for (const c of order) {
       const [per, total] = await this.cfg.publicClient.readContract({ address: c.config.pool, abi: LIMIT, functionName: "depositLimit", args: [asset] });
       const dep = await this.cfg.publicClient.readContract({ address: c.config.pool, abi: LIMIT, functionName: "deposited", args: [asset] });
       if (amount <= per && dep + amount <= total) return c;
