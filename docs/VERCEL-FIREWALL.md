@@ -25,14 +25,15 @@ commit `49bc60a`.
 
 Curl every route on the live v2 site:
 
-- real routes return 200: `/`, `/docs`, `/sdk`, `/proof`, `/agents`, `/pitch`, `/demo`, `/claim`, `/pay`, `/app`,
+- real routes return 200: `/`, `/docs`, `/sdk`, `/proof`, `/agents`, `/pitch`, `/claim`, `/pay`, `/app`,
   `/app/trade`, `/app/portfolio/receive`, `/roadmap`, `/brand`, `/robots.txt`, `/sitemap.xml`, `/tokenlist.json`,
   `/agent.md`, `/llms.txt`
 - junk paths return 404: `/blog/1`, `/.env`, `/wp-login.php`, `/api/demo`, `/api/generate`, `/docsx`
+- `/demo` returns 308 to `/docs#walkthrough` (the walkthrough moved into the Docs on Nov 14)
 - a `/mcp` POST returns 200
 
 ```sh
-for p in / /docs /sdk /proof /agents /pitch /demo /claim /pay /app /app/trade /roadmap /brand /tokenlist.json /agent.md /llms.txt /blog/1 /.env /wp-login.php /api/demo /docsx; do
+for p in / /docs /sdk /proof /agents /pitch /claim /pay /app /app/trade /roadmap /brand /tokenlist.json /agent.md /llms.txt /blog/1 /.env /wp-login.php /api/demo /docsx; do
   printf '%s %s\n' "$(curl -s -o /dev/null -w '%{http_code}' "https://SITE$p")" "$p"
 done
 curl -s -o /dev/null -w '%{http_code}\n' -X POST https://SITE/mcp -H 'content-type: application/json' \

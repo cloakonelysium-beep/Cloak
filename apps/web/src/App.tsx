@@ -12,7 +12,6 @@ const Create = lazy(() => import("./pages/Create").then((m) => ({ default: m.Cre
 const Docs = lazy(() => import("./pages/Docs").then((m) => ({ default: m.Docs })));
 const Agents = lazy(() => import("./pages/Agents").then((m) => ({ default: m.Agents })));
 const Pitch = lazy(() => import("./pages/Pitch").then((m) => ({ default: m.Pitch })));
-const Demo = lazy(() => import("./pages/Demo").then((m) => ({ default: m.Demo })));
 const Claim = lazy(() => import("./pages/Claim").then((m) => ({ default: m.Claim })));
 const Links = lazy(() => import("./pages/Links").then((m) => ({ default: m.Links })));
 const Drop = lazy(() => import("./pages/Drop").then((m) => ({ default: m.Drop })));
@@ -46,7 +45,11 @@ function Routes() {
   if (path === "/proof") return <AppShell><ProofPage /></AppShell>;
   if (path === "/agents") return <AppShell><Agents /></AppShell>;
   if (path === "/pitch") return <Pitch />;
-  if (path === "/demo") return <Demo />;
+  // the old demo page: the walkthrough now opens the Docs (vercel.json redirects it too)
+  if (path === "/demo") {
+    location.replace("/docs#walkthrough");
+    return null;
+  }
   if (path === "/claim") return <AppShell><Claim /></AppShell>;
   if (path === "/pay") return <AppShell><Pay /></AppShell>;
   if (path.startsWith("/app")) {

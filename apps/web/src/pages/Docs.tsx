@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "../router";
 import { EXPLORER, GITHUB, Icon } from "../ui";
+import { WALKTHROUGH_URL, Walkthrough } from "../walkthrough";
 import { CHAIN_ID, DEPLOYMENT, GLOAM, IS_MAINNET, MAIN_VAULT, MAIN_VAULT_RUN_BY, MAIN_VAULT_SHORT, MEMO_BOARD, chain } from "../config";
 
 /** Cloak v2 on Gloam: the contracts and rules this build runs on. */
@@ -8,7 +9,7 @@ const G = GLOAM;
 
 
 const NAV: [string, [string, string][]][] = [
-  ["Start here", [["overview", "Overview"], ["quickstart", "Quickstart"], ["what-works", "What works today"]]],
+  ["Start here", [["overview", "Overview"], ["walkthrough", "Walkthrough"], ["quickstart", "Quickstart"], ["what-works", "What works today"]]],
   ["Launches", [["sealed-launches", "Sealed launches"], ["clearing-price", "The clearing price"], ["liquidity", "Locked liquidity"], ["uniswap", "Trading on Uniswap"], ["nft-drops", "NFT drops"], ["existing-nfts", "Auctions of existing NFTs"], ["wl-spots", "WL spot sales"]]],
   ["Privacy", [["private-trading", "Private trading"], ["batch-auctions", "Batch auctions"], ["private-send", "Private send"], ["payment-links", "Payment links"], ["private-usdc", "Private USDC"], ["what-stays-private", "What stays private"], ["gloak", "GLOAK"]]],
   ["Build", [["sdk", "SDK"], ["agents", "AI agents (MCP)"], ["contracts", "Contracts"], ["fees", "Fees & caps"], ["rules", "All the rules"], ["governance", "Who can change what"], ["keeper", "Keeper & relayer"], ["limits", "Limits & threat model"]]],
@@ -60,10 +61,11 @@ export function Docs() {
           <div className="crumb">Start here</div>
           <h1 id="overview">Docs</h1>
           <p>Fair launches and private trading on Elysium, explained without the jargon wall.</p>
-          <div className="callout" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span>New here? Watch the walkthrough of the live app, from shielding funds to launching, bidding and trading.</span>
-            <Link to="/demo" className="btn btn-ghost btn-sm">Watch the demo</Link>
-          </div>
+
+          <h2 id="walkthrough">Watch the walkthrough</h2>
+          <p>New here? This is the whole app in six and a half minutes: connecting and unlocking, shielding, creating a launch, a private bid, trading, sending, payment links, proving funds, NFT drops and agents. Every transaction in it was made for real on testnet, and mainnet works the same way.</p>
+          <Walkthrough />
+          <p className="xs mute docs-video-note">Prefer YouTube? <a className="link" href={WALKTHROUGH_URL} target="_blank" rel="noreferrer">Watch it there ↗</a></p>
 
           <h2>What is Cloak?</h2>
           <p>On Elysium, one sequencer orders transactions first come, first served, several blocks a second. A normal token launch becomes a race that the fastest bots win in the first block. After that, every buy, sell and balance is public forever and tied to your wallet.</p>

@@ -288,7 +288,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span>Cloak on Elysium. Not investment advice.</span>
           <span className="row-flex" style={{ gap: 16 }}>
             <Link to="/docs">Docs</Link>
-            <Link to="/demo">Demo</Link>
+            <a href="/docs#walkthrough">Walkthrough</a>
             <a href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>
             <a href={X_URL} target="_blank" rel="noreferrer">X</a>
             <a href={TELEGRAM} target="_blank" rel="noreferrer" aria-label="Cloak's Telegram channel" className="row-flex" style={{ gap: 6 }}><SocialIcon.telegram size={14} />Telegram</a>
