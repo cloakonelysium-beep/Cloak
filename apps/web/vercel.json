@@ -4,6 +4,7 @@
   "outputDirectory": "dist",
   "framework": null,
   "ignoreCommand": "sh scripts/vercel-ignore.sh",
+  "redirects": [{ "source": "/demo", "destination": "/docs#walkthrough", "permanent": true }],
   "rewrites": [
     {
       "source": "/claim",
