@@ -87,18 +87,18 @@ about 12 Elysium blocks. `ArbSys(address(100)).arbBlockNumber()` returns Elysium
 rehearsals run on anvil, where `block.number` is the chain's own number, so they don't show this. The only uses of
 `block.number`, `blockhash` or `prevrandao` in deployed contracts are the three below; Gloam's contracts use none.
 
-- **E-1 (Medium): the NFT drops' tie draw seeds from `blockhash`.** `CloakDrop._drawSeed()` and `CloakEscrowDrop`'s
+- **E-1 (Low): the NFT drops' tie draw seeds from `blockhash`.** `CloakDrop._drawSeed()` and `CloakEscrowDrop`'s
   (the tie draw, and the token rotation in escrow drops) mix the bidders' salts with `blockhash(seedBlock)`, where
   `seedBlock` is the HyperEVM block after settlement. On ArbOS that hash is pseudo-random and produced by Elysium's single
   sequencer, so the sequencer could in principle steer which tied bidder wins (or which token each winner gets).
-  Bidders can't: their salts are sealed until they open, and the block comes after every bid is open. Rated Medium rather
-  than High because it takes the chain's operator to act, and ties only matter when a drop is oversubscribed at its
-  clearing price. Also: once the seed block's hash exists, anyone can compute the result before drawing; if nobody draws
+  Bidders can't: their salts are sealed until they open, and the block comes after every bid is open. Rated Low: only
+  the chain's operator (Kinetiq, through Conduit) builds blocks, so nobody outside can influence that hash without
+  compromising Elysium's sequencer itself, and ties only matter when a drop is oversubscribed at its clearing price. Also: once the seed block's hash exists, anyone can compute the result before drawing; if nobody draws
   within 256 HyperEVM blocks (minutes) it is re-drawn from a new block, so a tied bidder could only re-roll it by keeping
   everyone else, the keeper included, from drawing. The keeper draws within seconds.
-  **Fix (next drop factory):** seed from a drand round after the reveal deadline, as the launches' time-lock already
+  **Fix (next drop factory, not urgent):** seed from a drand round after the reveal deadline, as the launches' time-lock already
   does (planned since CL-01, `docs/REVIEW-RESPONSES.md`). **Until then:** don't run drops where a tie decides something
-  valuable, or say so on the drop.
+  valuable, or say so on the drop, if we want to remove even the operator's theoretical influence.
 - **E-2 (Low, informational): `CloakConfig._register()` compares a start block with `block.number`.** Start blocks are
   Elysium's numbers and `block.number` is HyperEVM's, which is far larger on both networks, so the check
   `startBlock > block.number` never fires: it can't block a real registration, it just checks nothing. The registry is
