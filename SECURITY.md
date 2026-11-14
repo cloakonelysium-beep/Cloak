@@ -76,6 +76,47 @@ Thank you to the people who reviewed Cloak's code on their own time and reported
 
 - **W-01 (High): one well-funded bidder can fill a launch's deposit cap.** With 100 wallets and about 10,000 HYPE, someone can fill a launch's 10,000 HYPE cap with bids at the creator's minimum price, lock others out, and buy the whole sale at that price. They always pay at least the creator's minimum, and their deposit beyond the cost comes back. It exists only while the beta caps do, and the fix (counting each bid's cost rather than its deposit, or dropping the total cap) waits for after the beta (`docs/MAINNET-DECISIONS.md`, A6).
 
+## To do: Elysium (ArbOS) findings, Nov 14
+
+From Parapet Labs' article "Elysium security: ArbOS, HyperEVM, HyperCore" (parapetlabs.net, Nov 7), checked against our
+contracts and measured on chain on Nov 14. Not fixed yet; tracked here.
+
+Measured: inside a contract on Elysium, `block.number` is HyperEVM's block number, not Elysium's. On mainnet it read
+51,219,671 while Elysium was at block 6,310,176 (testnet: 69,576,909 against 28,648,868), and it stayed the same across
+about 12 Elysium blocks. `ArbSys(address(100)).arbBlockNumber()` returns Elysium's own number. Our tests and fork
+rehearsals run on anvil, where `block.number` is the chain's own number, so they don't show this. The only uses of
+`block.number`, `blockhash` or `prevrandao` in deployed contracts are the three below; Gloam's contracts use none.
+
+- **E-1 (Medium): the NFT drops' tie draw seeds from `blockhash`.** `CloakDrop._drawSeed()` and `CloakEscrowDrop`'s
+  (the tie draw, and the token rotation in escrow drops) mix the bidders' salts with `blockhash(seedBlock)`, where
+  `seedBlock` is the HyperEVM block after settlement. On ArbOS that hash is pseudo-random and produced by Elysium's single
+  sequencer, so the sequencer could in principle steer which tied bidder wins (or which token each winner gets).
+  Bidders can't: their salts are sealed until they open, and the block comes after every bid is open. Rated Medium rather
+  than High because it takes the chain's operator to act, and ties only matter when a drop is oversubscribed at its
+  clearing price. Also: once the seed block's hash exists, anyone can compute the result before drawing; if nobody draws
+  within 256 HyperEVM blocks (minutes) it is re-drawn from a new block, so a tied bidder could only re-roll it by keeping
+  everyone else, the keeper included, from drawing. The keeper draws within seconds.
+  **Fix (next drop factory):** seed from a drand round after the reveal deadline, as the launches' time-lock already
+  does (planned since CL-01, `docs/REVIEW-RESPONSES.md`). **Until then:** don't run drops where a tie decides something
+  valuable, or say so on the drop.
+- **E-2 (Low, informational): `CloakConfig._register()` compares a start block with `block.number`.** Start blocks are
+  Elysium's numbers and `block.number` is HyperEVM's, which is far larger on both networks, so the check
+  `startBlock > block.number` never fires: it can't block a real registration, it just checks nothing. The registry is
+  a Cloak v1 feature and is empty on v2's mainnet config. **Fix (next config):** compare with `ArbSys.arbBlockNumber()`,
+  or drop the check.
+- **E-3 (Low, to confirm): how Elysium orders transactions.** The article says by priority fee within each block;
+  `docs/DESIGN.md` says the same, but `docs/REVIEW-RESPONSES.md` 2.2 and the site (landing, Docs, pitch) say first come,
+  first served. Sealed bids are safe either way. Settling launches, rounds and drops, and opening bids, can be called by
+  anyone and give the same result whoever calls first, so racing them gains nothing; the batch round settles at a
+  time-weighted price within a slippage bound either way. **To do:** confirm with Kinetiq, then make the docs and the
+  site say one thing.
+- **E-4 (none): timestamps.** Blocks come about every 0.1 to 0.3 s and several share one `block.timestamp`. Every window
+  we use (bidding, reveals, the 3-day timelocks, rounds, the time-weighted price) is seconds to days, so nothing
+  changes. Rule for new code: never assume the timestamp or `block.number` moves with every block.
+- **Later:** before using HyperCore's price precompile (mentioned on the Elysium hooks form), treat its data as the
+  sequencer's word: enforce a maximum age and guard against thin order books. Test ArbOS-specific behaviour on Elysium
+  itself (or its exact ArbOS version), not only on anvil forks.
+
 ## Audit scope for mainnet
 
 Cloak's code only (Gloam's vault and circuits are audited separately). Counted without comments, tests or interfaces:
