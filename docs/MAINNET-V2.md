@@ -137,6 +137,12 @@ Built, tested and pushed to `main`. All of it runs on Gloam's vault, circuits an
   - Everything delivers to a fresh receive address.
   - Needs a Bridge panel, per-bridge tracking, and the keeper redeeming stuck tickets.
   - Bob: paste or push `PRIVATE-BRIDGE.md`, and fund a v2 key on HyperEVM testnet.
+- [ ] **Launches into Ramses v3 pools** (Ramses, Nov 16; after the audit, never before it). Ramses wants mechanical synergy built on top of it, not only co-marketing, and they co-market only on audited security.
+  - **How:** a second launch factory with a Ramses v3 seeder (`IMarketSeeder`: opens the pool at the clearing price, full range) and a v3 fee locker that holds the position NFT forever and splits its fees (creator, Cloak, compounding back into the position). `CloakAuction` doesn't change; the v4 factory, hook, GLOAK and private trading stay as they are. v1's `CloakSeeder` and `CloakFeeLocker` (V2) are the pattern.
+  - **What those launches lose:** private trading (our router and batcher are v4 only; needs a v3 adapter and Gloam's escrow review), the hook's anti-snipe fee (v3 has fixed fee tiers), and "no other liquidity" (a Ramses pool is open to any LP, which is the point for Ramses).
+  - **Known from Ramses:** on Elysium, 95% of trading fees go to the LP (voters get fees only on HyperEVM, select pools), so a locked position earns real fees.
+  - **Asked Ramses:** the Elysium contracts (pool factory, position manager), fee tiers and full-range support, and any way to charge a higher fee in a pool's first minutes.
+  - New contracts holding launch funds: into the audit scope before any deploy.
 - [ ] **More swap pairs without an aggregator:** `CloakLaunchSwapV4` on Gloam's vault (USDC/HYPE and ecosystem tokens through hookless v4 pools), after Gloam says yes. Then a venue per non-v4 DEX a partner uses. Check mainnet's pools in its first week (KNTQ/HYPE, stock tokens).
 - [ ] **Claude:** a smaller bundle (swap heavy Poseidon libraries for `poseidon-lite` where possible).
 - [ ] **Claude:** escrows that post their payout's memo in the same transaction (waiting on Gloam's memo board taking posts before the note is in the vault).
