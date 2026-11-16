@@ -25,7 +25,9 @@ export function TokenIcon({ symbol, size = 28, token }: { symbol: string; size?:
   const meta = useTokenMeta(token);
   const builtin = ({ HYPE: "/tokens/hype.svg", WHYPE: "/tokens/hype.svg", CLOAK: "/tokens/cloak.svg" } as Record<string, string>)[symbol.toUpperCase()]
     // the USDC mark only for Cloak's USDC vault (passed without a launch token), never for a launch that calls itself USDC
-    ?? (!token && symbol.toUpperCase() === "USDC" ? "/tokens/usdc.svg" : undefined);
+    ?? (!token && symbol.toUpperCase() === "USDC" ? "/tokens/usdc.svg" : undefined)
+    // the bridge's coins on other chains (cryptocurrency-icons, CC0), likewise never for a launch token of the same name
+    ?? (!token ? ({ ETH: "/tokens/eth.svg", USDT: "/tokens/usdt.svg", USDT0: "/tokens/usdt.svg", BNB: "/tokens/bnb.svg", TRX: "/tokens/trx.svg", SOL: "/tokens/sol.svg", BTC: "/tokens/btc.svg" } as Record<string, string>)[symbol.toUpperCase()] : undefined);
   // HYPE always uses its official mark; launch tokens use the image uploaded at launch, if any
   const src = builtin === "/tokens/hype.svg" ? builtin : meta?.image ?? builtin;
   if (src) return <img className="token-icon" src={src} alt={symbol} width={size} height={size} style={{ objectFit: "cover" }} />;
