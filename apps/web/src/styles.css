@@ -1118,3 +1118,33 @@ button.asset-row { cursor: pointer; }
 .net-item.on { color: var(--text); }
 .net-tick { margin-left: auto; color: var(--signal); }
 .docs-video-note { margin-top: 6px; }
+
+/* ───────────── mobile pass (Nov 16): phones at 300–400 px, including large text settings ───────────── */
+/* hidden tooltips take no room (one near the right edge widened the drop page to 443 px on a 360 px phone) */
+.info::after { display: none; }
+.info:hover::after, .info:focus::after { display: block; }
+/* the Portfolio actions: each label on one line; the row wraps to the next line instead of breaking words */
+.wallet-actions { display: flex; flex-wrap: wrap; }
+.wallet-actions .btn { flex: 1 1 auto; white-space: nowrap; }
+/* tab bars: one line per tab; if they don't fit, the bar scrolls sideways inside itself */
+.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: 1 0 auto; white-space: nowrap; overflow-wrap: normal; }
+/* token buttons never break their symbol */
+.token-sel { flex: none; white-space: nowrap; }
+@media (max-width: 560px) {
+  /* rows with a long status (bridges, payments): the text keeps the row's width, the status goes under it */
+  .asset-row .nm { flex: 1 1 170px; }
+  .asset-row .amt { flex: 0 1 auto; max-width: 100%; }
+  .asset-row .amt .pill { white-space: normal; text-align: right; line-height: 1.3; }
+}
+@media (max-width: 420px) {
+  /* swap amounts stay readable next to the token button */
+  .swap-box input { font-size: 30px; }
+  .token-sel { gap: 6px; padding: 0 10px 0 6px; font-size: 14px; }
+  .swap .mode button { padding: 9px 10px; }
+  .mode span { font-size: 11.5px; }
+  .hero-actions { gap: 10px; }
+  .hero-actions .btn { white-space: nowrap; max-width: 100%; }
+}
+@media (max-width: 340px) { .swap-box input { font-size: 26px; } }
