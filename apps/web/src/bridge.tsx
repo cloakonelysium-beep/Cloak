@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits, numberToHex, parseUnits, type Address, type Hex } from "viem";
 import { RELAY_DESTINATIONS, RELAY_SOURCES, relayQuote, relayServes, relayStatus, validRefundAddress, type RelayQuote, type RelayStage } from "@cloakely/sdk";
-import { CHAIN_ID } from "./config";
-import { ensureElysium, type Eip1193 } from "./wallet";
+import { ASSETS, CHAIN_ID } from "./config";
+import { ensureElysium, publicClient, type Eip1193 } from "./wallet";
 import { useApp } from "./state";
 import { QR } from "./qr";
 import { Icon, More, TokenIcon } from "./ui";
@@ -38,10 +38,12 @@ const savePending = (x: Pending[]) => {
   } catch {}
 };
 
-const STAGE: Record<RelayStage, string> = {
+const STAGE: Record<RelayStage | "in", string> = {
   waiting: "Waiting for your deposit",
   moving: "On its way to Elysium",
   done: "Arrived. Moving into your private balance",
+  // shown once the receive address is empty again: the payment is in the private balance
+  in: "In your private balance",
   failed: "Failed. Relay refunds it to your refund address",
   refunded: "Refunded to your refund address",
 };
@@ -79,6 +81,28 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
   const [pending, setPending] = useState<Pending[]>(loadPending);
   const [copied, setCopied] = useState(false);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
+  // receive addresses an arrived bridge left empty again: its money has moved into the private balance
+  const [emptied, setEmptied] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const done = [...new Set(pending.filter((p) => p.stage === "done").map((p) => p.to.toLowerCase()))];
+    if (!done.length) return;
+    let live = true;
+    const ERC = [{ type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] }] as const;
+    const go = async () => {
+      const out = new Set<string>();
+      for (const a of done) {
+        const bals = await Promise.all([publicClient.getBalance({ address: a as Address }), ...ASSETS.map((t) => publicClient.readContract({ address: t.token, abi: ERC, functionName: "balanceOf", args: [a as Address] }))]).catch(() => null);
+        if (bals && bals.every((b) => b === 0n)) out.add(a);
+      }
+      if (live) setEmptied(out);
+    };
+    go();
+    const stop = every(go, 20_000);
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [pending]);
 
   // refunds go back to the connected wallet on EVM chains unless another address is given
   const refundTo = refund.trim() || (src.kind === "evm" && wallet?.account ? wallet.account.address : "");
@@ -236,7 +260,7 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
           {[...pending].reverse().slice(0, 5).map((p) => (
             <div key={p.requestId} className="asset-row">
               <div className="nm"><b className="small">{p.line}</b><span className="xs mute">to {p.to.slice(0, 8)}…{p.to.slice(-6)} · {new Date(p.at).toLocaleString()}</span></div>
-              <div className="amt"><span className={p.stage === "done" ? "pill ok" : p.stage === "failed" || p.stage === "refunded" ? "pill" : "pill"}>{STAGE[p.stage]}</span></div>
+              <div className="amt"><span className={p.stage === "done" ? "pill ok" : "pill"}>{STAGE[p.stage === "done" && emptied.has(p.to.toLowerCase()) ? "in" : p.stage]}</span></div>
             </div>
           ))}
         </div>
