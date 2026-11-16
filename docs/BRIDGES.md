@@ -49,3 +49,40 @@ From their docs (spiceflow-docs.spicenet.io, read Nov 10):
   is the same as Relay's. Loaded only on the Receive page, so the Privy and wagmi weight stays out of every other page.
 - **Privacy:** like Relay's wallet mode, the call runs from the user's own wallet, so it links that wallet to the
   receive address. The 7702 delegation stays on the wallet until cleared.
+
+### Update, Nov 16: the escrow flow (Spicenet's handoff of Nov 15). Planned, simulated, not built
+
+**Their flow.** The user funds a Spice Flow embedded wallet (Privy, Spicenet's app id `cmltzt02300i20cl8zqgzgho8`) from
+a wallet, a card or an exchange. Card and exchange funding arrive as Arbitrum USDC first. An intent then has Spicenet's
+escrow on Elysium (`0x7839287eAc1Db87b53aF06Be2A704f25F2186102`) transfer canonical USDC (`0xb47c…0B65`) to the address
+we give: a fresh Cloak receive address per deposit. Packages: `@spicenet-io/spiceflow-ui@4.24.0` and
+`@spicenet-io/spiceflow-core@0.10.1` (both published, Elysium mainnet in core, no install scripts), helper
+`buildSpicenetWithdrawalBatch`. This replaces the 7702 plan above, and is better for privacy: on Elysium the money comes
+from Spicenet's escrow, not the user's wallet.
+
+**Checked on chain (Nov 15).** The escrow is a 268-byte ERC-1967 proxy to an unverified 16 KB implementation
+(`0xbb10…66f1`), with no proxy admin set (so upgrades, if any, go through the implementation). It holds 0 USDC and has
+never sent a transaction on Elysium: their Elysium payout hasn't run live yet, matching their note that the reference
+flow still needs validating. Their SDK reads Elysium through `rpc.eleos.fun` (answers as chain 99901) and links
+`elysiumexplore.com`, neither of them Kinetiq's.
+
+**Simulated (Nov 16), on a fork of mainnet with Cloak's live contracts and Gloam's real vault, real proofs:** a fresh
+receive address per deposit; 600 USDC transferred from Spicenet's escrow address to it; the delivery check (a successful
+Elysium receipt with a USDC Transfer escrow to our address for the amount) passes; `collectReceived` moves it into the
+private balance as 500 + 100 USDC within Gloam's cap in about 19 s; collecting again moves nothing (no double credit);
+the shields come from the relay, not the user's wallet. Our side needs no new contract and no SDK change.
+
+**Must-haves when we build it:**
+- **Mainnet only.** Their handoff suggests testnet.oncloak.xyz could use the mainnet config. It can't: the testnet site
+  makes testnet receive addresses, and testnet's receive contract has no code on mainnet (checked), so mainnet USDC sent
+  there could never be collected. The Spicenet option shows on oncloak.xyz only.
+- **Credit only what arrives.** Our receive flow already does: it moves what is at the address, nothing from callbacks.
+  Show the user Spicenet's status until then, and keep their action id and the Elysium tx hash for support.
+- **Lazy-load** Privy, wagmi and the Spice Flow UI on the Bridge page only.
+- **Pin exact versions,** and review what the SDK sends where before shipping.
+- **Privacy note in the UI:** Spicenet sees both ends (the funding wallet or card, and the receive address), as Relay
+  does; amounts and timing can be matched. Same wording as the Relay option.
+
+**Ask Spicenet before we build:** verify the escrow and its implementation on the Elysium explorer; fund it with USDC
+(it holds none); run one live payout on Elysium; say how the user signs into Privy without a visible login (their
+remaining item); and what happens to the user's money if a payout fails after funding (refund path, time limits).
