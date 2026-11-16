@@ -87,7 +87,9 @@ export function App() {
       <Suspense fallback={<div className="wrap section" aria-busy="true" />}>
         <Routes />
       </Suspense>
-      <Analytics />
+      {/* Vercel Web Analytics (cookieless). Payment links keep their secret after "#" and payment requests theirs after "?",
+          so only the page's path is ever sent: never the query or the fragment. */}
+      <Analytics beforeSend={(e) => { const u = new URL(e.url); return { ...e, url: u.origin + u.pathname }; }} />
     </AppProvider>
   );
 }
