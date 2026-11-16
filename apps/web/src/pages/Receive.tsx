@@ -12,6 +12,7 @@ import { Icon } from "../ui";
 import { QR } from "../qr";
 import { every } from "../every";
 import { BridgeIn } from "../bridge";
+import { SpiceBridge } from "../spicenet";
 import { Gate } from "../gate";
 import { friendly } from "../errors";
 
@@ -44,14 +45,16 @@ export function Receive({ bridge = false }: { bridge?: boolean }) {
   const { refresh } = usePrivateBalances();
   const delivered = useRef(-1);
 
-  async function fresh(p: GloamPrivate, list: Issued[]) {
+  async function fresh(p: GloamPrivate, list: Issued[]): Promise<Address | undefined> {
     setBusy(true);
     setErr("");
     try {
       const n = list.reduce((m, x) => Math.max(m, x.n + 1), 0);
-      const next = [...list, { n, address: await p.receiveAddress(n), at: Math.floor(Date.now() / 1000) }];
+      const address = await p.receiveAddress(n);
+      const next = [...list, { n, address, at: Math.floor(Date.now() / 1000) }];
       await sealBox(p, "receive", JSON.stringify(next));
       setIssued(next);
+      return address;
     } catch (e) {
       setErr(friendly(e));
     } finally {
@@ -135,6 +138,16 @@ export function Receive({ bridge = false }: { bridge?: boolean }) {
         // the Bridge tab: the bridge alone. It delivers to a fresh receive address of this account, made in the background
         <div style={{ maxWidth: 640 }}>
           <BridgeIn to={cur?.address} onArrived={() => priv && issued && collectIssued(priv, issued).then(() => refresh()).catch(() => {})} />
+          {/* Spicenet: off unless switched on for mainnet (spicenet.tsx); each deposit gets its own fresh receive address */}
+          <SpiceBridge
+            newAddress={async () => {
+              if (!priv) throw new Error("Unlock your private account first.");
+              const a = await fresh(priv, (await load(priv)));
+              if (!a) throw new Error("Couldn't make a receive address. Try again.");
+              return a;
+            }}
+            onArrived={() => priv && load(priv).then((l) => collectIssued(priv, l)).then(() => refresh()).catch(() => {})}
+          />
         </div>
       ) : (
       <div className="grid">
