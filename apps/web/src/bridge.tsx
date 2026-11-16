@@ -8,6 +8,7 @@ import { QR } from "./qr";
 import { Icon, More, TokenIcon } from "./ui";
 import { TokenSheet, type SheetToken } from "./tokenPicker";
 import { every } from "./every";
+import { showBalance, sourceBalance } from "./bridgeBalances";
 import { friendly } from "./errors";
 
 /** Shown on Elysium mainnet (Relay doesn't serve the testnet), or anywhere with VITE_BRIDGE_PREVIEW=1 to review it. */
@@ -81,6 +82,33 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
   const [pending, setPending] = useState<Pending[]>(loadPending);
   const [copied, setCopied] = useState(false);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
+  // the connected wallet's balances on the source chains (EVM only): the chosen token's, and every token's while the list is open
+  const owner = src.kind === "evm" || sheet === "from" ? (wallet?.account?.address as Address | undefined) : undefined;
+  const [bal, setBal] = useState<bigint | undefined>();
+  useEffect(() => {
+    setBal(undefined);
+    if (!owner || src.kind !== "evm") return;
+    let live = true;
+    const go = () => sourceBalance(chainId, token, owner).then((b) => live && setBal(b));
+    go();
+    const stop = every(go, 30_000);
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [chainId, symbol, owner]);
+  const [bals, setBals] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (sheet !== "from" || !owner) return;
+    let live = true;
+    for (const c of RELAY_SOURCES.filter((x) => x.kind === "evm"))
+      for (const t of c.tokens)
+        sourceBalance(c.id, t, owner).then((b) => live && b !== undefined && setBals((cur) => ({ ...cur, [`${c.id}:${t.symbol}`]: showBalance(b, t.decimals) })));
+    return () => {
+      live = false;
+    };
+  }, [sheet, owner]);
+
   // receive addresses an arrived bridge left empty again: its money has moved into the private balance
   const [emptied, setEmptied] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -203,7 +231,7 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
   const canWallet = src.kind === "evm" && !!wallet?.account && !!provider;
   const ready = !!to && amount > 0n && refundOk && !busy;
   const srcKey = `${chainId}:${token.symbol}`;
-  const sources: SheetToken[] = RELAY_SOURCES.filter((c) => !c.needsKey).flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}` })));
+  const sources: SheetToken[] = RELAY_SOURCES.filter((c) => !c.needsKey).flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}`, bal: bals[`${c.id}:${t.symbol}`] })));
   const needRefund = !(src.kind === "evm" && wallet?.account);
   const refundField = (
     <div className="field" style={{ margin: needRefund ? "10px 0 0" : 0 }}><label><span>Refund address on {src.name}{!needRefund ? ", your wallet unless you change it" : ""}</span></label>
@@ -216,7 +244,7 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
       {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium" }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
       {!LIVE && <div className="summary small" style={{ margin: "0 0 10px" }}>Preview. Quotes are live from Relay into Elysium mainnet, and nothing is sent from this network.</div>}
       <div className="swap-box">
-        <div className="k"><span>You send</span><span>{src.name}</span></div>
+        <div className="k"><span>You send</span><span>{bal !== undefined ? <>Balance {showBalance(bal, token.decimals)}{bal > 0n && token.address !== "0x0000000000000000000000000000000000000000" && <button className="link" style={{ marginLeft: 8, background: "none", border: 0, padding: 0, font: "inherit", cursor: "pointer" }} onClick={() => setAmt(formatUnits(bal, token.decimals))}>Max</button>}</> : src.name}</span></div>
         <div className="amt">
           <input value={amt} onChange={(e) => setAmt(e.target.value)} inputMode="decimal" placeholder="0" aria-label="Amount" />
           <button className="token-sel two" onClick={() => setSheet("from")} aria-haspopup="dialog"><TokenIcon symbol={token.symbol} /><span>{token.symbol}<small>{src.name}</small></span><Icon.chev size={14} /></button>
