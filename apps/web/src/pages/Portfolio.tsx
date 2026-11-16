@@ -15,6 +15,7 @@ import { RecipientNote } from "../recipient";
 import { TokenPicker, type PickerOption } from "../tokenPicker";
 import { useFeePct, useMarkets, vaultOf, type Market } from "./markets";
 import { usePrivateBalances } from "../balances";
+import { V1Move } from "../v1move";
 import { schedule, useScheduled } from "../scheduled";
 import { Skel } from "../skel";
 import { GloakWithdrawNote, useGloak } from "../gloak";
@@ -156,6 +157,9 @@ export function Portfolio() {
           <button className="btn btn-ghost" onClick={copy} title={privAddress}><Icon.copy size={16} />Copy cloak address</button>
         </div>
       </div>
+
+      {/* testnet only: moving HYPE in from Cloak v1 (v1move.tsx) */}
+      <V1Move />
 
       <div className="grid">
         <div className="card">
