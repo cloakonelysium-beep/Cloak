@@ -13,7 +13,8 @@
   "pnpm": {
     "overrides": {
       "ws@>=8.0.0 <8.21.0": "^8.21.0",
-      "underscore@<1.13.8": "^1.13.8"
+      "underscore@<1.13.8": "^1.13.8",
+      "@solana/kit": "8.6.0"
     }
   },
   "license": "MIT"
