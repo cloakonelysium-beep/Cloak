@@ -71,8 +71,9 @@ export function LaunchTerms({ s }: { s: AuctionState }) {
       </ul>
 
       <h4 style={{ margin: "18px 0 6px" }}>If the whole sale sells</h4>
+      <p className="xs mute swipe-hint" style={{ margin: "0 0 6px" }}>Swipe the table sideways to see every column.</p>
       <div className="table-wrap" style={{ overflowX: "auto" }}>
-        <table className="small" style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table className="small terms-table" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr className="mute" style={{ textAlign: "left" }}><th>Clearing price</th><th>Raised</th><th>Cloak's fee</th><th>Into the pool</th><th>To the creator</th><th>Reserve burned</th></tr>
           </thead>

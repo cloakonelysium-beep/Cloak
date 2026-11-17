@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits, numberToHex, parseUnits, type Address, type Hex } from "viem";
 import { RELAY_DESTINATIONS, RELAY_SOURCES, relayQuote, relayServes, relayStatus, validRefundAddress, type RelayQuote, type RelayStage } from "@cloakely/sdk";
-import { CHAIN_ID } from "./config";
-import { ensureElysium, type Eip1193 } from "./wallet";
+import { ASSETS, CHAIN_ID } from "./config";
+import { ensureElysium, publicClient, type Eip1193 } from "./wallet";
 import { useApp } from "./state";
 import { QR } from "./qr";
 import { Icon, More, TokenIcon } from "./ui";
 import { TokenSheet, type SheetToken } from "./tokenPicker";
 import { every } from "./every";
+import { showBalance, sourceBalance } from "./bridgeBalances";
 import { friendly } from "./errors";
 
 /** Shown on Elysium mainnet (Relay doesn't serve the testnet), or anywhere with VITE_BRIDGE_PREVIEW=1 to review it. */
@@ -38,10 +39,12 @@ const savePending = (x: Pending[]) => {
   } catch {}
 };
 
-const STAGE: Record<RelayStage, string> = {
+const STAGE: Record<RelayStage | "in", string> = {
   waiting: "Waiting for your deposit",
   moving: "On its way to Elysium",
   done: "Arrived. Moving into your private balance",
+  // shown once the receive address is empty again: the payment is in the private balance
+  in: "In your private balance",
   failed: "Failed. Relay refunds it to your refund address",
   refunded: "Refunded to your refund address",
 };
@@ -79,6 +82,55 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
   const [pending, setPending] = useState<Pending[]>(loadPending);
   const [copied, setCopied] = useState(false);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
+  // the connected wallet's balances on the source chains (EVM only): the chosen token's, and every token's while the list is open
+  const owner = src.kind === "evm" || sheet === "from" ? (wallet?.account?.address as Address | undefined) : undefined;
+  const [bal, setBal] = useState<bigint | undefined>();
+  useEffect(() => {
+    setBal(undefined);
+    if (!owner || src.kind !== "evm") return;
+    let live = true;
+    const go = () => sourceBalance(chainId, token, owner).then((b) => live && setBal(b));
+    go();
+    const stop = every(go, 30_000);
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [chainId, symbol, owner]);
+  const [bals, setBals] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (sheet !== "from" || !owner) return;
+    let live = true;
+    for (const c of RELAY_SOURCES.filter((x) => x.kind === "evm"))
+      for (const t of c.tokens)
+        sourceBalance(c.id, t, owner).then((b) => live && b !== undefined && setBals((cur) => ({ ...cur, [`${c.id}:${t.symbol}`]: showBalance(b, t.decimals) })));
+    return () => {
+      live = false;
+    };
+  }, [sheet, owner]);
+
+  // receive addresses an arrived bridge left empty again: its money has moved into the private balance
+  const [emptied, setEmptied] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const done = [...new Set(pending.filter((p) => p.stage === "done").map((p) => p.to.toLowerCase()))];
+    if (!done.length) return;
+    let live = true;
+    const ERC = [{ type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] }] as const;
+    const go = async () => {
+      const out = new Set<string>();
+      for (const a of done) {
+        const bals = await Promise.all([publicClient.getBalance({ address: a as Address }), ...ASSETS.map((t) => publicClient.readContract({ address: t.token, abi: ERC, functionName: "balanceOf", args: [a as Address] }))]).catch(() => null);
+        if (bals && bals.every((b) => b === 0n)) out.add(a);
+      }
+      if (live) setEmptied(out);
+    };
+    go();
+    const stop = every(go, 20_000);
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [pending]);
 
   // refunds go back to the connected wallet on EVM chains unless another address is given
   const refundTo = refund.trim() || (src.kind === "evm" && wallet?.account ? wallet.account.address : "");
@@ -179,7 +231,7 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
   const canWallet = src.kind === "evm" && !!wallet?.account && !!provider;
   const ready = !!to && amount > 0n && refundOk && !busy;
   const srcKey = `${chainId}:${token.symbol}`;
-  const sources: SheetToken[] = RELAY_SOURCES.filter((c) => !c.needsKey).flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}` })));
+  const sources: SheetToken[] = RELAY_SOURCES.filter((c) => !c.needsKey).flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}`, bal: bals[`${c.id}:${t.symbol}`] })));
   const needRefund = !(src.kind === "evm" && wallet?.account);
   const refundField = (
     <div className="field" style={{ margin: needRefund ? "10px 0 0" : 0 }}><label><span>Refund address on {src.name}{!needRefund ? ", your wallet unless you change it" : ""}</span></label>
@@ -192,7 +244,7 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
       {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium" }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
       {!LIVE && <div className="summary small" style={{ margin: "0 0 10px" }}>Preview. Quotes are live from Relay into Elysium mainnet, and nothing is sent from this network.</div>}
       <div className="swap-box">
-        <div className="k"><span>You send</span><span>{src.name}</span></div>
+        <div className="k"><span>You send</span><span>{bal !== undefined ? <>Balance {showBalance(bal, token.decimals)}{bal > 0n && token.address !== "0x0000000000000000000000000000000000000000" && <button className="link" style={{ marginLeft: 8, background: "none", border: 0, padding: 0, font: "inherit", cursor: "pointer" }} onClick={() => setAmt(formatUnits(bal, token.decimals))}>Max</button>}</> : src.name}</span></div>
         <div className="amt">
           <input value={amt} onChange={(e) => setAmt(e.target.value)} inputMode="decimal" placeholder="0" aria-label="Amount" />
           <button className="token-sel two" onClick={() => setSheet("from")} aria-haspopup="dialog"><TokenIcon symbol={token.symbol} /><span>{token.symbol}<small>{src.name}</small></span><Icon.chev size={14} /></button>
@@ -236,7 +288,7 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
           {[...pending].reverse().slice(0, 5).map((p) => (
             <div key={p.requestId} className="asset-row">
               <div className="nm"><b className="small">{p.line}</b><span className="xs mute">to {p.to.slice(0, 8)}…{p.to.slice(-6)} · {new Date(p.at).toLocaleString()}</span></div>
-              <div className="amt"><span className={p.stage === "done" ? "pill ok" : p.stage === "failed" || p.stage === "refunded" ? "pill" : "pill"}>{STAGE[p.stage]}</span></div>
+              <div className="amt"><span className={p.stage === "done" ? "pill ok" : "pill"}>{STAGE[p.stage === "done" && emptied.has(p.to.toLowerCase()) ? "in" : p.stage]}</span></div>
             </div>
           ))}
         </div>
