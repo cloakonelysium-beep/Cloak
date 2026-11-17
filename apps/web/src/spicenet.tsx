@@ -33,7 +33,7 @@ const NET = SPICENET[CHAIN_ID];
 const ENV = import.meta.env as unknown as Record<string, string | undefined>;
 export const SPICENET_ON = spicenetServes(CHAIN_ID) && ENV[`VITE_SPICENET_${CHAIN_ID}`] === "1";
 
-type Stage = "funding" | "waiting" | "arrived" | "failed";
+type Stage = "funding" | "waiting" | "landing" | "arrived" | "failed";
 /** A Spicenet deposit followed on this device (the receive address and block it started at; nothing secret). */
 interface Deposit {
   id: string;
@@ -43,6 +43,7 @@ interface Deposit {
   fromBlock: string;
   stage: Stage;
   received?: string; // USDC that arrived, in its smallest unit
+  sent?: boolean; // the delivery to Elysium was submitted (not just the Spicenet balance funded)
   tx?: Hex;
   note?: string;
 }
@@ -59,8 +60,9 @@ const save = (x: Deposit[]) => {
     localStorage.setItem(KEY, JSON.stringify(x.slice(-20)));
   } catch {}
 };
-const LABEL: Record<Stage, string> = { funding: "Funding", waiting: "On its way", arrived: "Arrived", failed: "Didn't start" };
-/** Spicenet retries a payout on its own; after this long without one, the user can send it again from the Spicenet wallet. */
+const LABEL: Record<Stage, string> = { funding: "Funding", waiting: "On its way", landing: "Arriving", arrived: "Arrived", failed: "Didn't start" };
+/** After this long without a payout the deposit offers a check: Spicenet says whether its payout is still running, and
+ *  only if it no longer is can the balance be sent again (spicenet-flow.tsx, mode "resend"). */
 const RESEND_AFTER_MS = 30 * 60_000;
 const usdc = (x: string | bigint) => Number(formatUnits(BigInt(x), NET?.usdcDecimals ?? 6)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
@@ -82,12 +84,14 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
     if (!SPICENET_ON) return;
     const go = async () => {
       let arrived = false;
-      for (const d of load().filter((x) => x.stage === "funding" || x.stage === "waiting")) {
+      for (const d of load().filter((x) => x.stage === "funding" || x.stage === "waiting" || x.stage === "landing")) {
         const got = await spicenetDeliveries(publicClient, { chainId: CHAIN_ID, to: d.to, fromBlock: BigInt(d.fromBlock) }).catch(() => null);
         if (!got?.length) continue;
         const total = got.reduce((a, x) => a + x.amount, 0n);
-        update(d.id, { stage: "arrived", received: total.toString(), tx: got[got.length - 1].txHash });
-        arrived = true;
+        // complete only once every payout's block is finalized (about an hour on Elysium); until then "Arriving"
+        const final = got.every((x) => x.final);
+        update(d.id, { stage: final ? "arrived" : "landing", received: total.toString(), tx: got[got.length - 1].txHash });
+        arrived = true; // the USDC is at the address either way: moving it in can start (a reorg would undo both)
       }
       if (arrived) onArrived();
     };
@@ -131,8 +135,8 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
           <SpiceFunding
             to={open.to}
             mode={resend ? "resend" : "deposit"}
-            onStarted={(q) => update(open.id, { stage: "waiting", ...(q ? { amount: q.toString() } : {}) })}
-            onFunded={() => update(open.id, { stage: "waiting" })}
+            onStarted={(q) => update(open.id, { stage: "waiting", sent: true, ...(q ? { amount: q.toString() } : {}) })}
+            onFunded={(f) => update(open.id, { stage: "waiting", ...(f.stage === "sent" ? { sent: true } : {}) })}
             onError={(m) => setErr(m)}
             onClose={() => {
               // closed before Spicenet accepted anything: nothing is on its way
@@ -157,15 +161,22 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
                 <b className="small">{d.received ? `${usdc(d.received)} USDC` : d.amount ? `About ${usdc(d.amount)} USDC` : "USDC"} through Spicenet</b>
                 <span className="xs mute">to {d.to.slice(0, 8)}…{d.to.slice(-6)} · {new Date(d.at).toLocaleString()}</span>
                 {d.note && <span className="xs mute">{d.note}</span>}
-                {d.stage === "waiting" && Date.now() - d.at > RESEND_AFTER_MS && (
+                {d.stage === "landing" && <span className="xs mute">At your receive address; final in about an hour.</span>}
+                {d.stage === "waiting" && !d.sent && (
                   <span className="xs mute">
-                    Taking longer than usual. Spicenet keeps retrying; if it still hasn't arrived, the USDC is waiting in your Spicenet wallet on this device.{" "}
-                    <button className="link" disabled={!!open} onClick={() => { setErr(""); setResend(true); setOpen(d); }}>Send it again</button>
+                    Funded on Spicenet, not sent to Cloak yet.{" "}
+                    <button className="link" disabled={!!open} onClick={() => { setErr(""); setResend(true); setOpen(d); }}>Send to Cloak</button>
+                  </span>
+                )}
+                {d.stage === "waiting" && d.sent && Date.now() - d.at > RESEND_AFTER_MS && (
+                  <span className="xs mute">
+                    Taking longer than usual. Spicenet retries a payout on its own.{" "}
+                    <button className="link" disabled={!!open} onClick={() => { setErr(""); setResend(true); setOpen(d); }}>Check with Spicenet</button>
                   </span>
                 )}
               </div>
               <div className="amt">
-                {d.tx && txLink(d.tx) ? <a className="pill ok" href={txLink(d.tx)} target="_blank" rel="noreferrer">{LABEL[d.stage]}</a> : <span className={d.stage === "arrived" ? "pill ok" : "pill"}>{LABEL[d.stage]}</span>}
+                {d.tx && txLink(d.tx) ? <a className="pill ok" href={txLink(d.tx)} target="_blank" rel="noreferrer">{d.stage === "waiting" && !d.sent ? "Not sent" : LABEL[d.stage]}</a> : <span className={d.stage === "arrived" ? "pill ok" : "pill"}>{d.stage === "waiting" && !d.sent ? "Not sent" : LABEL[d.stage]}</span>}
               </div>
             </div>
           ))}

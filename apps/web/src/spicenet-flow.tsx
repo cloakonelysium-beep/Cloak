@@ -35,6 +35,7 @@ import {
   SpiceFlowProvider,
   SpiceWithdraw,
   buildSpicenetWithdrawalBatch,
+  relayerService,
 } from "@spicenet-io/spiceflow-ui";
 import { SPICENET } from "@cloakely/sdk";
 import type { Address } from "viem";
@@ -54,8 +55,9 @@ export interface SpiceFundingProps {
   mode?: "deposit" | "resend";
   /** Spicenet accepted the delivery to Elysium (before any wallet prompt). */
   onStarted: (quotedNet?: bigint) => void;
-  /** The SDK reports the funding done. Not delivery: only the escrow's transfer on Elysium counts. */
-  onFunded: (detail: { txHash?: string }) => void;
+  /** Funding done ("funded": the Spicenet balance holds it, not sent yet) or the delivery accepted ("sent"). Neither is
+   *  delivery: only the escrow's transfer on Elysium counts. */
+  onFunded: (detail: { txHash?: string; stage: "funded" | "sent" }) => void;
   onError: (message: string) => void;
   onClose: () => void;
 }
@@ -71,8 +73,8 @@ function Inner({ to, mode = "deposit", onStarted, onFunded, onError, onClose }: 
   const { wallets, ready: walletsReady } = useWallets();
   const asked = useRef(false);
   const [err, setErr] = useState("");
-  // after funding, the same window moves on to delivery
-  const [step, setStep] = useState<"deposit" | "deliver">(mode === "resend" ? "deliver" : "deposit");
+  // after funding, the same window moves on to delivery. A resend first asks Spicenet ("check")
+  const [step, setStep] = useState<"deposit" | "check" | "deliver" | "busy">(mode === "resend" ? "check" : "deposit");
   useEffect(() => {
     if (!ready || authenticated || asked.current) return;
     asked.current = true;
@@ -80,8 +82,36 @@ function Inner({ to, mode = "deposit", onStarted, onFunded, onError, onClose }: 
   }, [ready, authenticated, createGuestAccount]);
   const embedded = walletsReady ? wallets.find((w) => w.walletClientType === "privy") : undefined;
 
+  // A resend only once the original payout can no longer pay (Spicenet's review, Nov 17): Spicenet's own record of this
+  // wallet's actions decides, never a timer. While any action is still pending, nothing opens; otherwise SpiceWithdraw
+  // opens on what the Spicenet balance really holds (a cancelled payout's reserved balance comes back there), under the
+  // same lock: Elysium USDC, this deposit's receive address.
+  useEffect(() => {
+    if (step !== "check" || !embedded) return;
+    let live = true;
+    relayerService
+      .getWalletActions(embedded.address, { pendingOnly: true })
+      .then((pending: unknown[]) => {
+        if (!live) return;
+        if (pending.length) setStep("busy");
+        else setStep("deliver");
+      })
+      .catch(() => live && setErr("Couldn't reach Spicenet to check this payout. Try again in a moment."));
+    return () => {
+      live = false;
+    };
+  }, [step, embedded]);
+
   if (err) return <div className="err">{err}</div>;
   if (!ready || !authenticated || !embedded) return <p className="small mute">Starting Spicenet…</p>;
+  if (step === "check") return <p className="small mute">Checking with Spicenet…</p>;
+  if (step === "busy")
+    return (
+      <p className="small soft">
+        Spicenet is still delivering this payout, so there's nothing to send again yet. It retries on its own; check back later.{" "}
+        <button className="link" onClick={onClose}>OK</button>
+      </p>
+    );
   if (step === "deliver")
     return (
       <SpiceWithdraw
@@ -90,7 +120,7 @@ function Inner({ to, mode = "deposit", onStarted, onFunded, onError, onClose }: 
         availableTokens={{ 99901: [{ address: NET.usdc, symbol: "USDC", name: "USD Coin", decimals: NET.usdcDecimals }] }}
         buildSpicenetBatch={lockedBatch(to)}
         onWithdrawExecute={() => onStarted()}
-        onWithdrawSuccess={() => onFunded({})}
+        onWithdrawSuccess={() => onFunded({ stage: "sent" })}
         onWithdrawError={(e) => onError(e)}
       />
     );
@@ -101,7 +131,10 @@ function Inner({ to, mode = "deposit", onStarted, onFunded, onError, onClose }: 
       destinationChainId={99901}
       destinationTokenAddress={NET.usdc}
       depositActionLabel="Add to Spicenet"
-      onDepositSuccess={() => setStep("deliver")}
+      onDepositSuccess={(d) => {
+        onFunded({ txHash: d.txHash, stage: "funded" });
+        setStep("deliver");
+      }}
       onDepositError={(e) => onError(e)}
     />
   );

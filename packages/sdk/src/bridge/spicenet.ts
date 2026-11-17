@@ -44,6 +44,9 @@ export function spicenetServes(chainId: number): boolean {
 export interface SpicenetDelivery {
   txHash: Hex;
   blockNumber: bigint;
+  /** In a finalized block (Elysium settles to HyperEVM, so finality trails the head by about an hour). Only a final
+   *  delivery counts as complete (Spicenet's review, Nov 17). */
+  final: boolean;
   /** USDC, in its smallest unit (6 decimals). */
   amount: bigint;
 }
@@ -52,15 +55,16 @@ const TRANSFER = parseAbiItem("event Transfer(address indexed from, address inde
 
 /**
  * Spicenet's payouts to `to` since `fromBlock`: canonical USDC Transfers from Spicenet's escrow to exactly that address.
- * Logs exist only for successful transactions, so each one is a delivery. Read in chunks (public RPCs cap log ranges).
+ * Logs exist only for successful transactions, so each one is a delivery; `final` says whether its block is finalized.
+ * Read in chunks (public RPCs cap log ranges).
  */
 export async function spicenetDeliveries(
-  client: Pick<PublicClient, "getLogs" | "getBlockNumber">,
+  client: Pick<PublicClient, "getLogs" | "getBlockNumber" | "getBlock">,
   { chainId, to, fromBlock, chunk = 50_000n }: { chainId: number; to: Address; fromBlock: bigint; chunk?: bigint },
 ): Promise<SpicenetDelivery[]> {
   const net = SPICENET[chainId];
   if (!net) throw new Error(`Spicenet doesn't pay out on chain ${chainId}`);
-  const head = await client.getBlockNumber();
+  const [head, finalized] = await Promise.all([client.getBlockNumber(), client.getBlock({ blockTag: "finalized" }).then((b) => b.number ?? -1n).catch(() => -1n)]);
   const out: SpicenetDelivery[] = [];
   for (let a = fromBlock; a <= head; a += chunk) {
     const b = a + chunk - 1n < head ? a + chunk - 1n : head;
@@ -70,7 +74,7 @@ export async function spicenetDeliveries(
       if (l.address.toLowerCase() !== net.usdc.toLowerCase()) continue;
       if (String(l.args.from).toLowerCase() !== net.escrow.toLowerCase() || String(l.args.to).toLowerCase() !== to.toLowerCase()) continue;
       if (!l.transactionHash || l.blockNumber == null) continue;
-      out.push({ txHash: l.transactionHash, blockNumber: l.blockNumber, amount: l.args.value as bigint });
+      out.push({ txHash: l.transactionHash, blockNumber: l.blockNumber, amount: l.args.value as bigint, final: l.blockNumber <= finalized });
     }
   }
   return out;

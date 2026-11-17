@@ -8,9 +8,9 @@ const BOX = "0x1111111111111111111111111111111111111111";
 const OTHER = "0x2222222222222222222222222222222222222222";
 const log = (o) => ({ address: NET.usdc, transactionHash: "0x" + "ab".repeat(32), blockNumber: 6_400_000n, args: { from: NET.escrow, to: BOX, value: 600_000_000n }, ...o });
 
-function client(logs, head = 6_500_000n) {
+function client(logs, head = 6_500_000n, finalized = 6_450_000n) {
   const asked = [];
-  return { asked, getBlockNumber: async () => head, getLogs: async (q) => (asked.push(q), logs.filter((l) => l.blockNumber >= q.fromBlock && l.blockNumber <= q.toBlock)) };
+  return { asked, getBlockNumber: async () => head, getBlock: async ({ blockTag }) => ({ number: blockTag === "finalized" ? finalized : head }), getLogs: async (q) => (asked.push(q), logs.filter((l) => l.blockNumber >= q.fromBlock && l.blockNumber <= q.toBlock)) };
 }
 
 test("mainnet only: testnet and anything else are refused", () => {
@@ -30,6 +30,19 @@ test("asks for canonical USDC Transfers from the escrow to the address, in chunk
     assert.equal(q.args.from, NET.escrow);
     assert.equal(q.args.to, BOX);
   }
+});
+
+test("a delivery is final only once its block is finalized", async () => {
+  const d = await spicenetDeliveries(client([log({ blockNumber: 6_440_000n }), log({ blockNumber: 6_460_000n, transactionHash: "0x" + "cd".repeat(32) })]), { chainId: 99901, to: BOX, fromBlock: 6_430_000n });
+  assert.deepEqual(d.map((x) => x.final), [true, false]);
+});
+
+test("an RPC without the finalized tag counts nothing as final", async () => {
+  const c = client([log()]);
+  c.getBlock = async () => { throw new Error("unsupported block tag"); };
+  const d = await spicenetDeliveries(c, { chainId: 99901, to: BOX, fromBlock: 6_399_000n });
+  assert.equal(d.length, 1);
+  assert.equal(d[0].final, false);
 });
 
 test("ignores anything else a misbehaving RPC returns", async () => {
