@@ -60,11 +60,14 @@ const save = (x: Deposit[]) => {
   } catch {}
 };
 const LABEL: Record<Stage, string> = { funding: "Funding", waiting: "On its way", arrived: "Arrived", failed: "Didn't start" };
+/** Spicenet retries a payout on its own; after this long without one, the user can send it again from the Spicenet wallet. */
+const RESEND_AFTER_MS = 30 * 60_000;
 const usdc = (x: string | bigint) => Number(formatUnits(BigInt(x), NET?.usdcDecimals ?? 6)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promise<Address>; onArrived: () => void }) {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<Deposit | null>(null);
+  const [resend, setResend] = useState(false);
   const [err, setErr] = useState("");
   const [list, setList] = useState<Deposit[]>(load);
   const update = (id: string, patch: Partial<Deposit>) =>
@@ -106,6 +109,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
         save(next);
         return next;
       });
+      setResend(false);
       setOpen(d);
     } catch (e) {
       setErr(friendly(e));
@@ -126,6 +130,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
         <Suspense fallback={<p className="small mute">Loading Spicenet…</p>}>
           <SpiceFunding
             to={open.to}
+            mode={resend ? "resend" : "deposit"}
             onStarted={(q) => update(open.id, { stage: "waiting", ...(q ? { amount: q.toString() } : {}) })}
             onFunded={() => update(open.id, { stage: "waiting" })}
             onError={(m) => setErr(m)}
@@ -137,6 +142,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
                 return next;
               });
               setOpen(null);
+              setResend(false);
             }}
           />
         </Suspense>
@@ -151,6 +157,12 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
                 <b className="small">{d.received ? `${usdc(d.received)} USDC` : d.amount ? `About ${usdc(d.amount)} USDC` : "USDC"} through Spicenet</b>
                 <span className="xs mute">to {d.to.slice(0, 8)}…{d.to.slice(-6)} · {new Date(d.at).toLocaleString()}</span>
                 {d.note && <span className="xs mute">{d.note}</span>}
+                {d.stage === "waiting" && Date.now() - d.at > RESEND_AFTER_MS && (
+                  <span className="xs mute">
+                    Taking longer than usual. Spicenet keeps retrying; if it still hasn't arrived, the USDC is waiting in your Spicenet wallet on this device.{" "}
+                    <button className="link" disabled={!!open} onClick={() => { setErr(""); setResend(true); setOpen(d); }}>Send it again</button>
+                  </span>
+                )}
               </div>
               <div className="amt">
                 {d.tx && txLink(d.tx) ? <a className="pill ok" href={txLink(d.tx)} target="_blank" rel="noreferrer">{LABEL[d.stage]}</a> : <span className={d.stage === "arrived" ? "pill ok" : "pill"}>{LABEL[d.stage]}</span>}
