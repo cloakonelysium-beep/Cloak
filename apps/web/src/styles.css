@@ -1148,3 +1148,12 @@ button.asset-row { cursor: pointer; }
   .hero-actions .btn { white-space: nowrap; max-width: 100%; }
 }
 @media (max-width: 340px) { .swap-box input { font-size: 26px; } }
+/* held tokens: name and amount share one line, the buttons go under them */
+@media (max-width: 560px) {
+  .asset-row.held .nm { flex: 1 1 0; }
+  .asset-row.held .amt { flex: none; }
+}
+/* launch outcome table: scrolls sideways on a phone instead of squeezing its columns */
+.terms-table th, .terms-table td { white-space: nowrap; padding: 6px 12px 6px 0; vertical-align: top; }
+@media (max-width: 640px) { .terms-table { min-width: 640px; } .terms-table td[colspan] { white-space: normal; } }
+.swipe-hint { display: none; } @media (max-width: 640px) { .swipe-hint { display: block; } }

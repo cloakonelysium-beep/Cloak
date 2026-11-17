@@ -178,7 +178,7 @@ export function Portfolio() {
           ) : (
             <div className="asset-list">
               {held.map(({ a, bal, v }) => (
-                <div key={a.key} className="asset-row">
+                <div key={a.key} className="asset-row held">
                   <TokenIcon symbol={a.symbol} token={a.iconToken} size={34} />
                   <div className="nm"><b>{a.symbol}{gloak.is(a.key) && <span className="pill ok" style={{ marginLeft: 6 }} title="Free to trade privately; 10% burned when it leaves for a wallet">private-only</span>}</b><span className="xs mute">{a.name}</span></div>
                   <div className="amt"><b className="mono">{amountOf(a, bal)}</b><span className="xs mute">{v === null ? a.symbol : dollars(v)}</span></div>
