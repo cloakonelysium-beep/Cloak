@@ -4,7 +4,7 @@
 
 An agent that trades on chain leaks its strategy with every transaction, and anyone can copy or front-run it. With Cloak, its bids stay sealed until bidding closes, and its trades come from a private balance: each one is proven on the agent's machine and sent by a relayer, so the agent's wallet never appears on them.
 
-**Testnet only for now** (Elysium testnet, chain `99801`). Play money only.
+**Testnet by default** (Elysium testnet, chain `99801`, play money). Mainnet is live too, behind two explicit settings (see below).
 
 **The easy way:** tell your agent
 
@@ -107,7 +107,7 @@ Amounts are in whole units (`"0.5"` HYPE). `private_send`, `withdraw` and a `pri
 
 - **Spending limits.** Every action that moves value is checked first: bids, shields, swaps (either side, valued in HYPE at the pool price), batch orders, sends and withdrawals. There's a cap per transaction and per UTC day for HYPE value, a separate one for USDC, and a number of launches per day. The day's totals are kept in `~/.cloak-mcp`, so restarting the server doesn't reset them.
 - **Dry run.** Every write tool takes `dry_run: true` and returns exactly what it would do, without signing or sending anything. `CLOAK_DRY_RUN=1` makes every write a dry run.
-- **Testnet by default.** Mainnet needs `CLOAK_NETWORK=mainnet` and `CLOAK_ALLOW_MAINNET=1`, and isn't live yet.
+- **Testnet by default.** Mainnet needs `CLOAK_NETWORK=mainnet` and `CLOAK_ALLOW_MAINNET=1`, as a safeguard, since mainnet moves real money.
 - **The key stays on your machine.** It signs locally and is never sent anywhere. The private account is derived from a local signature, and proofs are generated locally (the circuit files are downloaded once and checked against the hashes pinned in `@cloakely/sdk`). The relayer only sees proofs, which it can submit but can't change.
 - **One write at a time**, so two calls never spend the same private notes.
 - Give the agent a **dedicated wallet** with only what you're willing to let it spend.

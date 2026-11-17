@@ -175,7 +175,7 @@ export function Pitch() {
         <Slide i={10}>
           <h2 className="p-h">Roadmap</h2>
           <div className="p-road">
-            <div className="on"><span className="eyebrow">Now · testnet</span><h3>Launches, vault, SDK</h3><p>Sealed bids, one price, Uniswap pools with liquidity locked forever and creator fees. Private balances, swaps, sends, payment links, batch auctions and bids from a private balance. SDK and MCP server on npm. One site for testnet and mainnet.</p></div>
+            <div className="on"><span className="eyebrow">Now · mainnet</span><h3>Launches, vault, SDK</h3><p>Sealed bids, one price, Uniswap pools with liquidity locked forever and creator fees. Private balances, swaps, sends, payment links, batch auctions and bids from a private balance. SDK and MCP server on npm. One site for testnet and mainnet.</p></div>
             <div><span className="eyebrow">Next · mainnet</span><h3>Mainnet on Elysium</h3><p>On Gloam's live vault and final keys, with one memo board shared by Cloak and Gloam and deposit caps that grow with Gloam. Then GLOAK's launch, an audit of Cloak's own contracts and higher caps.</p></div>
             <div><span className="eyebrow">After</span><h3>Grow</h3><p>$CLOAK with buyback and burn from revenue, private xStocks, partner launchpads in Cloak's ecosystem vault, and more chains on one site.</p></div>
           </div>

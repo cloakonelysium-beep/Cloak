@@ -364,7 +364,7 @@ await priv.batch(token, "buy", parseEther("0.37"));`}</pre>
                 <li>Proofs use Gloam's final ceremony keys, and Kann audited Gloam's vault. Cloak's own escrows and launch vault are reviewed internally, and an outside review comes next, with deposit caps until it's done.</li>
                 <li>A private payment is spendable by its sender until the recipient's app sweeps it, which happens every time Cloak is open. The pending balance shows it.</li>
                 <li>While the beta caps are on, one well-funded bidder (about 10,000 HYPE across 100 wallets) can fill a launch's deposit cap at the creator's minimum price and lock others out. They pay at least that minimum for every token. It goes away when the caps lift after the audit.</li>
-                <li>Testnet software. Mainnet comes in stages, privately first.</li>
+                <li>Beta software, live on Elysium mainnet with caps until Cloak's own contracts are audited.</li>
               </></>
           </ul>
         </article>

@@ -7,7 +7,7 @@
 
 # Cloak v2: private launches and private trading for Elysium, on Gloam
 
-**Site: [oncloak.xyz](https://oncloak.xyz)** (mainnet, keeper at keeper.oncloak.xyz) and [testnet.oncloak.xyz](https://testnet.oncloak.xyz) (testnet), being hosted. Cloak v1 stays at [cloak.boblabs.tech](https://cloak.boblabs.tech) and lives in its own repository.
+**Site: [oncloak.xyz](https://oncloak.xyz)** (mainnet, keeper at keeper.oncloak.xyz) and [testnet.oncloak.xyz](https://testnet.oncloak.xyz) (testnet). Cloak v1 stays at [cloak.boblabs.tech](https://cloak.boblabs.tech) and lives in its own repository.
 
 > **Launches nobody can snipe, and trades nobody can trace.** Bids stay sealed until bidding closes, hidden even from the sequencer. Every winner pays **one clearing price**, and the launch opens a Uniswap v4 pool at that price. After launch, anyone can hold, send, buy and sell the token **from a private balance** kept in [Gloam](https://github.com/gloamtrade/gloam)'s shielded vault: proofs are made on your device and a relay sends them, so your wallet never appears.
 
@@ -36,9 +36,27 @@ Around the vaults sit small escrows that turn a Gloam proof into an action:
 
 **Community:** [t.me/cloakdesk](https://t.me/cloakdesk) on Telegram, [@cloakonelysium](https://x.com/cloakonelysium) on X, [Cloak](https://www.linkedin.com/company/oncloak) on LinkedIn.
 
-## Mainnet (Elysium, chain `99901`): coming, in stages
+## Live on Elysium mainnet (chain `99901`)
 
-The whole deploy has been rehearsed against Gloam's real Elysium vault (`0x89d3…2164`) on a fork of mainnet, with real proofs and real pools (`e2e-gloam/part22-mainnet-fork.mjs`). Here's what's settled:
+Cloak v2 runs on Elysium mainnet: privately from Nov 13, and public from Nov 16. It sits next to Gloam's own vault (`0x89d3…2164`), on the memo board shared with Gloam, and every new feature goes to mainnet first. Before going live, the whole deploy was rehearsed against Gloam's real vault on a fork of mainnet, with real proofs and real pools (`e2e-gloam/part22-mainnet-fork.mjs`).
+
+| Contract | Address |
+|---|---|
+| CloakConfig | `0xbf9d133d2be0572c9ab94adcdb2d00ac8f0e3080` |
+| CloakFactory, from block 6033579 | `0x01BbBA502E4a9bef60F261Cf04d8D04e48F2fB12` |
+| CloakV4Hook | `0x0df8E5771Cad0DEb29b7544b3bDe5A993D342a80` |
+| Gloam's vault (run by Gloam) / its memo board | `0x89d3042390204f57b8b4F8949D3c2203E4002164` / `0xb99db19cdeaf3779013a75f2cb7a13d0eecd075a` |
+| CloakLaunchVault | `0x849097aa6081aa9977ceaf30b6d1cd8467b01726` |
+| CloakEcosystemVault | `0x5ab0ecc7cc6654cf1bfc7247cfeee1ab2887046d` |
+| CloakLaunchSwapV4 / CloakRouterV4 | `0xa0aed21d694809ade5b001d413c826ca63247818` / `0x13de29b8801fcaba9d476c68869a4286cf3203b3` |
+| CloakGloamBatcherV4 | `0xabc13cb154e5c708600d54622bc37fb4ec14b16a` |
+| CloakGloamBids | `0x03344099637832bb26922dca9178675244271758` |
+| CloakGloamReceive | `0xe2a8af9c67e63b7be92c3d1cc308496ba5c8ef9e` |
+| CloakFundsGate / CloakReceiptCheck | `0xdcd44b68626d5b9c6cff317e2f41992481997d91` / `0x3909ec2f2e4d1625b4c4348c561eae8cf5b5efb9` |
+| CloakDropFactory / CloakEscrowDropFactory / CloakSpotBook | `0x6b10a7c9873a99d69a68456bfc34b204b85c0ca3` / `0xa995207204e79459caed54f26580ed3676b0d7d9` / `0x6c3e17b589c5514b8db61d6533231612f5b012d7` |
+| PoolManager (Uniswap v4) | `0xe2e105d3f7209a9da11f83ccf3e7398a753823f1` |
+
+The full record is in `deployments/elysium-mainnet-*.json`, and the SDK carries the same addresses (`deploymentFor(99901)`). Here's what's settled:
 - **Fees:**
   - 1.5% of a successful raise;
   - 20% of launch pools' trading fees;
@@ -53,7 +71,7 @@ The rest:
 - every decision and why: [`docs/MAINNET-DECISIONS.md`](docs/MAINNET-DECISIONS.md);
 - the token: [`docs/CLOAK.md`](docs/CLOAK.md).
 
-## Live on Elysium testnet (chain `99801`)
+## Also on Elysium testnet (chain `99801`)
 
 v2 has **its own launch factory** (redeployed Nov 13 with the GLOAK audit fixes, from the testnet main wallet), apart from Cloak v1's. Its rules are copied from v1's: launch fee 1.5%, auctions capped at 100 HYPE per bid and 10,000 HYPE in total. Testnet runs **Cloak's test vault**: Cloak's own copy of Gloam's open-source (MIT) vault, unmodified, taking HYPE, USDC and a test KNTQ with mainnet's limits. It's run by Cloak, for testnet only, and it isn't Gloam's vault (Gloam agreed to it on those terms). On mainnet, Cloak uses Gloam's own vault. It's deployed and run by the testnet main wallet (since Nov 13). Cloak's launch vault and escrows are deployed around it.
 

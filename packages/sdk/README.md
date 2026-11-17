@@ -12,7 +12,7 @@ TypeScript SDK for [Cloak](https://oncloak.xyz): fair launches and private tradi
 - Zero-knowledge proofs are made on the user's device, on Gloam's final ceremony keys.
 - A relayer sends the transaction and pays its gas, but it can't change anything.
 
-Live on Elysium testnet (chain `99801`). Mainnet (`99901`) is coming, in stages. Built on [viem](https://viem.sh).
+Live on Elysium mainnet (chain `99901`), with a testnet copy on chain `99801`. Built on [viem](https://viem.sh).
 
 ```bash
 npm install @cloakely/sdk viem

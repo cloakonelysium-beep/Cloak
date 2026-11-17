@@ -1,7 +1,10 @@
 # Cloak's rules
 
-Every rule Cloak runs on, with its number, where it is enforced, and who can change it. Numbers are the live values on
-Elysium testnet (chain `99801`) as of Nov 9, 2026, read from Cloak v2's contracts, its `CloakConfig` and Gloam's vault.
+Every rule Cloak runs on, with its number, where it is enforced, and who can change it. Cloak v2 is live on Elysium
+mainnet (chain `99901`). The numbers below were read on Elysium testnet (chain `99801`) on Nov 9, 2026, from Cloak v2's
+contracts, its `CloakConfig` and Gloam's vault. Mainnet uses the same rules, except where a row says otherwise: setup
+ended at deploy, and the withdrawal fee on Cloak's vaults is 0%. Mainnet's exact values are in
+`deployments/elysium-mainnet-*.json`.
 
 **Where a rule lives matters:**
 - **Contract (fixed):** written into the code. Nobody can change it, us included. Only a new contract could, added next
@@ -18,8 +21,8 @@ Elysium testnet (chain `99801`) as of Nov 9, 2026, read from Cloak v2's contract
 | Rule | Value | Where |
 |---|---|---|
 | Moving user funds | **Impossible.** No function in any Cloak contract moves user money. Notes leave a vault only with their owner's proof; auction money goes only to bidders, the creator and the fee recipient | Contract (fixed) |
-| Setup mode | **Still on on testnet.** The owner (one wallet today) sets rules directly and instantly | Config |
-| Ending setup | `endSetup()`, one way, can never be turned back on. Planned before mainnet, after ownership moves to a multisig | Config |
+| Setup mode | **Ended at deploy** on mainnet, and on testnet since the Nov 12 redeploy. While it was on, the owner (one wallet today) set rules directly and instantly | Config |
+| Ending setup | `endSetup()`, one way, can never be turned back on. Done at deploy on mainnet. Ownership is one wallet today, moving to a multisig later | Config |
 | After setup: tightening a rule | Instant (lower a fee, lower a cap, close deposits, remove a launch factory) | Config |
 | After setup: loosening a rule | Queued on-chain, waits **3 days** in public, then must be executed within the next **14 days** or it lapses. Covers raising fees or caps, a new verifier, a new fee recipient, a new launch factory, approving an asset, registering a router | Config |
 | Fee ceilings | Withdrawal fee at most **1%**, launch fee at most **3%**, whatever the owner sets | Contract (fixed) |

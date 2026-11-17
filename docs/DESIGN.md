@@ -3,7 +3,7 @@
 > **Nobody can see your bid until it can no longer be front-run: not bots, not other bidders, not the sequencer.**
 > Everyone pays one clearing price. Liquidity is seeded at that price and locked by the contract.
 
-Cloak is built by Bob Labs and runs on Kinetiq's Elysium testnet.
+Cloak is built by Bob Labs and runs on Kinetiq's Elysium mainnet, with a testnet copy for testing.
 
 ---
 

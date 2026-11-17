@@ -345,7 +345,7 @@ export function Landing() {
             <div className="three">
               <div><h3>Nobody can take funds</h3><p>No function lets anyone, including us, move funds out of an auction or a vault. Loosening any rule waits a public 3-day delay.</p></div>
               <div><h3>Nothing to trust early</h3><p>Bids open on a public schedule. A relayer can submit your trade but can't change it.</p></div>
-              <div><h3>Open source, end to end</h3><p>Contracts, SDK, keeper and app are public, with tests and real testnet runs. The proofs use Gloam's open-source circuits.</p></div>
+              <div><h3>Open source, end to end</h3><p>Contracts, SDK, keeper and app are public, with tests and real runs on testnet and mainnet. The proofs use Gloam's open-source circuits.</p></div>
             </div>
           </div>
         </Section>

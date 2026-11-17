@@ -1,8 +1,9 @@
 # Security
 
-Cloak v2 runs on Elysium **testnet** (chain `99801`) on top of Gloam's shielded vault. It is beta software. Gloam's
-vault has its own audit (Kann). **Cloak's own contracts around it are not externally audited yet.** Mainnet opens with
-deposit caps that stay on until an external audit of Cloak's contracts is done.
+Cloak v2 runs on Elysium **mainnet** (chain `99901`, public since Nov 16, 2026), with a testnet copy on chain `99801`, on
+top of Gloam's shielded vault. It is beta software. Gloam's vault has its own audit (Kann). **Cloak's own contracts
+around it are not externally audited yet**, so mainnet runs with deposit caps that stay on until an external audit of
+Cloak's contracts is done.
 
 Cloak v1 (its own vaults and circuits) lives in its own repository with its own `SECURITY.md` and review history.
 
