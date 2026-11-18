@@ -32,7 +32,7 @@ export const SPICENET: Readonly<Record<number, SpicenetNetwork>> = {
     usdc: "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
     usdcDecimals: 6,
     privyAppId: "cmltzt02300i20cl8zqgzgho8",
-    packages: { ui: "4.24.0", core: "0.10.1" },
+    packages: { ui: "5.0.1", core: "0.10.3" },
   },
 };
 

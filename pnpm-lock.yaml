@@ -37,11 +37,11 @@ importers:
         specifier: 3.51.0
         version: 3.51.0(@solana-program/system@0.16.0(@solana/kit@8.6.0(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)))(@solana-program/token@0.16.1(@solana/kit@8.6.0(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)))(@solana/kit@8.6.0(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10))(@solana/sysvars@8.6.0(typescript@5.6.3))(@stripe/stripe-js@1.54.2)(@tanstack/query-core@5.105.3)(@tanstack/react-query@5.105.3(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(bufferutil@4.2.0)(css-to-react-native@3.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)(use-sync-external-store@1.2.0(react@18.3.1))(utf-8-validate@5.0.10)(zod@4.6.7)
       '@spicenet-io/spiceflow-core':
-        specifier: 0.10.1
-        version: 0.10.1(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
+        specifier: 0.10.3
+        version: 0.10.3(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
       '@spicenet-io/spiceflow-ui':
-        specifier: 4.24.0
-        version: 4.24.0(fcbfd605d126cd89580bcbb8b0481cdb)
+        specifier: 5.0.1
+        version: 5.0.1(fcbfd605d126cd89580bcbb8b0481cdb)
       '@tanstack/react-query':
         specifier: 5.105.3
         version: 5.105.3(@types/react@18.3.12)(react@18.3.1)
@@ -2077,13 +2077,13 @@ packages:
     resolution: {integrity: sha512-gxlLaEfPAqbhd3LNkK0Ks2pbVvDm1SDGqBK/ynDQy13Gu+qiURLpRCfSPjbtrw5bmqQsZ6rS2YJHL31bY/Koag==}
     engines: {node: '>=22'}
 
-  '@spicenet-io/spiceflow-core@0.10.1':
-    resolution: {integrity: sha512-WWcMJghx9uj+V5H5noAcKSFR9p1gcel2mrOtusd2wLIktdw/vUNt4ZtxAe+YpsXbRA3vUsTMdMS6VvUrwbiFHg==}
+  '@spicenet-io/spiceflow-core@0.10.3':
+    resolution: {integrity: sha512-6ZLlO7DoLKSLGp1TMeOf3C+syPUrlS9ifm2Ih9aVenNns/QdpqX63P9KKUDLOqth5rFkECixRfui/Ca/eTJUWw==}
     peerDependencies:
       viem: ^2.13.9
 
-  '@spicenet-io/spiceflow-ui@4.24.0':
-    resolution: {integrity: sha512-A0DQEPofGZqq1SY6vSvsOP0exeEGU0PJ87HY6GF/nMBFULeZzauZCPtva6XFWkJDsSDATDjQ0GpwZLfvBdvT/Q==}
+  '@spicenet-io/spiceflow-ui@5.0.1':
+    resolution: {integrity: sha512-gRQqKyapsOL/hVc9960rg/jIxDuKrvXKIx4xomPACdrNCzl3Gyh1G7ehL0vYLqINLGerxQ5FTwf35aFsUF5qMg==}
     peerDependencies:
       '@privy-io/react-auth': '>=2.24.0 <4.0.0'
       '@tanstack/react-query': '>=5.0.0'
@@ -7557,13 +7557,13 @@ snapshots:
       '@wallet-standard/base': 1.1.1
       '@wallet-standard/features': 1.1.1
 
-  '@spicenet-io/spiceflow-core@0.10.1(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))':
+  '@spicenet-io/spiceflow-core@0.10.3(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))':
     dependencies:
       viem: 2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7)
 
-  '@spicenet-io/spiceflow-ui@4.24.0(fcbfd605d126cd89580bcbb8b0481cdb)':
+  '@spicenet-io/spiceflow-ui@5.0.1(fcbfd605d126cd89580bcbb8b0481cdb)':
     dependencies:
-      '@spicenet-io/spiceflow-core': 0.10.1(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
+      '@spicenet-io/spiceflow-core': 0.10.3(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
       '@swapper-finance/deposit-sdk': 0.3.2
       '@tanstack/react-query': 5.105.3(@types/react@18.3.12)(react@18.3.1)
       react: 18.3.1

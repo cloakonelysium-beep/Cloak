@@ -1,6 +1,6 @@
 /**
  * Spicenet's funding step (Spice Flow), loaded only when a user starts a Spicenet deposit: Privy, wagmi and the Spice
- * Flow UI never weigh on any other page. Spicenet's integration steps (Nov 17), in order:
+ * Flow UI never weigh on any other page. Spice Flow UI 5.0.1, core 0.10.3. Spicenet's integration steps (Nov 17), in order:
  *  1. PrivyProvider with Spicenet's app id and embedded Ethereum wallets; SpiceFlowProvider inside it, provider "privy",
  *     mode "7702", network "mainnet".
  *  2. A guest session when the deposit starts: no Privy login screen, no session key to save. An existing session is
@@ -118,6 +118,12 @@ function Inner({ to, mode = "deposit", onStarted, onFunded, onError, onClose }: 
         isOpen
         onClose={onClose}
         availableTokens={{ 99901: [{ address: NET.usdc, symbol: "USDC", name: "USD Coin", decimals: NET.usdcDecimals }] }}
+        // the SDK's destination controls (5.0.1): Elysium only, and a last check of what is about to be submitted; the
+        // recipient itself is fixed by lockedBatch, which every payout is built through
+        destinationChainIds={[99901]}
+        beforeSubmit={(r) => {
+          if (r.chainId !== 99901 || r.token.toLowerCase() !== NET.usdc.toLowerCase()) throw new Error("Cloak deposits arrive as USDC on Elysium only.");
+        }}
         buildSpicenetBatch={lockedBatch(to)}
         onWithdrawExecute={() => onStarted()}
         onWithdrawSuccess={() => onFunded({ stage: "sent" })}
