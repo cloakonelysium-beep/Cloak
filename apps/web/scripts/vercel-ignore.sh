@@ -1,7 +1,7 @@
 #!/bin/sh
 # Vercel's "Ignored Build Step" (apps/web/vercel.json): exit 0 skips the build, exit 1 builds.
-# The claude/ branch only mirrors main, so it never builds a preview of its own.
-case "$VERCEL_GIT_COMMIT_REF" in claude/*) exit 0 ;; esac
+# The claude/ branch only mirrors main, and spicenet works with Privy only on oncloak.xyz: neither builds a preview.
+case "$VERCEL_GIT_COMMIT_REF" in claude/*|spicenet) exit 0 ;; esac
 cd ../..
 PREV="${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}"
 # the previous commit missing from Vercel's clone: build rather than fail

@@ -60,8 +60,10 @@ function Routes() {
       : dm ? <Drop key={dm[1]} drop={dm[1] as Address} />
       : path === "/app/drops" ? <Drops />
       : path === "/app/drops/create" ? <DropCreate />
-      : path === "/app/portfolio/receive" ? <Receive />
-      : path === "/app/bridge" ? <Receive bridge />
+      : path === "/app/deposit" ? <Receive view="menu" />
+      : path === "/app/deposit/receive" || path === "/app/portfolio/receive" ? <Receive key="receive" view="receive" />
+      : path === "/app/deposit/bridge" || path === "/app/bridge" ? <Receive key="bridge" view="bridge" />
+      : path === "/app/deposit/card" ? <Receive key="card" view="card" />
       : path === "/app/portfolio/prove" ? <ProveFunds />
       : act ? <PortfolioAction key={act[1]} kind={act[1] as "shield" | "send" | "withdraw"} />
       : path === "/app/trade" ? <Trade />

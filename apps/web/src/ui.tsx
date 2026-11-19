@@ -354,3 +354,8 @@ export function Footer() {
 export function Section({ id, children, className = "" }: { id?: string; children: ReactNode; className?: string }) {
   return <section id={id} className={`wrap section ${className}`}>{children}</section>;
 }
+
+/** "Powered by …": who runs a deposit route (Cloak doesn't), with their logo. */
+export function Powered({ by, logo, extra }: { by: string; logo?: string; extra?: string }) {
+  return <p className="by" style={{ margin: "14px 0 0" }}>{logo && <img src={logo} alt="" />}Powered by {by}{extra ? ` · ${extra}` : ""}</p>;
+}

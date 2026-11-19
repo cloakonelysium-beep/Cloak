@@ -5,7 +5,7 @@ import { ASSETS, CHAIN_ID } from "./config";
 import { ensureElysium, publicClient, type Eip1193 } from "./wallet";
 import { useApp } from "./state";
 import { QR } from "./qr";
-import { Icon, More, TokenIcon } from "./ui";
+import { Icon, More, Powered, TokenIcon } from "./ui";
 import { TokenSheet, type SheetToken } from "./tokenPicker";
 import { every } from "./every";
 import { showBalance, sourceBalance } from "./bridgeBalances";
@@ -66,7 +66,7 @@ async function mined(eth: Eip1193, hash: string) {
  * Money in from another chain or an exchange, through Relay, landing at `to` (one of the account's receive addresses).
  * The Receive page moves what arrives there into the private balance; `onArrived` asks it to do so at once.
  */
-export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived: () => void }) {
+export function BridgeIn({ to, onArrived, viaAddress = false }: { to: Address | undefined; onArrived: () => void; viaAddress?: boolean }) {
   const { wallet, provider } = useApp();
   const [chainId, setChainId] = useState(999);
   const src = RELAY_SOURCES.find((c) => c.id === chainId)!;
@@ -242,6 +242,7 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
     <div className="swap bridge">
       {sheet === "from" && <TokenSheet title="Send from" tokens={sources} value={srcKey} placeholder="Search a token or a network" filters={RELAY_SOURCES.filter((c) => !c.needsKey).slice(0, 6).map((c) => c.name)} onPick={(k) => { const [c, sym] = k.split(":"); setChainId(Number(c)); setSymbol(sym); }} onClose={() => setSheet(null)} />}
       {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium" }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
+      {viaAddress && <div className="infobox" style={{ margin: "0 0 12px" }}><b>From an exchange</b><br />Pick the coin and the network your exchange withdraws on. Relay gives you a one-time address for it and brings it to Elysium.</div>}
       {!LIVE && <div className="summary small" style={{ margin: "0 0 10px" }}>Preview. Quotes are live from Relay into Elysium mainnet, and nothing is sent from this network.</div>}
       <div className="swap-box">
         <div className="k"><span>You send</span><span>{bal !== undefined ? <>Balance {showBalance(bal, token.decimals)}{bal > 0n && token.address !== "0x0000000000000000000000000000000000000000" && <button className="link" style={{ marginLeft: 8, background: "none", border: 0, padding: 0, font: "inherit", cursor: "pointer" }} onClick={() => setAmt(formatUnits(bal, token.decimals))}>Max</button>}</> : src.name}</span></div>
@@ -261,8 +262,12 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
       {needRefund && refundField}
       {refundTo && !refundOk && <div className="err">That isn't a {src.name} address.</div>}
       <div className="bridge-cta">
-        <button className="btn btn-ink btn-lg" disabled={!ready} onClick={() => quote(false)}>{busy && !q ? busy : amount <= 0n ? "Enter an amount" : !refundOk ? "Add a refund address" : "Get a deposit address"}</button>
-        {canWallet && <button className="btn btn-ghost btn-lg" disabled={!ready} onClick={() => quote(true)}>Pay from my wallet</button>}
+        {canWallet && !viaAddress ? (
+          <button className="btn btn-ink btn-lg" disabled={!ready} onClick={() => quote(true)}>{busy && !q ? busy : amount <= 0n ? "Enter an amount" : !refundOk ? "Add a refund address" : "Bridge from my wallet"}</button>
+        ) : (
+          // Bitcoin, Solana, Tron and the like: no wallet here signs for them, so Relay's one-time deposit address
+          <button className="btn btn-ink btn-lg" disabled={!ready} onClick={() => quote(false)}>{busy && !q ? busy : amount <= 0n ? "Enter an amount" : !refundOk ? "Add a refund address" : "Get a deposit address"}</button>
+        )}
       </div>
       {busy && q && <div className="summary small" style={{ marginTop: 10 }}><span className="dot live" style={{ marginRight: 8 }} />{busy}</div>}
       {err && <div className="err">{err}</div>}
@@ -293,8 +298,10 @@ export function BridgeIn({ to, onArrived }: { to: Address | undefined; onArrived
           ))}
         </div>
       )}
+      <Powered by="Relay" logo="/partners/relay.png" />
       <div className="more-list">
         {!needRefund && <More title="Refund address">{refundField}</More>}
+        <More title="Risks">Relay runs the bridge, not Cloak. While your funds are with Relay, Cloak can't move, speed up or recover them. If a bridge fails, Relay refunds it to your refund address. Quotes, fees and networks are Relay's. Send exactly the quoted amount on the quoted network, or it may not arrive.</More>
         <More title="What is public and what isn't">Relay delivers to your receive address on Elysium, never to your wallet, and Cloak moves it into your private balance. Like any deposit, what was sent and from where is public. A deposit address from an exchange keeps your wallet out of it. Paying from your wallet links that wallet to this receive address, so use a new address afterwards.</More>
       </div>
     </div>

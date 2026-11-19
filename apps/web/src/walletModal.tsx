@@ -104,7 +104,7 @@ export function WalletModal({ onPick, onClose }: { onPick: (o: WalletOption | "w
           <div className="wm-steps">
             <button className="btn btn-ghost btn-sm" onClick={addNetwork}>Add {chain.name}</button>
             {IS_MAINNET ? (
-              <a className="btn btn-ghost btn-sm" href="/app/bridge">Bring HYPE or USDC over</a>
+              <a className="btn btn-ghost btn-sm" href="/app/deposit/bridge">Bring HYPE or USDC over</a>
             ) : (
               <a className="btn btn-ghost btn-sm" href={FAUCET_URL} target="_blank" rel="noreferrer">Get testnet HYPE ↗</a>
             )}

@@ -21,7 +21,7 @@ function Welcome({ onClose }: { onClose: () => void }) {
         <div className="qs">
           <div><span className="n">1</span><span>Connect a wallet. Cloak adds the <b>{chain.name}</b> network for you.</span></div>
           {IS_MAINNET ? (
-            <div><span className="n">2</span><span>Have some HYPE on Elysium, or <a className="link" href="/app/bridge">bring HYPE or USDC over</a> from another chain or an exchange.</span></div>
+            <div><span className="n">2</span><span>Have some HYPE on Elysium, or <a className="link" href="/app/deposit/bridge">bring HYPE or USDC over</a> from another chain or an exchange.</span></div>
           ) : (
             <div><span className="n">2</span><span>Get testnet HYPE from the <a className="link" href="https://elysium.kinetiq.xyz/testnet-faucet" target="_blank" rel="noreferrer">Elysium faucet</a>.</span></div>
           )}
@@ -42,9 +42,9 @@ function Welcome({ onClose }: { onClose: () => void }) {
 type Item = { to: string; label: string; I: (p: { size?: number }) => JSX.Element; on: (p: string) => boolean };
 const GROUPS: [string, Item[]][] = [
   ["Private", [
-    { to: "/app", label: "Portfolio", I: Icon.wallet, on: (p) => p === "/app" || (p.startsWith("/app/portfolio") && p !== "/app/portfolio/prove") },
+    { to: "/app", label: "Portfolio", I: Icon.wallet, on: (p) => p === "/app" || (p.startsWith("/app/portfolio") && p !== "/app/portfolio/prove" && p !== "/app/portfolio/receive") },
     { to: "/app/trade", label: "Trade", I: Icon.swap, on: (p) => p.startsWith("/app/trade") },
-    { to: "/app/bridge", label: "Bridge", I: Icon.bridge, on: (p) => p === "/app/bridge" },
+    { to: "/app/deposit", label: "Deposit", I: Icon.arrowDown, on: (p) => p.startsWith("/app/deposit") || p === "/app/bridge" || p === "/app/portfolio/receive" },
     { to: "/app/links", label: "Payment links", I: Icon.link, on: (p) => p === "/app/links" || p === "/claim" || p === "/pay" },
     { to: "/app/portfolio/prove", label: "Prove funds", I: Icon.shield, on: (p) => p === "/app/portfolio/prove" || p === "/proof" },
     { to: "/agents", label: "Agents", I: Icon.users, on: (p) => p === "/agents" },

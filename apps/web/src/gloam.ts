@@ -2,6 +2,7 @@ import { gloamProvers as sdkProvers, toJson, fromJson, type GloamCoreConfig, typ
 import type { Hex } from "viem";
 import { openBox } from "./deviceBox";
 import { CHAIN_ID } from "./config";
+import { collectionPass } from "./collection";
 
 /** Gloam's final-key provers, made once per page load (their 13.5 MB of files download on the first proof). */
 let provers: GloamCoreConfig["provers"] | null = null;
@@ -33,10 +34,27 @@ export function launchRecords(wallet: string): { load(): LaunchRecord[]; save(r:
 /** What this device moved in from each receive address, per address (amount text and transaction), for the Receive page. */
 const delivered = new Map<string, { token: string; amount: string; fee: string; txHash: Hex }[]>();
 
+/** Receive addresses of Spicenet deposits this device started and hasn't seen collected (spicenet.tsx keeps the list;
+ *  read here directly so the Spicenet code never loads on unlock). */
+function spicenetPending(): string[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(`cloak.spicenet.v1.${CHAIN_ID}`) ?? "[]") as { to: string; stage: string; at: number }[];
+    // a deposit counts as pending for 90 days unless it never started
+    return list.filter((d) => d.stage !== "failed" && Date.now() - d.at < 90 * 86_400_000).map((d) => d.to);
+  } catch {
+    return [];
+  }
+}
+
+/** Where the turn through older receive addresses is (this session): each pass checks the next 12 of them. */
+let olderTurn = 0;
+
 /** Move what waits at these receive addresses into the private balance. Returns how many deposits it made. */
 export async function collectIssued(p: GloamPrivate, issued: { n: number; address: string }[]): Promise<number> {
   let made = 0;
-  for (const x of issued.slice(-12)) {
+  const { pick, nextTurn } = collectionPass(issued, spicenetPending(), olderTurn);
+  olderTurn = nextTurn;
+  for (const x of pick) {
     for (const d of await p.collectReceived(x.n)) {
       const k = x.address.toLowerCase();
       delivered.set(k, [...(delivered.get(k) ?? []), { token: d.asset, amount: d.amount.toString(), fee: "0", txHash: d.txHash }]);

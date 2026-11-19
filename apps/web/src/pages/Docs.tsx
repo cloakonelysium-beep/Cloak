@@ -81,7 +81,7 @@ export function Docs() {
           <ol>
             <li>Open the <Link to="/app">app</Link> and connect a wallet. Cloak adds <b>{chain.name}</b> (chain {CHAIN_ID}) for you.</li>
             {IS_MAINNET ? (
-              <li>Have some HYPE on Elysium, or <Link to="/app/bridge">bring HYPE or USDC over</Link> from another chain or an exchange.</li>
+              <li>Have some HYPE on Elysium, or <Link to="/app/deposit/bridge">bring HYPE or USDC over</Link> from another chain or an exchange.</li>
             ) : (
               <li>Get testnet HYPE from the <a href="https://elysium.kinetiq.xyz/testnet-faucet" target="_blank" rel="noreferrer">Elysium faucet</a>.</li>
             )}
