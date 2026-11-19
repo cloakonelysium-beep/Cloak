@@ -153,6 +153,7 @@ export function Portfolio() {
           <Link to="/app/portfolio/send" className="btn btn-ghost"><Icon.send size={16} />Send privately</Link>
           <Link to="/app/portfolio/withdraw" className="btn btn-ghost"><Icon.arrowDown size={16} />Withdraw</Link>
           {GLOAM?.receive && <Link to="/app/deposit/receive" className="btn btn-ghost"><Icon.wallet size={16} />Receive</Link>}
+          {GLOAM?.receive && <Link to="/app/deposit/bridge" className="btn btn-ghost"><Icon.bridge size={16} />Bridge</Link>}
           <button className="btn btn-ghost" onClick={copy} title={privAddress}><Icon.copy size={16} />Copy cloak address</button>
         </div>
       </div>
