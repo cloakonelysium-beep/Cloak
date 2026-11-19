@@ -3,11 +3,13 @@ import { formatUnits, type Address } from "viem";
 import { SPICENET, spicenetCapacity, spicenetDeliveries, spicenetDelivery, spicenetServes } from "@cloakely/sdk";
 import { CHAIN_ID, txLink } from "./config";
 import { publicClient } from "./wallet";
-import { More, TELEGRAM } from "./ui";
+import { Powered, TELEGRAM } from "./ui";
+import { CloakCard, Mastercard, Visa } from "./cloakCard";
 import { every } from "./every";
 import { friendly } from "./errors";
-import { MIN_CAPACITY, arrived, checkFirst, closed, open as following, pendingDeposit, resumable, txHashOf, type Deposit, type Stage } from "./spicenet-state";
+import { CARD_CAP, CARD_MIN, MIN_CAPACITY, arrived, depositLimit, checkFirst, closed, open as following, pendingDeposit, resumable, txHashOf, type Deposit, type Stage } from "./spicenet-state";
 const SpiceFunding = lazy(() => import("./spicenet-flow"));
+const CARD_ICON = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5" /><path d="M3 10h18M7 15h4" /></svg>;
 
 /** Spicenet's window can fail (its SDK, Privy, the network): it shows a message there and never takes the page down. */
 class Contained extends Component<{ children: ReactNode; onError: (m: string) => void }, { failed: boolean }> {
@@ -70,7 +72,7 @@ const save = (x: Deposit[]) => {
   } catch {}
 };
 const LABEL: Record<Stage, string> = { funding: "Funding", waiting: "On its way", landing: "Arrived, confirming", arrived: "Arrived", failed: "Not confirmed" };
-const label = (d: Deposit) => (d.stage === "waiting" && !d.sent ? "Not delivered" : LABEL[d.stage]);
+const label = (d: Deposit) => LABEL[d.stage];
 const usdc = (x: string | bigint) => Number(formatUnits(BigInt(x), NET?.usdcDecimals ?? 6)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 /** What Elysium shows for a deposit: the reported transaction's receipt first, else the escrow's transfers to the address. */
@@ -119,9 +121,10 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
     };
   }, []);
 
-  if (!SPICENET_ON || !NET) return null;
-  const pending = pendingDeposit(list);
+  const on = SPICENET_ON && !!NET;
+  const pending = on ? pendingDeposit(list) : undefined;
   const dry = capacity !== null && capacity < MIN_CAPACITY;
+  const limit = depositLimit(capacity);
 
   async function start() {
     if (pendingDeposit(load())) return; // one at a time (the button is hidden then too)
@@ -151,76 +154,121 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
     follow(id);
   };
 
+  const shown = [...list].reverse().filter((d) => d.stage !== "funding" && (d.stage !== "failed" || resumable(d))).slice(0, 6);
+  const canResume = !!pending && resumable(pending);
+  const resume = (d: Deposit) => { setErr(""); setOpen({ d, resume: true }); };
+
   return (
-    <div className="swap bridge" style={{ marginTop: 16 }}>
-      <div className="k" style={{ marginBottom: 10 }}><b>Card, exchange or wallet</b><span className="xs mute">through Spicenet</span></div>
-      <p className="small soft" style={{ margin: "0 0 10px" }}>Pay by card, from an exchange, or from a wallet on another chain. Spicenet delivers USDC on Elysium to a fresh receive address, and Cloak moves it into your private balance.</p>
-      {pending && !open ? (
-        <div className="small soft" style={{ margin: "0 0 10px" }}>
-          <b>You have a deposit on its way. Please don't start a new one.</b> Use <b>Resume delivery</b> below; it never charges you again. If it still hasn't
-          arrived after an hour, <a href={TELEGRAM} target="_blank" rel="noreferrer">contact the Cloak team</a> with its receive address:{" "}
-          <span className="mono" style={{ wordBreak: "break-all" }}>{pending.to}</span>
+    <div className="dep-grid">
+      <div className="card" style={{ padding: 24 }}>
+        <CloakCard />
+        <div className="kv" style={{ marginTop: 18 }}>
+          <div className="r"><span>Per payment</span><span><b>{on ? `${usdc(CARD_MIN)} to ${usdc(limit)} USDC` : "Opens soon"}</b></span></div>
+          {on && limit < CARD_CAP && (
+            <div className="r" style={{ display: "block" }}>
+              <div className="meter"><i style={{ width: `${Math.max(3, Math.min(100, Number((limit * 100n) / CARD_CAP)))}%` }} /></div>
+              <div className="row-flex xs mute" style={{ justifyContent: "space-between", marginTop: 6 }}><span>Available now {usdc(limit)}</span><span>Cloak's cap {usdc(CARD_CAP)}</span></div>
+            </div>
+          )}
+          <div className="r"><span>Arrives</span><span>Usually within minutes</span></div>
+          <div className="r"><span>Fees</span><span>Shown in checkout before you pay</span></div>
+          <div className="r"><span>Pay with</span><span className="netlogos"><Visa h={13} color="var(--visa)" /><Mastercard h={20} /></span></div>
         </div>
-      ) : (
-        <>
-          {capacity !== null && (
-            <p className="xs mute" style={{ margin: "0 0 8px" }}>
-              {dry ? "Spicenet's escrow on Elysium is out of USDC right now, so new deposits can't be delivered. Try again later." : `Spicenet can deliver up to ${usdc(capacity)} USDC right now. Larger deposits are refused before you pay.`}
+        {!on ? (
+          <button className="btn btn-ink btn-lg btn-block" style={{ marginTop: 16 }} disabled>{CARD_ICON}Opening soon</button>
+        ) : dry ? (
+          <>
+            <div className="warnbox" style={{ marginTop: 16 }}>Card payments are paused. Spicenet's payout balance on Elysium is empty right now. Try again later.</div>
+            <button className="btn btn-ink btn-lg btn-block" style={{ marginTop: 10 }} disabled>{CARD_ICON}Continue to payment</button>
+          </>
+        ) : pending && !open ? (
+          <>
+            <button className="btn btn-ink btn-lg btn-block" style={{ marginTop: 16 }} disabled={!canResume} onClick={() => resume(pending)}>{canResume ? "Resume delivery" : "Your payment is on its way"}</button>
+            <p className="xs mute" style={{ margin: "10px 0 0", textAlign: "center" }}>One payment at a time. Resume never charges you twice.</p>
+          </>
+        ) : (
+          <>
+            <button className="btn btn-ink btn-lg btn-block" style={{ marginTop: 16 }} disabled={busy || !!open} onClick={start}>{CARD_ICON}{busy ? "Starting…" : "Continue to payment"}</button>
+            <p className="xs mute" style={{ margin: "10px 0 0", textAlign: "center" }}>Opens Spicenet's checkout. Choose <b>With Card</b>.</p>
+          </>
+        )}
+        {err && <div className="err">{err}</div>}
+        <Powered by="Spicenet" logo="/partners/spicenet-mark.svg" extra="Card checkout by Swapper" />
+      </div>
+
+      <div className="col">
+        <div className="card">
+          <div className="card-head" style={{ marginBottom: 4 }}><h3>Your card payments</h3>{shown.length > 0 && <span className="xs mute">{shown.length}</span>}</div>
+          {shown.length === 0 ? (
+            <p className="small mute" style={{ margin: "8px 0 0" }}>None yet. Payments and their status show here.</p>
+          ) : (
+            shown.map((d) => (
+              <div key={d.id} className="pay-row">
+                <div>
+                  <b>{d.received ? `${usdc(d.received)} USDC` : d.amount ? `About ${usdc(d.amount)} USDC` : "Card payment"}</b>
+                  <span className="xs mute">{new Date(d.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}{d.stage === "landing" ? " · final in about an hour" : ""}</span>
+                  {resumable(d) && d !== pending && <button className="link xs" disabled={!!open} onClick={() => resume(d)}>Resume delivery</button>}
+                </div>
+                {d.tx && txLink(d.tx) ? <a className="pill ok" href={txLink(d.tx)} target="_blank" rel="noreferrer">{label(d)}</a> : <span className={d.stage === "arrived" ? "pill ok" : d.stage === "waiting" ? "pill warn" : "pill"}>{label(d)}</span>}
+              </div>
+            ))
+          )}
+          {pending && (
+            <p className="xs mute" style={{ margin: "12px 0 0" }}>
+              Not there after an hour? <a className="link" href={TELEGRAM} target="_blank" rel="noreferrer">Contact us</a> with its receive address <span className="mono">{pending.to.slice(0, 6)}…{pending.to.slice(-4)}</span>
             </p>
           )}
-          <div className="bridge-cta">
-            <button className="btn btn-ink btn-lg" disabled={busy || !!open || dry} onClick={start}>{busy ? "Starting…" : "Add funds with Spicenet"}</button>
+        </div>
+        <div className="card">
+          <h3 style={{ marginBottom: 6 }}>How it works</h3>
+          <div className="kv steps-kv">
+            <div className="r"><span><i className="n">1</i>Pay</span><span>Card checkout by Swapper</span></div>
+            <div className="r"><span><i className="n">2</i>Deliver</span><span>USDC to a fresh address</span></div>
+            <div className="r"><span><i className="n">3</i>Private</span><span>Cloak moves it into your balance</span></div>
           </div>
-        </>
-      )}
+        </div>
+        <div className="card flat">
+          <h3 style={{ marginBottom: 10 }}>Before you pay</h3>
+          <ul className="dep-dots">
+            <li>Fees and any ID check are set by the card partner</li>
+            <li>One payment at a time, within the limit</li>
+            <li>Finish in this browser. An unfinished payment can only resume here</li>
+            <li>Cloak can't refund a card payment. Until the USDC arrives, only Spicenet and its card partner can</li>
+            <li>Spicenet sees the payment and the receive address, like any card on-ramp</li>
+          </ul>
+        </div>
+      </div>
+
       {open && (
         <Contained onError={(m) => { setErr(m); shut(open.d.id, "Spicenet didn't start"); }}>
-        <Suspense fallback={<p className="small mute">Loading Spicenet…</p>}>
-          <SpiceFunding
-            to={open.d.to}
-            resume={open.resume ? { guest: open.d.guest, checkFirst: checkFirst(open.d) } : undefined}
-            onGuest={(g) => change(open.d.id, (d) => (d.guest ? d : { ...d, guest: g }))}
-            onSubmitted={() => change(open.d.id, (d) => ({ ...d, submitted: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined }))}
-            onDelivered={({ txHash }) => {
-              const tx = txHashOf(txHash);
-              change(open.d.id, (d) => ({ ...d, submitted: true, sent: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined, ...(tx ? { deliveryTx: tx } : {}) }));
-              // read the receipt now; the 20-second follow keeps going until it is final
-              setTimeout(() => follow(open.d.id), 0);
-            }}
-            onError={(m) => setErr(m)}
-            onClose={() => shut(open.d.id)}
-          />
-        </Suspense>
+          <Suspense fallback={null}>
+            <SpiceFunding
+              to={open.d.to}
+              resume={open.resume ? { guest: open.d.guest, checkFirst: checkFirst(open.d) } : undefined}
+              onGuest={(g) => change(open.d.id, (d) => (d.guest ? d : { ...d, guest: g }))}
+              onSubmitted={() => change(open.d.id, (d) => ({ ...d, submitted: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined }))}
+              onDelivered={({ txHash }) => {
+                const tx = txHashOf(txHash);
+                change(open.d.id, (d) => ({ ...d, submitted: true, sent: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined, ...(tx ? { deliveryTx: tx } : {}) }));
+                // read the receipt now; the 20-second follow keeps going until it is final
+                setTimeout(() => follow(open.d.id), 0);
+              }}
+              onError={(m) => setErr(m)}
+              onClose={() => shut(open.d.id)}
+            />
+          </Suspense>
         </Contained>
       )}
-      {err && <div className="err">{err}</div>}
-      {list.length > 0 && (
-        <div className="asset-list" style={{ marginTop: 12 }}>
-          {[...list].reverse().slice(0, 5).map((d) => (
-            <div key={d.id} className="asset-row">
-              <div className="nm">
-                <b className="small">{d.received ? `${usdc(d.received)} USDC` : d.amount ? `About ${usdc(d.amount)} USDC` : "USDC"} through Spicenet</b>
-                <span className="xs mute">to {d.to.slice(0, 8)}…{d.to.slice(-6)} · {new Date(d.at).toLocaleString()}</span>
-                {d.note && <span className="xs mute">{d.note}</span>}
-                {d.stage === "landing" && <span className="xs mute">At your receive address; final in about an hour.</span>}
-                {resumable(d) && (
-                  <span className="xs mute">
-                    {d.stage === "failed" ? "Paid by card or exchange and closed the window?" : d.sent ? "Taking longer than usual." : "Not delivered to Cloak yet."} Nothing is charged again.{" "}
-                    <button className="link" disabled={!!open} onClick={() => { setErr(""); setOpen({ d, resume: true }); }}>Resume delivery</button>
-                  </span>
-                )}
-              </div>
-              <div className="amt">
-                {d.tx && txLink(d.tx) ? <a className="pill ok" href={txLink(d.tx)} target="_blank" rel="noreferrer">{label(d)}</a> : <span className={d.stage === "arrived" ? "pill ok" : "pill"}>{label(d)}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="more-list">
-        <More title="What is public and what isn't">Spicenet's escrow pays USDC to a fresh receive address on Elysium, never to your wallet, and Cloak moves it into your private balance. On Elysium the payment comes from Spicenet, not from you. Spicenet sees both ends (where the money came from and the receive address), as any bridge does, and amounts and timing can be matched. Waiting a while before you trade helps.</More>
-        <More title="When it counts">Only when the USDC is at your receive address on Elysium. A card payment going through, or a deposit on another chain, isn't the money arriving.</More>
-      </div>
     </div>
   );
+}
+
+/** The card limit for the Deposit menu: off, or "10 to N USDC" with N the lower of Cloak's cap and the escrow. */
+export function useCardLimit(): { on: boolean; range: string } {
+  const [capacity, setCapacity] = useState<bigint | null>(null);
+  useEffect(() => {
+    if (!SPICENET_ON) return;
+    spicenetCapacity(publicClient, CHAIN_ID).then(setCapacity, () => setCapacity(null));
+  }, []);
+  return { on: SPICENET_ON, range: `${usdc(CARD_MIN)} to ${usdc(depositLimit(capacity))} USDC` };
 }

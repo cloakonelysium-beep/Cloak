@@ -7,12 +7,12 @@ import { openBox, sealBox } from "../deviceBox";
 import { publicClient } from "../wallet";
 import { useApp } from "../state";
 import { usePrivateBalances } from "../balances";
-import { Link } from "../router";
+import { Link, useRoute } from "../router";
 import { Icon } from "../ui";
 import { QR } from "../qr";
 import { every } from "../every";
 import { BridgeIn } from "../bridge";
-import { SpiceBridge } from "../spicenet";
+import { SpiceBridge, useCardLimit } from "../spicenet";
 import { Gate } from "../gate";
 import { friendly } from "../errors";
 
@@ -34,8 +34,51 @@ const load = async (p: GloamPrivate): Promise<Issued[]> => {
   }
 };
 
-/** The Receive page; with `bridge` (the Bridge tab) the bridge from other chains and exchanges comes first. */
-export function Receive({ bridge = false }: { bridge?: boolean }) {
+export type DepositView = "menu" | "receive" | "bridge" | "card";
+
+const ICO = {
+  qr: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2" /></svg>,
+  card: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5" /><path d="M3 10h18M7 15h4" /></svg>,
+  chev: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>,
+};
+
+/** The Deposit menu: one card per way in. No account needed to see it. */
+function DepositMenu() {
+  const card = useCardLimit();
+  return (
+    <>
+      <div className="page-head"><div><h1>Deposit</h1><p>Three ways in. Each one lands in your private balance.</p></div></div>
+      <div className="dep-list">
+        <Link to="/app/deposit/receive" className="dep-opt">
+          <span className="dep-ico">{ICO.qr}</span>
+          <span><b>Receive address</b><span className="d">An Elysium address anyone can pay, from a wallet or an exchange.</span><span className="by">By Cloak</span></span>
+          <span className="meta"><span className="pill ok">No fee</span></span><span className="chev">{ICO.chev}</span>
+        </Link>
+        <Link to="/app/deposit/bridge" className="dep-opt">
+          <span className="dep-ico"><Icon.bridge size={22} /></span>
+          <span><b>Bridge</b><span className="d">Move HYPE or USDC over from 20 chains with your wallet.</span><span className="by"><img src="/partners/relay.png" alt="" />Powered by Relay</span></span>
+          <span className="meta"><span className="pill">Relay fee</span></span><span className="chev">{ICO.chev}</span>
+        </Link>
+        <Link to="/app/deposit/card" className="dep-opt">
+          <span className="dep-ico">{ICO.card}</span>
+          <span><b>Pay by card</b><span className="d">Buy USDC with a debit or credit card.</span><span className="by"><img src="/partners/spicenet-mark.svg" alt="" />Powered by Spicenet</span></span>
+          <span className="meta"><span className="pill">{card.on ? card.range : "Soon"}</span></span><span className="chev">{ICO.chev}</span>
+        </Link>
+      </div>
+      <p className="dep-foot"><Icon.lock size={13} />Nobody can see which private balance a deposit joins.</p>
+    </>
+  );
+}
+
+/** The Deposit page: a menu of three ways in, and each one's page. Every way lands at one of the account's receive
+ *  addresses, and what arrives moves into the private balance. */
+export function Receive({ view = "menu" }: { view?: DepositView }) {
+  if (view === "menu") return <DepositMenu />;
+  return <DepositWay view={view} />;
+}
+
+function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
+  const { query } = useRoute();
   const { priv } = useApp();
   const [issued, setIssued] = useState<Issued[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -113,43 +156,59 @@ export function Receive({ bridge = false }: { bridge?: boolean }) {
     };
   }, [issued, priv]);
 
-  // the Bridge tab is in the nav, so no way back is needed there
-  const back = bridge ? null : <Link to="/app" className="back-btn"><span aria-hidden>←</span>Back to Portfolio</Link>;
-  if (!RECEIVE) return <>{back}<div className="empty">Receive addresses aren't available on this network yet.</div></>;
-  if (!priv) return <>{back}<div className="page-head"><div><h1>{bridge ? "Bridge" : "Receive"}</h1><p>{bridge ? "Bring funds from another chain straight into your private balance." : "A one-time address that pays into your private balance."}</p></div></div><Gate what={bridge ? "bridge funds into your private balance" : "get a receive address"} /></>;
+  const TITLE: Record<typeof view, [string, string]> = {
+    receive: ["Receive address", "Anyone can pay it. What arrives moves into your private balance."],
+    bridge: ["Bridge", "Bring HYPE or USDC over from another chain."],
+    card: ["Pay by card", "Buy USDC with a debit or credit card. It lands in your private balance."],
+  };
+  const head = (
+    <>
+      <Link to="/app/deposit" className="back-btn"><span aria-hidden>←</span>Deposit</Link>
+      <div className="page-head"><div><h1>{TITLE[view][0]}</h1><p>{TITLE[view][1]}</p></div></div>
+    </>
+  );
+  if (!RECEIVE) return <>{head}<div className="empty">Receive addresses aren't available on this network yet.</div></>;
+  if (!priv) return <>{head}<Gate what={view === "card" ? "pay by card into your private balance" : view === "bridge" ? "bridge funds into your private balance" : "get a receive address"} /></>;
   const cur = issued?.at(-1);
-  const curUsed = cur && ((state[cur.address]?.waiting.length ?? 0) > 0 || (state[cur.address]?.delivered.length ?? 0) > 0);
+  const curState = cur ? state[cur.address] : undefined;
+  const curUsed = !!curState && (curState.waiting.length > 0 || curState.delivered.length > 0);
   const copy = () => {
     if (!cur) return;
     navigator.clipboard?.writeText(cur.address).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
+  const collect = () => priv && load(priv).then((l) => collectIssued(priv, l)).then(() => refresh()).catch(() => {});
 
+  if (view === "bridge")
+    return (
+      <>
+        {head}
+        <div style={{ maxWidth: 640 }}>
+          <BridgeIn to={cur?.address} viaAddress={query.get("via") === "address"} onArrived={collect} />
+        </div>
+      </>
+    );
+  if (view === "card")
+    return (
+      <>
+        {head}
+        <SpiceBridge
+          newAddress={async () => {
+            if (!priv) throw new Error("Unlock your private account first.");
+            const a = await fresh(priv, await load(priv));
+            if (!a) throw new Error("Couldn't make a receive address. Try again.");
+            return a;
+          }}
+          onArrived={collect}
+        />
+      </>
+    );
+
+  const older = issued ? [...issued].reverse().slice(1, 12) : [];
   return (
     <>
-      {back}
-      {bridge ? (
-        <div className="page-head"><div><h1>Bridge</h1><p>Bring HYPE or USDC in from another chain. It lands in your private balance.</p></div></div>
-      ) : (
-        <div className="page-head"><div><h1>Receive</h1><p>A normal Elysium address anyone can pay. What arrives moves into your private balance.</p></div></div>
-      )}
-      {bridge ? (
-        // the Bridge tab: the bridge alone. It delivers to a fresh receive address of this account, made in the background
-        <div style={{ maxWidth: 640 }}>
-          <BridgeIn to={cur?.address} onArrived={() => priv && issued && collectIssued(priv, issued).then(() => refresh()).catch(() => {})} />
-          {/* Spicenet: off unless switched on for mainnet (spicenet.tsx); each deposit gets its own fresh receive address */}
-          <SpiceBridge
-            newAddress={async () => {
-              if (!priv) throw new Error("Unlock your private account first.");
-              const a = await fresh(priv, (await load(priv)));
-              if (!a) throw new Error("Couldn't make a receive address. Try again.");
-              return a;
-            }}
-            onArrived={() => priv && load(priv).then((l) => collectIssued(priv, l)).then(() => refresh()).catch(() => {})}
-          />
-        </div>
-      ) : (
+      {head}
       <div className="grid">
         <div className="card">
           {!cur ? (
@@ -162,47 +221,52 @@ export function Receive({ bridge = false }: { bridge?: boolean }) {
                 <button className="btn btn-ink" onClick={copy}><Icon.copy size={16} />{copied ? "Copied" : "Copy address"}</button>
                 <button className="btn btn-ghost" disabled={busy} onClick={() => priv && issued && fresh(priv, issued)}>{busy ? "Making…" : "New address"}</button>
               </div>
-              {curUsed && <div className="okmsg" style={{ margin: 0 }}>This address has been paid. Make a new one for the next payment, so the two can't be linked.</div>}
               {err && <div className="err">{err}</div>}
             </div>
           )}
-          <p className="note">
-            Send HYPE or USDC on Elysium. It moves into your private balance the next time you open Cloak, through the relayer at no cost to you. The address has no key and only your account can move what's sent to it. Use a new address for every payment.
-          </p>
+          <div className="kv" style={{ marginTop: 18 }}>
+            <div className="r"><span>Network</span><span>Elysium</span></div>
+            <div className="r"><span>Tokens</span><span>HYPE or USDC</span></div>
+            <div className="r"><span>Fee</span><span>None, the relayer pays gas</span></div>
+          </div>
+          <div className="warnbox" style={{ marginTop: 12 }}>Send on Elysium only. Anything sent on another network, or any other token, can't be recovered.</div>
+          <div className="infobox" style={{ marginTop: 10 }}>
+            <b>Exchange doesn't list Elysium?</b><br />Get a one-time deposit address on a network it supports, and Relay brings it here.{" "}
+            <Link to="/app/deposit/bridge?via=address" className="link">Get a deposit address</Link>
+          </div>
+          <p className="by" style={{ marginTop: 16 }}>By Cloak's receive contract on Elysium</p>
         </div>
         <div className="col">
-          {issued && issued.length > 0 && (
-            <div className="card">
-              <div className="card-head"><h3>Your addresses</h3><span className="xs mute">{issued.length}</span></div>
-              <div className="asset-list">
-                {[...issued].reverse().slice(0, 12).map((x) => {
-                  const s = state[x.address];
-                  return (
-                    <div key={x.n} className="asset-row">
-                      <div className="nm"><b className="mono">{x.address.slice(0, 8)}…{x.address.slice(-6)}</b><span className="xs mute">#{x.n + 1} · {new Date(x.at * 1000).toLocaleDateString()}</span></div>
-                      <div className="amt">
-                        {s?.waiting.length ? <span className="pill">Arriving {s.waiting.join(", ")}</span> : s?.delivered.length ? <span className="pill ok">Received</span> : <span className="xs mute">Nothing yet</span>}
-                        {s?.delivered.map((d) => (
-                          <span key={d.tx} className="xs mute">{d.amount} {txLink(d.tx) && <a href={txLink(d.tx)} target="_blank" rel="noreferrer">↗</a>}</span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="card">
+            <div className="card-head" style={{ marginBottom: 4 }}><h3>Payments to this address</h3>{cur && <span className="xs mute">#{cur.n + 1}</span>}</div>
+            {!curUsed ? (
+              <p className="small mute" style={{ margin: "8px 0 0" }}>Nothing yet. Payments show here as they arrive.</p>
+            ) : (
+              <>
+                {curState!.waiting.map((w) => <div key={w} className="pay-row"><div><b>{w}</b><span className="xs mute">At the address</span></div><span className="pill">Arriving</span></div>)}
+                {curState!.delivered.map((d) => (
+                  <div key={d.tx} className="pay-row"><div><b>{d.amount}</b>{txLink(d.tx) && <a className="xs" href={txLink(d.tx)} target="_blank" rel="noreferrer">View transaction ↗</a>}</div><span className="pill ok">In your balance</span></div>
+                ))}
+                <p className="xs mute" style={{ margin: "12px 0 0" }}>Used already. Make a new address for the next payment so the two can't be linked.</p>
+              </>
+            )}
+          </div>
+          {older.length > 0 && (
+            <div className="card flat">
+              <div className="card-head" style={{ marginBottom: 4 }}><h3>Older addresses</h3><span className="xs mute">{older.length}</span></div>
+              {older.map((x) => {
+                const st = state[x.address];
+                return (
+                  <div key={x.n} className="pay-row">
+                    <div><b className="mono">{x.address.slice(0, 8)}…{x.address.slice(-6)}</b><span className="xs mute">#{x.n + 1} · {new Date(x.at * 1000).toLocaleDateString()}</span></div>
+                    {st?.waiting.length ? <span className="pill">Arriving</span> : st?.delivered.length ? <span className="pill ok">{st.delivered.length === 1 ? st.delivered[0].amount : `${st.delivered.length} payments`}</span> : <span className="xs mute">Nothing yet</span>}
+                  </div>
+                );
+              })}
             </div>
           )}
-          <div className="card flat">
-            <h3>What stays private</h3>
-            <ul className="small soft" style={{ paddingLeft: 18, margin: "10px 0 0", display: "grid", gap: 6 }}>
-              <li>Who received it: the address isn't linked to your wallet or your other addresses.</li>
-              <li>What you do with it afterwards.</li>
-              <li>Public, as with any deposit: the sender and the amount.</li>
-            </ul>
-          </div>
         </div>
       </div>
-      )}
     </>
   );
 }

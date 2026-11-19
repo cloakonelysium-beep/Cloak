@@ -64,6 +64,13 @@ export function pendingDeposit(list: readonly Deposit[]): Deposit | undefined {
 
 /** Below this, Spicenet's escrow can't deliver a useful deposit: new deposits wait. (1 USDC) */
 export const MIN_CAPACITY = 1_000_000n;
+
+/** Cloak's own limits on a card deposit through Spicenet, for now: at most 500 USDC, at least 10 (smaller ones may not
+ *  cover the delivery fee). Raised once Spicenet's Elysium payouts have a track record. */
+export const CARD_CAP = 500_000_000n;
+export const CARD_MIN = 10_000_000n;
+/** The most one deposit may be: Cloak's cap, or less if Spicenet's escrow holds less (unknown capacity: the cap). */
+export const depositLimit = (capacity: bigint | null | undefined) => (capacity != null && capacity < CARD_CAP ? capacity : CARD_CAP);
 /** Whether a delivery of `amount` (the escrow credit: net payment plus Spicenet's fees) fits what the escrow holds.
  *  An unknown capacity (the read failed) doesn't block: Spicenet's own checks still apply. */
 export const fits = (amount: bigint, capacity: bigint | null | undefined) => capacity == null || amount <= capacity;

@@ -147,6 +147,16 @@ against the SDK's real plan with several fee splits (passes, nothing mutated) an
 - `onDepositSuccess` also fires with type `wallet-funding` (a card or exchange payment reaching an external wallet);
   only type `deposit` counts as the delivery.
 
+**Deposit page and card limits (Nov 19):** the Bridge nav item is now **Deposit**, a menu of three ways in, each
+with its own page and a way back: Receive address (`/app/deposit/receive`, Cloak's receive contract, with the exchange
+route to Relay's one-time deposit address), Bridge (`/app/deposit/bridge`, Relay from the connected wallet, or
+`?via=address` for an exchange) and Pay by card (`/app/deposit/card`, Spicenet). Each page says who runs it, with their
+logo (`public/partners/`). Card is the only Spicenet route Cloak supports. Cloak builds the card widget itself
+(`embedFactory`) with `supportedDepositOptions: ["depositWithCash"]`, `minDepositUsd: 10` and `maxDepositUsd` set to the
+lower of 500 and what the escrow holds, so the widget refuses a larger amount as it is typed (checked with 500 typed and
+187 USDC in escrow: "Maximum deposit is 187.00 USD"). The same cap is checked again before any delivery, on every route
+the window offers. Any Spicenet SDK upgrade gets the same review as 5.0.2 before it is pinned.
+
 **Still to do before switching on (the user's live test):** one real deposit on mainnet, confirming the Elysium transfer
 reaches the receive address, the receipt check records the delivered amount, and it lands in the Cloak private
 balance; and one interrupted deposit resumed without paying again.

@@ -60,3 +60,10 @@ test("escrow capacity: a delivery must fit; an unknown capacity doesn't block", 
   assert.equal(S.fits(101n, 100n), false);
   assert.equal(S.fits(10n ** 12n, null), true);
 });
+
+test("deposit limit: Cloak's 500 USDC cap, or less when the escrow holds less", () => {
+  assert.equal(S.depositLimit(null), S.CARD_CAP);
+  assert.equal(S.depositLimit(10n ** 12n), S.CARD_CAP);
+  assert.equal(S.depositLimit(187_210_354n), 187_210_354n);
+  assert.equal(S.CARD_CAP, 500_000_000n);
+});

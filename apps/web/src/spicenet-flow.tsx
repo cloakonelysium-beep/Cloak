@@ -23,6 +23,10 @@
  *     action was already submitted, Spicenet's record of the guest wallet's actions is checked first, and while one is
  *     still pending nothing reopens.
  *
+ * Limits (Cloak's, for now): card checkout only, at most CARD_CAP (500 USDC) or what the escrow holds, at least CARD_MIN,
+ * set in the card widget itself (cardOnly) and checked again before any delivery. Spicenet's window still lists its
+ * wallet and exchange routes; Cloak supports card here, and the cap applies to every route at confirm.
+ *
  * The embedded wallet is Spicenet's execution wallet, kept apart from the user's own wallet: Cloak never reads its key
  * and nothing here holds Cloak funds.
  */
@@ -48,7 +52,8 @@ import { SPICENET, spicenetCapacity } from "@cloakely/sdk";
 import { RPC_URL, chain } from "./config";
 import { publicClient } from "./wallet";
 import { checkDelivery } from "./spicenet-lock";
-import { fits } from "./spicenet-state";
+import { CARD_CAP, CARD_MIN, depositLimit, fits } from "./spicenet-state";
+import type { SwapperEmbedFactory } from "@spicenet-io/spiceflow-ui";
 
 const NET = SPICENET[99901];
 const ELYSIUM = { ...chain, id: 99901 } as typeof chain;
@@ -121,7 +126,9 @@ function Inner({ to, resume, onGuest, onSubmitted, onDelivered, onError, onClose
       // anything is submitted. A failed read doesn't block (Spicenet's own checks still apply).
       const capacity = await spicenetCapacity(publicClient, 99901).catch(() => null);
       if (!fits(context.destinationAmount, capacity))
-        throw new Error(`Not enough USDC in Spicenet's escrow on Elysium right now: it can deliver up to ${formatUnits(capacity!, NET.usdcDecimals)} USDC. Enter a smaller amount, or try again later.`);
+        throw new Error(`Spicenet can deliver up to ${formatUnits(capacity!, NET.usdcDecimals)} USDC on Elysium right now. Enter a smaller amount, or try again later.`);
+      // Cloak's own cap for now, on every route the window offers (the card widget is capped too, below)
+      if (context.destinationAmount > CARD_CAP) throw new Error(`Deposits through Spicenet are limited to ${formatUnits(CARD_CAP, NET.usdcDecimals)} USDC for now. Enter a smaller amount.`);
       const plan = await quoteSpicenetWithdrawalBatches({ amount: context.destinationAmount, recipient: to, token: NET.usdc, chainId: 99901, userAddress: guest, estimate: execution.estimate });
       return checkDelivery(plan, { to, usdc: NET.usdc, feeRecipients: FEE_TO, decode }) as typeof plan;
     },
@@ -163,13 +170,24 @@ function Inner({ to, resume, onGuest, onSubmitted, onDelivered, onError, onClose
   );
 }
 
+/**
+ * The card checkout (Swapper, inside Spicenet's window), made by Cloak instead of Spice Flow's default so Cloak sets its
+ * limits: card only (no crypto transfer from an exchange, whose amount nobody can cap), at most Cloak's cap or what
+ * Spicenet's escrow can deliver, whichever is less, and at least CARD_MIN. Everything else is Spice Flow's own config.
+ */
+const cardOnly: SwapperEmbedFactory = async (options) => {
+  const [{ SwapperEmbed }, capacity] = await Promise.all([import("@swapper-finance/deposit-sdk"), spicenetCapacity(publicClient, 99901).catch(() => null)]);
+  const usd = (x: bigint) => Math.floor(Number(formatUnits(x, NET.usdcDecimals)));
+  return new SwapperEmbed({ ...options, supportedDepositOptions: ["depositWithCash"], maxDepositUsd: usd(depositLimit(capacity)), minDepositUsd: usd(CARD_MIN) });
+};
+
 /** Spicenet's deposit window, mounted when a deposit starts or resumes. Elysium mainnet only (the caller checks). */
 export default function SpiceFunding(props: SpiceFundingProps) {
   return (
     <PrivyProvider appId={NET.privyAppId} config={{ embeddedWallets: { ethereum: { createOnLogin: "users-without-wallets" } }, supportedChains: [...CHAINS], defaultChain: ELYSIUM }}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
-          <SpiceFlowProvider provider="privy" mode="7702" network="mainnet" privyAppId={NET.privyAppId} appName="Cloak" rpcOverrides={{ 99901: RPC_URL }} swapper={{ enabled: true }}>
+          <SpiceFlowProvider provider="privy" mode="7702" network="mainnet" privyAppId={NET.privyAppId} appName="Cloak" rpcOverrides={{ 99901: RPC_URL }} swapper={{ enabled: true, embedFactory: cardOnly }}>
             <Inner {...props} />
           </SpiceFlowProvider>
         </WagmiProvider>
