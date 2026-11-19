@@ -129,6 +129,24 @@ Elysium USDC, on a chain other than Elysium, or to anyone other than the receive
 against the SDK's real plan with several fee splits (passes, nothing mutated) and with wrong recipient, token or chain
 (refused).
 
+**What a customer can and can't recover (Nov 19, after review):**
+- *Money at a Cloak receive address* is the customer's: only their Cloak account can produce or empty it, from any
+  browser. But the list of addresses handed out lives in the browser, and a new browser counts them again from the
+  first, so it finds older ones only as it hands them out. Hence the next rule.
+- *One Spicenet deposit at a time.* While one is on its way and hasn't reached its receive address, the page shows
+  "You have a deposit on its way. Please don't start a new one", offers Resume delivery, and after an hour points to
+  the Cloak team (Telegram, cloakdesk) with that receive address. No new receive address is made meanwhile.
+- *Money that never left Spicenet* sits with Spicenet's guest session, which lives in the browser that started the
+  deposit. Resume works there (and for a week after a window closed before confirming, since a card or exchange
+  payment can reach Spicenet before the confirm). From another browser, or after clearing site data, only Spicenet's
+  team can help; the customer should contact us with the receive address and we take it to Spicenet.
+- *Escrow capacity.* Spicenet's escrow on Elysium pays every delivery (about 187 USDC on Nov 19). The page shows what it
+  can deliver now, new deposits wait while it holds under 1 USDC, and a delivery larger than its balance is refused
+  with a clear message before anything is submitted. The amount box is Spicenet's own, so the check runs when the
+  customer confirms, not as they type.
+- `onDepositSuccess` also fires with type `wallet-funding` (a card or exchange payment reaching an external wallet);
+  only type `deposit` counts as the delivery.
+
 **Still to do before switching on (the user's live test):** one real deposit on mainnet, confirming the Elysium transfer
 reaches the receive address, the receipt check records the delivered amount, and it lands in the Cloak private
 balance; and one interrupted deposit resumed without paying again.

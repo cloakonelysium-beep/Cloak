@@ -90,3 +90,14 @@ test("receipt: a reverted transaction, another sender, another token or another 
   assert.equal(await spicenetDelivery(rclient(receipt([xfer(NET.escrow, OTHER, 1n)])), q), null);
   assert.equal(await spicenetDelivery(rclient(receipt([])), { ...q, txHash: "0x1234" }), null);
 });
+
+// spicenetCapacity: the escrow's USDC balance
+import { spicenetCapacity } from "../dist/index.js";
+test("capacity: reads the escrow's canonical USDC balance", async () => {
+  let q;
+  const c = await spicenetCapacity({ readContract: async (x) => ((q = x), 187_210_354n) }, 99901);
+  assert.equal(c, 187_210_354n);
+  assert.equal(q.address, NET.usdc);
+  assert.deepEqual(q.args, [NET.escrow]);
+  await assert.rejects(spicenetCapacity({ readContract: async () => 0n }, 99801), /doesn't pay out/);
+});

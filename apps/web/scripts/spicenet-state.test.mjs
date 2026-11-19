@@ -27,6 +27,9 @@ test("resume: offered for a confirmed, undelivered deposit; for a reported one o
   assert.equal(S.resumable({ ...base, stage: "landing", received: "1" }, 1e12), false);
   assert.equal(S.resumable({ ...base, stage: "arrived", received: "1" }, 1e12), false);
   assert.equal(S.resumable(base, 1e12), false);
+  // closed before confirming: resumable for a week (a card payment can reach Spicenet before the confirm)
+  assert.equal(S.resumable(S.closed(base), 2_000), true);
+  assert.equal(S.resumable(S.closed(base), 1_000 + S.RESUME_CLOSED_FOR_MS + 1), false);
 });
 test("resume asks Spicenet first once an action may have been submitted", () => {
   assert.equal(S.checkFirst(base), false);
@@ -45,4 +48,15 @@ test("only a real transaction hash is kept from a callback", () => {
   assert.equal(S.txHashOf(H1), H1);
   assert.equal(S.txHashOf("0x1234"), undefined);
   assert.equal(S.txHashOf(undefined), undefined);
+});
+
+test("a deposit on its way blocks a new one; arrived, closed or still-open ones don't", () => {
+  assert.equal(S.pendingDeposit([]), undefined);
+  assert.equal(S.pendingDeposit([{ ...base, stage: "failed" }, { ...base, id: "2", stage: "funding" }, { ...base, id: "3", stage: "landing", received: "5" }, { ...base, id: "4", stage: "arrived", received: "5" }]), undefined);
+  assert.equal(S.pendingDeposit([{ ...base, stage: "waiting", submitted: true }, { ...base, id: "2", stage: "arrived", received: "1" }]).id, "1");
+});
+test("escrow capacity: a delivery must fit; an unknown capacity doesn't block", () => {
+  assert.equal(S.fits(100n, 100n), true);
+  assert.equal(S.fits(101n, 100n), false);
+  assert.equal(S.fits(10n ** 12n, null), true);
 });

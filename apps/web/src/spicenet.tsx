@@ -1,12 +1,12 @@
 import { Component, Suspense, lazy, useEffect, useState, type ReactNode } from "react";
 import { formatUnits, type Address } from "viem";
-import { SPICENET, spicenetDeliveries, spicenetDelivery, spicenetServes } from "@cloakely/sdk";
+import { SPICENET, spicenetCapacity, spicenetDeliveries, spicenetDelivery, spicenetServes } from "@cloakely/sdk";
 import { CHAIN_ID, txLink } from "./config";
 import { publicClient } from "./wallet";
-import { More } from "./ui";
+import { More, TELEGRAM } from "./ui";
 import { every } from "./every";
 import { friendly } from "./errors";
-import { arrived, checkFirst, closed, open as following, resumable, txHashOf, type Deposit, type Stage } from "./spicenet-state";
+import { MIN_CAPACITY, arrived, checkFirst, closed, open as following, pendingDeposit, resumable, txHashOf, type Deposit, type Stage } from "./spicenet-state";
 const SpiceFunding = lazy(() => import("./spicenet-flow"));
 
 /** Spicenet's window can fail (its SDK, Privy, the network): it shows a message there and never takes the page down. */
@@ -38,7 +38,16 @@ class Contained extends Component<{ children: ReactNode; onError: (m: string) =>
  * Interrupted deposits (confirmed in the window but not delivered): "Resume delivery" reopens the same SpiceDeposit with
  * the same guest session, receive address and delivery callback, skipRecovery={false}, so Spice Flow confirms the funded
  * balance and nobody pays again. If an action was already submitted, Spicenet is asked first and nothing reopens while
- * it is still pending. Only a window closed before anything was confirmed is "Didn't start".
+ * it is still pending. A window closed before anything was confirmed is "Not confirmed", and can still be resumed for a
+ * week (a card or exchange payment can reach Spicenet before the confirm).
+ *
+ * One deposit at a time: while one is on its way and hasn't reached its receive address, no new Spicenet deposit (and
+ * so no new receive address) starts. The customer resumes it or contacts the team with its receive address. Spicenet's
+ * guest session lives in this browser, so money that never left Spicenet can be resumed only here.
+ *
+ * Escrow capacity: Spicenet's escrow on Elysium pays every delivery. Its USDC balance is shown before a deposit starts,
+ * new deposits wait while it is nearly empty, and a delivery larger than it holds is refused before anything is
+ * submitted (spicenet-flow.tsx).
  *
  * Off unless VITE_SPICENET_99901=1, and never on any network but Elysium mainnet (a testnet receive address can't be
  * collected on mainnet). Turned on only once Spicenet's Elysium payouts are live and checked.
@@ -60,7 +69,7 @@ const save = (x: Deposit[]) => {
     localStorage.setItem(KEY, JSON.stringify(x.slice(-20)));
   } catch {}
 };
-const LABEL: Record<Stage, string> = { funding: "Funding", waiting: "On its way", landing: "Arriving", arrived: "Arrived", failed: "Didn't start" };
+const LABEL: Record<Stage, string> = { funding: "Funding", waiting: "On its way", landing: "Arrived, confirming", arrived: "Arrived", failed: "Not confirmed" };
 const label = (d: Deposit) => (d.stage === "waiting" && !d.sent ? "Not delivered" : LABEL[d.stage]);
 const usdc = (x: string | bigint) => Number(formatUnits(BigInt(x), NET?.usdcDecimals ?? 6)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
@@ -76,6 +85,8 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
   const [open, setOpen] = useState<{ d: Deposit; resume: boolean } | null>(null);
   const [err, setErr] = useState("");
   const [list, setList] = useState<Deposit[]>(load);
+  // what Spicenet's escrow on Elysium can deliver now (null: unknown)
+  const [capacity, setCapacity] = useState<bigint | null>(null);
   const change = (id: string, f: (d: Deposit) => Deposit) =>
     setList((cur) => {
       const next = cur.map((d) => (d.id === id ? f(d) : d));
@@ -98,12 +109,22 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
   useEffect(() => {
     if (!SPICENET_ON) return;
     follow();
-    return every(() => follow(), 20_000);
+    const stop = every(() => follow(), 20_000);
+    const cap = () => spicenetCapacity(publicClient, CHAIN_ID).then(setCapacity, () => setCapacity(null));
+    cap();
+    const stopCap = every(cap, 60_000);
+    return () => {
+      stop();
+      stopCap();
+    };
   }, []);
 
   if (!SPICENET_ON || !NET) return null;
+  const pending = pendingDeposit(list);
+  const dry = capacity !== null && capacity < MIN_CAPACITY;
 
   async function start() {
+    if (pendingDeposit(load())) return; // one at a time (the button is hidden then too)
     setBusy(true);
     setErr("");
     try {
@@ -134,9 +155,24 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
     <div className="swap bridge" style={{ marginTop: 16 }}>
       <div className="k" style={{ marginBottom: 10 }}><b>Card, exchange or wallet</b><span className="xs mute">through Spicenet</span></div>
       <p className="small soft" style={{ margin: "0 0 10px" }}>Pay by card, from an exchange, or from a wallet on another chain. Spicenet delivers USDC on Elysium to a fresh receive address, and Cloak moves it into your private balance.</p>
-      <div className="bridge-cta">
-        <button className="btn btn-ink btn-lg" disabled={busy || !!open} onClick={start}>{busy ? "Starting…" : "Add funds with Spicenet"}</button>
-      </div>
+      {pending && !open ? (
+        <div className="small soft" style={{ margin: "0 0 10px" }}>
+          <b>You have a deposit on its way. Please don't start a new one.</b> Use <b>Resume delivery</b> below; it never charges you again. If it still hasn't
+          arrived after an hour, <a href={TELEGRAM} target="_blank" rel="noreferrer">contact the Cloak team</a> with its receive address:{" "}
+          <span className="mono" style={{ wordBreak: "break-all" }}>{pending.to}</span>
+        </div>
+      ) : (
+        <>
+          {capacity !== null && (
+            <p className="xs mute" style={{ margin: "0 0 8px" }}>
+              {dry ? "Spicenet's escrow on Elysium is out of USDC right now, so new deposits can't be delivered. Try again later." : `Spicenet can deliver up to ${usdc(capacity)} USDC right now. Larger deposits are refused before you pay.`}
+            </p>
+          )}
+          <div className="bridge-cta">
+            <button className="btn btn-ink btn-lg" disabled={busy || !!open || dry} onClick={start}>{busy ? "Starting…" : "Add funds with Spicenet"}</button>
+          </div>
+        </>
+      )}
       {open && (
         <Contained onError={(m) => { setErr(m); shut(open.d.id, "Spicenet didn't start"); }}>
         <Suspense fallback={<p className="small mute">Loading Spicenet…</p>}>
@@ -144,10 +180,10 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
             to={open.d.to}
             resume={open.resume ? { guest: open.d.guest, checkFirst: checkFirst(open.d) } : undefined}
             onGuest={(g) => change(open.d.id, (d) => (d.guest ? d : { ...d, guest: g }))}
-            onSubmitted={() => change(open.d.id, (d) => ({ ...d, submitted: true, stage: d.stage === "funding" ? "waiting" : d.stage }))}
+            onSubmitted={() => change(open.d.id, (d) => ({ ...d, submitted: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined }))}
             onDelivered={({ txHash }) => {
               const tx = txHashOf(txHash);
-              change(open.d.id, (d) => ({ ...d, submitted: true, sent: true, stage: d.stage === "funding" ? "waiting" : d.stage, ...(tx ? { deliveryTx: tx } : {}) }));
+              change(open.d.id, (d) => ({ ...d, submitted: true, sent: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined, ...(tx ? { deliveryTx: tx } : {}) }));
               // read the receipt now; the 20-second follow keeps going until it is final
               setTimeout(() => follow(open.d.id), 0);
             }}
@@ -169,7 +205,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
                 {d.stage === "landing" && <span className="xs mute">At your receive address; final in about an hour.</span>}
                 {resumable(d) && (
                   <span className="xs mute">
-                    {d.sent ? "Taking longer than usual." : "Not delivered to Cloak yet."} Nothing is charged again.{" "}
+                    {d.stage === "failed" ? "Paid by card or exchange and closed the window?" : d.sent ? "Taking longer than usual." : "Not delivered to Cloak yet."} Nothing is charged again.{" "}
                     <button className="link" disabled={!!open} onClick={() => { setErr(""); setOpen({ d, resume: true }); }}>Resume delivery</button>
                   </span>
                 )}

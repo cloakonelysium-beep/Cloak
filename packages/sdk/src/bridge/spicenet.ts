@@ -114,3 +114,16 @@ export async function spicenetDelivery(
   const finalized = await client.getBlock({ blockTag: "finalized" }).then((b) => b.number ?? -1n).catch(() => -1n);
   return { txHash, blockNumber: receipt.blockNumber, amount, final: receipt.blockNumber <= finalized };
 }
+
+const BALANCE_OF = parseAbiItem("function balanceOf(address) view returns (uint256)");
+
+/**
+ * What Spicenet's escrow on Elysium can pay out right now: its canonical USDC balance, in the smallest unit. Every
+ * delivery (the net payment and Spicenet's fee transfers) comes out of it, so a deposit whose escrow credit is larger
+ * can't be delivered until Spicenet tops it up. A snapshot only: other deliveries draw on the same balance.
+ */
+export async function spicenetCapacity(client: Pick<PublicClient, "readContract">, chainId: number): Promise<bigint> {
+  const net = SPICENET[chainId];
+  if (!net) throw new Error(`Spicenet doesn't pay out on chain ${chainId}`);
+  return client.readContract({ address: net.usdc, abi: [BALANCE_OF], functionName: "balanceOf", args: [net.escrow] }) as Promise<bigint>;
+}

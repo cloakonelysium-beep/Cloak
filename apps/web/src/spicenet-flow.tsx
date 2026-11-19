@@ -13,7 +13,9 @@
  *     estimate. The SDK owns the amounts and fees; Cloak only checks the destination (spicenet-lock.ts, check-only:
  *     it throws if anything would pay another token, chain or recipient than Elysium USDC to this receive address or
  *     Spicenet's own fee addresses, and never changes the plan). There is no separate SpiceWithdraw step any more.
- *  3. onDepositSuccess reports detail.txHash, the Elysium delivery. Credit happens elsewhere and only on proof:
+ *     Before quoting, the delivery must fit what Spicenet's escrow on Elysium holds (it pays the whole delivery); a larger
+ *     one is refused with a clear message before anything is submitted.
+ *  3. onDepositSuccess (type "deposit") reports detail.txHash, the Elysium delivery. Credit happens elsewhere and only on proof:
  *     spicenet.tsx reads that receipt for USDC from Spicenet's escrow to the receive address and records the amount the
  *     receipt shows (never the callback's amount, which is the escrow credit before fees).
  *  4. Interrupted deposits reopen this same window (resume): the same guest session, the same receive address, the same
@@ -29,7 +31,7 @@ import { PrivyProvider, useGuestAccounts, usePrivy, useWallets } from "@privy-io
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { arbitrum, base, bsc, mainnet, optimism, polygon } from "viem/chains";
-import { decodeFunctionData, type Address, type Hex } from "viem";
+import { decodeFunctionData, formatUnits, type Address, type Hex } from "viem";
 import {
   SPICE_COMBINED_FEE_RECIPIENT,
   SPICE_GAS_FEE_RECIPIENT,
@@ -42,9 +44,11 @@ import {
   type PostDepositContext,
 } from "@spicenet-io/spiceflow-ui";
 import { spicenetAbi } from "@spicenet-io/spiceflow-core";
-import { SPICENET } from "@cloakely/sdk";
+import { SPICENET, spicenetCapacity } from "@cloakely/sdk";
 import { RPC_URL, chain } from "./config";
+import { publicClient } from "./wallet";
 import { checkDelivery } from "./spicenet-lock";
+import { fits } from "./spicenet-state";
 
 const NET = SPICENET[99901];
 const ELYSIUM = { ...chain, id: 99901 } as typeof chain;
@@ -113,6 +117,11 @@ function Inner({ to, resume, onGuest, onSubmitted, onDelivered, onError, onClose
   const deliveryBatches = useCallback(
     async (context: PostDepositContext) => {
       if (!guest || context.destinationAmount === undefined) throw new Error("Wallet and confirmed deposit credit are required");
+      // Spicenet's escrow pays the whole delivery (net and fees): one larger than it holds can't land, so say so before
+      // anything is submitted. A failed read doesn't block (Spicenet's own checks still apply).
+      const capacity = await spicenetCapacity(publicClient, 99901).catch(() => null);
+      if (!fits(context.destinationAmount, capacity))
+        throw new Error(`Not enough USDC in Spicenet's escrow on Elysium right now: it can deliver up to ${formatUnits(capacity!, NET.usdcDecimals)} USDC. Enter a smaller amount, or try again later.`);
       const plan = await quoteSpicenetWithdrawalBatches({ amount: context.destinationAmount, recipient: to, token: NET.usdc, chainId: 99901, userAddress: guest, estimate: execution.estimate });
       return checkDelivery(plan, { to, usdc: NET.usdc, feeRecipients: FEE_TO, decode }) as typeof plan;
     },
@@ -146,7 +155,9 @@ function Inner({ to, resume, onGuest, onSubmitted, onDelivered, onError, onClose
       depositBatches={deliveryBatches}
       depositActionLabel="Delivery to Cloak on Elysium"
       onSubmit={() => onSubmitted()}
-      onDepositSuccess={(detail) => onDelivered({ txHash: detail.txHash })}
+      // "deposit" is the delivery to Cloak; "wallet-funding" (a card or exchange payment reaching an external wallet)
+      // only means money moved, not that it was delivered
+      onDepositSuccess={(detail) => (detail.type === "deposit" ? onDelivered({ txHash: detail.txHash }) : onSubmitted())}
       onDepositError={(e) => onError(e)}
     />
   );
