@@ -40,8 +40,8 @@ importers:
         specifier: 0.10.3
         version: 0.10.3(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
       '@spicenet-io/spiceflow-ui':
-        specifier: 5.0.1
-        version: 5.0.1(fcbfd605d126cd89580bcbb8b0481cdb)
+        specifier: 5.0.2
+        version: 5.0.2(fcbfd605d126cd89580bcbb8b0481cdb)
       '@tanstack/react-query':
         specifier: 5.105.3
         version: 5.105.3(@types/react@18.3.12)(react@18.3.1)
@@ -2082,8 +2082,8 @@ packages:
     peerDependencies:
       viem: ^2.13.9
 
-  '@spicenet-io/spiceflow-ui@5.0.1':
-    resolution: {integrity: sha512-gRQqKyapsOL/hVc9960rg/jIxDuKrvXKIx4xomPACdrNCzl3Gyh1G7ehL0vYLqINLGerxQ5FTwf35aFsUF5qMg==}
+  '@spicenet-io/spiceflow-ui@5.0.2':
+    resolution: {integrity: sha512-4aNRMLfGwh9QyTIM6KgjUrTrPg0tXIWpBY+fM4/Ctw9ejcmlW5S/WWXXXCTeuXi/oOIGnmiKSxk9NNhG2ZmeXw==}
     peerDependencies:
       '@privy-io/react-auth': '>=2.24.0 <4.0.0'
       '@tanstack/react-query': '>=5.0.0'
@@ -7561,7 +7561,7 @@ snapshots:
     dependencies:
       viem: 2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7)
 
-  '@spicenet-io/spiceflow-ui@5.0.1(fcbfd605d126cd89580bcbb8b0481cdb)':
+  '@spicenet-io/spiceflow-ui@5.0.2(fcbfd605d126cd89580bcbb8b0481cdb)':
     dependencies:
       '@spicenet-io/spiceflow-core': 0.10.3(viem@2.21.54(bufferutil@4.2.0)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@4.6.7))
       '@swapper-finance/deposit-sdk': 0.3.2

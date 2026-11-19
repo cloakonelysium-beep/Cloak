@@ -7,11 +7,13 @@
  * Elysium MAINNET only. A testnet receive address means nothing on mainnet (testnet's receive contract has no code
  * there), so USDC Spicenet paid to one could never be collected: `spicenetServes` is false everywhere else.
  *
- * Nothing here holds money or a key. The one check that matters, `spicenetDeliveries`, credits nothing itself: it finds
- * USDC Transfers from Spicenet's escrow to the address, which only successful transactions log. Never treat a card
- * success or a source-chain deposit as delivery.
+ * Nothing here holds money or a key. The two checks that matter credit nothing themselves: `spicenetDelivery` reads the
+ * Elysium receipt Spice Flow reports (5.0.2's onDepositSuccess txHash, Spicenet's instructions of Nov 19) and
+ * `spicenetDeliveries` scans for the same thing by address (the fallback). Both count only USDC Transfers from
+ * Spicenet's escrow to the address in successful transactions. Never treat a card success, a source-chain deposit or
+ * a callback amount as delivery.
  */
-import { parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
+import { decodeEventLog, parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 
 export interface SpicenetNetwork {
   /** Spicenet's escrow on this chain: every payout is a transfer from it. */
@@ -32,7 +34,7 @@ export const SPICENET: Readonly<Record<number, SpicenetNetwork>> = {
     usdc: "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
     usdcDecimals: 6,
     privyAppId: "cmltzt02300i20cl8zqgzgho8",
-    packages: { ui: "5.0.1", core: "0.10.3" },
+    packages: { ui: "5.0.2", core: "0.10.3" },
   },
 };
 
@@ -78,4 +80,37 @@ export async function spicenetDeliveries(
     }
   }
   return out;
+}
+
+/**
+ * The delivery in one Elysium transaction (the txHash Spice Flow 5.0.2 reports when its delivery to Cloak completes):
+ * null unless the receipt exists, succeeded, and holds at least one canonical USDC Transfer from Spicenet's escrow to
+ * exactly `to`. The amount is what those Transfers moved, read from the receipt (never the callback's amount, which is
+ * the escrow credit before Spicenet's fees). `final` as in `spicenetDeliveries`.
+ */
+export async function spicenetDelivery(
+  client: Pick<PublicClient, "getTransactionReceipt" | "getBlock">,
+  { chainId, to, txHash }: { chainId: number; to: Address; txHash: Hex },
+): Promise<SpicenetDelivery | null> {
+  const net = SPICENET[chainId];
+  if (!net) throw new Error(`Spicenet doesn't pay out on chain ${chainId}`);
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) return null;
+  const receipt = await client.getTransactionReceipt({ hash: txHash });
+  if (!receipt || receipt.status !== "success" || receipt.blockNumber == null) return null;
+  let amount = 0n;
+  for (const l of receipt.logs) {
+    if (l.address.toLowerCase() !== net.usdc.toLowerCase()) continue;
+    let ev: { eventName: string; args: { from: Address; to: Address; value: bigint } };
+    try {
+      ev = decodeEventLog({ abi: [TRANSFER], data: l.data, topics: l.topics }) as typeof ev;
+    } catch {
+      continue;
+    }
+    if (ev.eventName !== "Transfer") continue;
+    if (ev.args.from.toLowerCase() !== net.escrow.toLowerCase() || ev.args.to.toLowerCase() !== to.toLowerCase()) continue;
+    amount += ev.args.value;
+  }
+  if (amount <= 0n) return null;
+  const finalized = await client.getBlock({ blockTag: "finalized" }).then((b) => b.number ?? -1n).catch(() => -1n);
+  return { txHash, blockNumber: receipt.blockNumber, amount, final: receipt.blockNumber <= finalized };
 }

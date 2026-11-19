@@ -59,3 +59,34 @@ test("ignores anything else a misbehaving RPC returns", async () => {
 test("refuses a chain Spicenet doesn't serve", async () => {
   await assert.rejects(spicenetDeliveries(client([]), { chainId: 99801, to: BOX, fromBlock: 0n }), /doesn't pay out on chain 99801/);
 });
+
+// spicenetDelivery: the Elysium receipt Spice Flow 5.0.2 reports (onDepositSuccess txHash)
+import { encodeAbiParameters, pad } from "viem";
+import { spicenetDelivery } from "../dist/index.js";
+const TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const HASH = "0x" + "ef".repeat(32);
+const xfer = (from, to, value, address = NET.usdc) => ({ address, topics: [TOPIC, pad(from), pad(to)], data: encodeAbiParameters([{ type: "uint256" }], [value]) });
+const GAS = "0x718dE8f0A0DC14D5BC6c560C192F02AE6Af036c7";
+function rclient(receipt, finalized = 6_450_000n) {
+  return { getTransactionReceipt: async () => receipt, getBlock: async () => ({ number: finalized }) };
+}
+const receipt = (logs, o = {}) => ({ status: "success", blockNumber: 6_440_000n, logs, ...o });
+
+test("receipt: the escrow's USDC to the receive address counts, fee transfers don't", async () => {
+  const d = await spicenetDelivery(rclient(receipt([xfer(NET.escrow, BOX, 987_000n), xfer(NET.escrow, GAS, 13_000n)])), { chainId: 99901, to: BOX, txHash: HASH });
+  assert.equal(d.amount, 987_000n);
+  assert.equal(d.final, true);
+  assert.equal(d.txHash, HASH);
+});
+test("receipt: not final until its block is finalized", async () => {
+  const d = await spicenetDelivery(rclient(receipt([xfer(NET.escrow, BOX, 1n)]), 6_439_999n), { chainId: 99901, to: BOX, txHash: HASH });
+  assert.equal(d.final, false);
+});
+test("receipt: a reverted transaction, another sender, another token or another recipient is no delivery", async () => {
+  const q = { chainId: 99901, to: BOX, txHash: HASH };
+  assert.equal(await spicenetDelivery(rclient(receipt([xfer(NET.escrow, BOX, 1n)], { status: "reverted" })), q), null);
+  assert.equal(await spicenetDelivery(rclient(receipt([xfer(OTHER, BOX, 1n)])), q), null);
+  assert.equal(await spicenetDelivery(rclient(receipt([xfer(NET.escrow, BOX, 1n, OTHER)])), q), null);
+  assert.equal(await spicenetDelivery(rclient(receipt([xfer(NET.escrow, OTHER, 1n)])), q), null);
+  assert.equal(await spicenetDelivery(rclient(receipt([])), { ...q, txHash: "0x1234" }), null);
+});

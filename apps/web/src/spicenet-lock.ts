@@ -1,51 +1,65 @@
 /**
- * The destination lock for Spicenet payouts (Spicenet's review, Nov 17), kept apart from the SDK so it can be tested
- * on its own (scripts/spicenet-lock.test.mjs). Every SpiceWithdraw path, first try and retries alike, builds its payout
- * through this. It keeps the SDK's payout plan as quoted, the net payment and its separate fee transfers, and refuses
- * it unless it is on Elysium mainnet (99901), in canonical USDC, and every transfer goes to the deposit's receive
- * address or to one of Spicenet's own fee addresses. The net payment's recipient becomes the receive address: the
- * window offers the user's own wallet by default, and a custom address field, and a Cloak deposit may land only at
- * its receive address.
+ * The destination check for Spicenet's delivery plan (Spice Flow UI 5.0.2, Spicenet's instructions of Nov 19), kept
+ * apart so it can be tested on its own, against the SDK's real output (scripts/spicenet-lock.test.mjs).
+ *
+ * CHECK ONLY. It reads the plan quoteSpicenetWithdrawalBatches returned and hands back the very same array, untouched:
+ * no amount, recipient or fee is ever changed (the SDK owns those). It throws only if the plan would pay anything other
+ * than Elysium USDC, on any chain other than Elysium, or to anyone other than this deposit's Cloak receive address and
+ * Spicenet's own fee addresses (Jack's rule: Elysium USDC and the original Cloak address stay fixed on every path).
+ *
+ * The plan, as 5.0.2 builds it (read from the SDK source and from its output):
+ *  - a "spicenet"-domain batch with one createWithdrawalRequest call, whose transfers (token and recipient as address
+ *    strings, chain "evm:99901") are what Spicenet's escrow will pay;
+ *  - an Elysium (99901) batch with no calls and the same transfers as tokenTransfers from "escrow".
+ * Both are checked. Anything the check can't read (another call, a call on Elysium) is refused rather than trusted.
  */
-import type { Address } from "viem";
-
-export type Transfer = { token: Address; recipient: Address; amount: bigint };
-export type PayoutParams = {
-  destinationChainId: number;
-  deliveryToken: Address;
-  deliveryAmount: bigint;
-  withdrawalAmount?: bigint;
-  deliveryRecipient: Address;
-  deliveryTransfers?: Transfer[];
-  requestTimestampMs?: number;
+export type Hex = `0x${string}`;
+export type PlanTransfer = { token: string; to: string; amount: bigint | string | number };
+export type PlanBatch = {
+  chainId: number;
+  domain?: "evm" | "spicenet";
+  calls: readonly { to: string; value?: bigint; data?: Hex }[];
+  tokenTransfers?: readonly { from?: string; to: string; token: string; amount?: bigint | string | number }[];
 };
-type Build<B> = (p: {
-  destinationChainId: number;
-  deliveryToken: Address;
-  deliveryAmount: bigint;
-  withdrawalAmount?: bigint;
-  deliveryRecipient: Address;
-  deliveryTransfers?: Transfer[];
-  requestTimestampMs?: number;
-}) => B | null;
+/** Decodes a spicenet-domain call (viem's decodeFunctionData with spiceflow-core's spicenetAbi); throws if it can't. */
+export type Decode = (data: Hex) => { functionName: string; args?: readonly unknown[] };
 
-const lc = (a: string) => a.toLowerCase();
+const ELYSIUM = 99901;
+const lc = (a: string) => String(a).toLowerCase();
 
-export function lockDelivery<B>({ to, usdc, feeRecipients, build }: { to: Address; usdc: Address; feeRecipients: readonly string[]; build: Build<B> }) {
-  const fees = new Set(feeRecipients.map(lc));
-  return (p: PayoutParams): B => {
-    if (p.destinationChainId !== 99901) throw new Error("Cloak deposits go to Elysium only.");
-    if (lc(p.deliveryToken) !== lc(usdc)) throw new Error("Cloak deposits arrive as USDC on Elysium only.");
-    const plan = p.deliveryTransfers?.length ? p.deliveryTransfers : [{ token: p.deliveryToken, recipient: p.deliveryRecipient, amount: p.withdrawalAmount ?? p.deliveryAmount }];
-    const transfers = plan.map((t) => {
-      if (lc(t.token) !== lc(usdc)) throw new Error("Spicenet's payout plan includes a token other than Elysium USDC.");
-      if (t.amount <= 0n) throw new Error("Spicenet's payout plan includes an empty transfer.");
-      return fees.has(lc(t.recipient)) ? t : { ...t, recipient: to };
-    });
-    const net = transfers.filter((t) => lc(t.recipient) === lc(to)).reduce((a, t) => a + t.amount, 0n);
-    if (net <= 0n) throw new Error("Spicenet's payout plan has nothing for your Cloak address.");
-    const batch = build({ destinationChainId: 99901, deliveryToken: usdc, deliveryAmount: net, withdrawalAmount: p.withdrawalAmount, deliveryRecipient: to, deliveryTransfers: transfers, requestTimestampMs: p.requestTimestampMs });
-    if (!batch) throw new Error("Spicenet couldn't build the delivery to Elysium.");
-    return batch;
+export function checkDelivery<B extends PlanBatch>(
+  plan: readonly B[],
+  { to, usdc, feeRecipients, decode }: { to: string; usdc: string; feeRecipients: readonly string[]; decode: Decode },
+): readonly B[] {
+  const allowed = new Set([lc(to), ...feeRecipients.map(lc)]);
+  let toReceive = 0n;
+  const pay = (t: PlanTransfer, where: string) => {
+    if (lc(t.token) !== lc(usdc)) throw new Error(`Spicenet's delivery plan pays a token other than Elysium USDC (${where}).`);
+    if (!allowed.has(lc(t.to))) throw new Error(`Spicenet's delivery plan pays an address other than your Cloak receive address (${where}).`);
+    if (lc(t.to) === lc(to)) toReceive += BigInt(t.amount ?? 0);
   };
+  if (!Array.isArray(plan) || plan.length === 0) throw new Error("Spicenet returned no delivery plan.");
+  for (const b of plan) {
+    if (b.domain === "spicenet") {
+      for (const c of b.calls) {
+        let call: ReturnType<Decode>;
+        try {
+          call = decode((c.data ?? "0x") as Hex);
+        } catch {
+          throw new Error("Spicenet's delivery plan has a call Cloak can't read.");
+        }
+        if (call.functionName !== "createWithdrawalRequest") throw new Error(`Spicenet's delivery plan has an unexpected call (${call.functionName}).`);
+        const req = call.args?.[0] as { chainId?: string; transfers?: readonly PlanTransfer[] } | undefined;
+        if (req?.chainId !== `evm:${ELYSIUM}`) throw new Error("Spicenet's delivery plan pays out on a chain other than Elysium.");
+        for (const t of req.transfers ?? []) pay(t, "withdrawal request");
+      }
+      for (const t of b.tokenTransfers ?? []) pay(t, "Spicenet transfer");
+      continue;
+    }
+    if (b.chainId !== ELYSIUM) throw new Error("Spicenet's delivery plan pays out on a chain other than Elysium.");
+    if (b.calls.length) throw new Error("Spicenet's delivery plan has a call on Elysium Cloak can't check.");
+    for (const t of b.tokenTransfers ?? []) pay({ token: t.token, to: t.to, amount: t.amount ?? 0 }, "Elysium transfer");
+  }
+  if (toReceive <= 0n) throw new Error("Spicenet's delivery plan has nothing for your Cloak receive address.");
+  return plan;
 }

@@ -29,7 +29,7 @@ nothing).
   the money in as soon as it arrives.
 - **No Cloak fee on bridging.** Relay can add an app fee (`appFees`); not set.
 
-## Spicenet (Spice Flow): partnership, waiting on their Elysium release
+## Spicenet (Spice Flow): built on the `spicenet` branch, off until checked live (see Nov 19 below)
 
 From their docs (spiceflow-docs.spicenet.io, read Nov 10):
 
@@ -86,3 +86,49 @@ the shields come from the relay, not the user's wallet. Our side needs no new co
 **Ask Spicenet before we build:** verify the escrow and its implementation on the Elysium explorer; fund it with USDC
 (it holds none); run one live payout on Elysium; say how the user signs into Privy without a visible login (their
 remaining item); and what happens to the user's money if a payout fails after funding (refund path, time limits).
+
+
+### Update, Nov 19: one action, Spice Flow UI 5.0.2 (Spicenet's final instructions). Built, off
+
+Built on the `spicenet` branch (`apps/web/src/spicenet-flow.tsx`, `spicenet.tsx`, `spicenet-lock.ts`,
+`spicenet-state.ts`; `packages/sdk/src/bridge/spicenet.ts`). Off unless `VITE_SPICENET_99901=1`, which is set nowhere.
+Packages pinned exactly: `@spicenet-io/spiceflow-ui@5.0.2`, `@spicenet-io/spiceflow-core@0.10.3`; Privy, wagmi and viem
+unchanged. This replaces 5.0.1's two steps (SpiceDeposit into the Spicenet balance, then a separate SpiceWithdraw).
+
+**Spicenet's four points (Matt, Nov 19) and how they are met:**
+1. **One SpiceDeposit**, `skipRecovery={false}` (the SDK's default is `true`), `destinationChainId={99901}`,
+   `destinationTokenAddress` Elysium USDC, `depositActionLabel="Delivery to Cloak on Elysium"`. Inside
+   `PrivyProvider` → `SpiceFlowProvider` (provider `privy`, mode `7702`, network `mainnet`), with a Privy guest
+   session (no login screen); nothing renders until the guest's embedded wallet is ready.
+2. **`depositBatches`** calls `quoteSpicenetWithdrawalBatches` with `context.destinationAmount`, this deposit's Cloak
+   receive address as recipient, Elysium USDC, chain 99901, the guest embedded address as `userAddress`, and
+   `useSpiceExecution().estimate`. No SpiceWithdraw. Fees come from the SDK's quote; none are hard-coded.
+3. **Credit from the receipt.** `onDepositSuccess` gives `detail.txHash`, the Elysium delivery. The page reads that
+   receipt (`spicenetDelivery`): it must have succeeded and hold a canonical USDC Transfer from Spicenet's escrow
+   (`0x7839…6102`) to the receive address, and the amount recorded is what the receipt shows. The callback's `amount` is
+   the escrow credit before fees and is never used as a credit. "Arriving" until that block is finalized, then
+   "Arrived". With no hash (or after a reload) the address is scanned for the same Transfers (`spicenetDeliveries`).
+   The move into the private balance is still `collectReceived` of what is actually at the address.
+4. **Interrupted deposits** show "Resume delivery", which reopens the same SpiceDeposit with the same guest session,
+   receive address and `depositBatches` (`skipRecovery={false}`, so Spice Flow confirms the funded balance instead of
+   charging again). Once the deposit was confirmed in the window (`onSubmit`), a resume first asks Spicenet
+   (`relayerService.getWalletActions(guest, { pendingOnly: true })`); while an action is pending nothing reopens. A
+   resume from a different guest wallet is refused. Only a window closed before anything was confirmed counts as
+   "Didn't start". `escrowRecovery` is not used.
+
+**The plan, as 5.0.2 builds it** (its source, and its own output in `apps/web/scripts/spicenet-lock.test.mjs`): a
+`spicenet`-domain batch (chain 4321) with one `createWithdrawalRequest` call to Spicenet's system address, chain
+`evm:99901`, whose transfers are the net payment to the receive address plus Spicenet's gas/bridge fee (to
+`SPICE_GAS_FEE_RECIPIENT`) and platform fee (to `SPICE_PLATFORM_FEE_RECIPIENT`); and an Elysium batch with no calls and
+the same transfers as `tokenTransfers` from `escrow`.
+
+**Destination check** (`spicenet-lock.ts`, Jack's rule: Elysium USDC and the original Cloak address stay fixed). Check
+only: it reads both batches and returns the same array untouched. It throws if any transfer is in a token other than
+Elysium USDC, on a chain other than Elysium, or to anyone other than the receive address and Spicenet's fee addresses
+(`SPICE_GAS/PLATFORM/COMBINED_FEE_RECIPIENT`), if a call can't be read, or if nothing goes to the receive address. Tested
+against the SDK's real plan with several fee splits (passes, nothing mutated) and with wrong recipient, token or chain
+(refused).
+
+**Still to do before switching on (the user's live test):** one real deposit on mainnet, confirming the Elysium transfer
+reaches the receive address, the receipt check records the delivered amount, and it lands in the Cloak private
+balance; and one interrupted deposit resumed without paying again.
