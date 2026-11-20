@@ -55,15 +55,30 @@ test("a deposit on its way blocks a new one; arrived, closed or still-open ones 
   assert.equal(S.pendingDeposit([{ ...base, stage: "failed" }, { ...base, id: "2", stage: "funding" }, { ...base, id: "3", stage: "landing", received: "5" }, { ...base, id: "4", stage: "arrived", received: "5" }]), undefined);
   assert.equal(S.pendingDeposit([{ ...base, stage: "waiting", submitted: true }, { ...base, id: "2", stage: "arrived", received: "1" }]).id, "1");
 });
-test("escrow capacity: a delivery must fit; an unknown capacity doesn't block", () => {
-  assert.equal(S.fits(100n, 100n), true);
-  assert.equal(S.fits(101n, 100n), false);
-  assert.equal(S.fits(10n ** 12n, null), true);
-});
-
-test("deposit limit: Cloak's 500 USDC cap, or less when the escrow holds less", () => {
-  assert.equal(S.depositLimit(null), S.CARD_CAP);
-  assert.equal(S.depositLimit(10n ** 12n), S.CARD_CAP);
-  assert.equal(S.depositLimit(187_210_354n), 187_210_354n);
+test("the cap is a fixed 500 USDC, at least 10", () => {
   assert.equal(S.CARD_CAP, 500_000_000n);
+  assert.equal(S.CARD_MIN, 10_000_000n);
+});
+const iso = (t) => new Date(t).toISOString();
+test("resume waits while a pending request can still be paid, and opens once every one is past its hour", () => {
+  const now = Date.parse("2026-11-20T12:00:00Z");
+  assert.equal(S.resumeWaitsUntil([], now), null);
+  assert.equal(S.resumeWaitsUntil([{ actionId: "a", createdAt: iso(now - 20 * 60_000) }], now), now + 40 * 60_000);
+  assert.equal(S.resumeWaitsUntil([{ actionId: "a", createdAt: iso(now - 61 * 60_000) }], now), null, "expired: reopen, recovery cancels or completes it");
+  assert.equal(S.resumeWaitsUntil([{ actionId: "a", createdAt: iso(now - 90 * 60_000) }, { actionId: "b", createdAt: iso(now - 5 * 60_000) }], now), now + 55 * 60_000);
+  assert.equal(S.resumeWaitsUntil([{ actionId: "a", createdAt: "garbage" }], now), null);
+});
+test("a deposit's actions are the guest wallet's actions since it started, kept once each", () => {
+  const since = Date.parse("2026-11-20T12:00:00Z");
+  const acts = [{ actionId: "old", createdAt: iso(since - 3600_000) }, { actionId: "a1", createdAt: iso(since + 30_000) }, { actionId: "a2", createdAt: iso(since - 30_000) }];
+  assert.deepEqual(S.actionsSince(acts, since), ["a1", "a2"]);
+  const d = S.addActions(base, ["a1"]);
+  assert.deepEqual(S.addActions(d, ["a1", "a2"]).actions, ["a1", "a2"]);
+  assert.equal(S.addActions(d, ["a1"]), d, "nothing new: the same record");
+});
+test("support details hold what Spicenet's support asks for, and no secrets", () => {
+  const d = { ...base, stage: "waiting", submitted: true, guest: "0x2222222222222222222222222222222222222222", actions: ["act_1"], deliveryTx: H1 };
+  const t = S.supportDetails(d, (x) => (Number(x) / 1e6).toString());
+  for (const want of [base.to, d.guest, "act_1", H1, "Started", "Card provider reference"]) assert.ok(t.includes(want), want);
+  assert.ok(!/[:;—]/.test(t.replace(/0x[0-9a-fA-F]+|\d{4}-\d\d-\d\dT[\d:.]+Z/g, "")), "no colons or semicolons in the words");
 });

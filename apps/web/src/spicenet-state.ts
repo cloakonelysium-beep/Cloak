@@ -28,6 +28,10 @@ export interface Deposit {
   /** The Elysium transaction that delivered it (verified). */
   tx?: Hex;
   note?: string;
+  /** When it was confirmed in the window. */
+  submittedAt?: number;
+  /** Spicenet's action ids for this deposit, for support (Spicenet asks for them to trace a payment). */
+  actions?: string[];
   /** Older records (5.0.1's two steps): Spicenet's quoted net, display only. */
   amount?: string;
 }
@@ -62,18 +66,52 @@ export function pendingDeposit(list: readonly Deposit[]): Deposit | undefined {
   return [...list].reverse().find((d) => d.stage === "waiting" && !d.received);
 }
 
-/** Below this, Spicenet's escrow can't deliver a useful deposit: new deposits wait. (1 USDC) */
+/** Below this, Spicenet's escrow is empty: new card payments pause until it is refilled. (1 USDC) */
 export const MIN_CAPACITY = 1_000_000n;
 
 /** Cloak's own limits on a card deposit through Spicenet, for now: at most 500 USDC, at least 10 (smaller ones may not
- *  cover the delivery fee). Raised once Spicenet's Elysium payouts have a track record. */
+ *  cover the delivery fee). A fixed cap: Spicenet's rebalancer refills the escrow from other chains (Matt, Nov 20), so
+ *  its balance at any moment isn't a ceiling. Raised once Spicenet's Elysium payouts have a track record. */
 export const CARD_CAP = 500_000_000n;
 export const CARD_MIN = 10_000_000n;
-/** The most one deposit may be: Cloak's cap, or less if Spicenet's escrow holds less (unknown capacity: the cap). */
-export const depositLimit = (capacity: bigint | null | undefined) => (capacity != null && capacity < CARD_CAP ? capacity : CARD_CAP);
-/** Whether a delivery of `amount` (the escrow credit: net payment plus Spicenet's fees) fits what the escrow holds.
- *  An unknown capacity (the read failed) doesn't block: Spicenet's own checks still apply. */
-export const fits = (amount: bigint, capacity: bigint | null | undefined) => capacity == null || amount <= capacity;
+
+/** How long a delivery request can still be paid: the SDK's withdrawal request expires an hour after it is made. After
+ *  that it can't complete, and its money comes back only once it is cancelled (Matt, Nov 20). */
+export const REQUEST_TTL_MS = 60 * 60_000;
+type Action = { actionId: string; createdAt: string };
+const made = (a: Action) => Date.parse(a.createdAt) || 0;
+/** While a pending action could still be paid, resuming waits (never resend one that may still complete). Once every
+ *  pending action is past its hour, Resume reopens the window, whose own recovery completes or cancels it. Returns
+ *  when the wait ends, or null to open now. */
+export function resumeWaitsUntil(pending: readonly Action[], now = Date.now()): number | null {
+  const live = pending.map(made).filter((t) => now - t < REQUEST_TTL_MS);
+  return live.length ? Math.max(...live) + REQUEST_TTL_MS : null;
+}
+/** This deposit's actions among the guest wallet's: those made since it started (a minute's slack for clocks). */
+export function actionsSince(actions: readonly Action[], since: number): string[] {
+  return actions.filter((a) => made(a) >= since - 60_000).map((a) => a.actionId);
+}
+export const addActions = (d: Deposit, ids: readonly string[]): Deposit => {
+  const all = [...new Set([...(d.actions ?? []), ...ids])];
+  return all.length === (d.actions?.length ?? 0) ? d : { ...d, actions: all };
+};
+
+/** Everything Spicenet's support asks for to trace a payment (Matt, Nov 20), as text to copy. The payment provider's
+ *  own reference isn't available to Cloak: it is in the card provider's receipt email. */
+export function supportDetails(d: Deposit, fmt: (raw: string) => string): string {
+  return [
+    "Cloak card payment through Spicenet",
+    `Started ${new Date(d.at).toISOString()}`,
+    d.received ? `Received ${fmt(d.received)} USDC` : d.amount ? `Quoted ${fmt(d.amount)} USDC` : "",
+    `Status ${d.stage}${d.sent ? ", delivery reported" : d.submitted ? ", confirmed" : ""}`,
+    `Cloak receive address ${d.to}`,
+    d.guest ? `Spicenet wallet ${d.guest}` : "",
+    d.actions?.length ? `Spicenet action ${d.actions.join(", ")}` : "",
+    d.deliveryTx ? `Delivery transaction ${d.deliveryTx}` : "",
+    d.tx && d.tx !== d.deliveryTx ? `Elysium transaction ${d.tx}` : "",
+    "Card provider reference, from its receipt email",
+  ].filter(Boolean).join("\n");
+}
 
 /** A resume asks Spicenet first when an action may already be on its way (never resend one that may still complete).
  *  "waiting" alone counts too: a 5.0.1 record in that stage had its funding or payout submitted. */

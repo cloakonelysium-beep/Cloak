@@ -157,6 +157,23 @@ lower of 500 and what the escrow holds, so the widget refuses a larger amount as
 187 USDC in escrow: "Maximum deposit is 187.00 USD"). The same cap is checked again before any delivery, on every route
 the window offers. Any Spicenet SDK upgrade gets the same review as 5.0.2 before it is pinned.
 
+**Spicenet's answers (Matt, Nov 20) and what changed:**
+- *Escrow liquidity:* Elysium payouts are live and a rebalancer refills the escrow from other chains. So the cap is a
+  fixed **500 USDC** per payment (10 at least), in the card widget and again before delivery. The escrow's balance is no
+  longer a limit; card payments only pause while it is empty.
+- *Maximum amount:* SpiceDeposit 5.0.2 has no maximum of its own. Cloak's card widget (`embedFactory`, `maxDepositUsd`)
+  enforces it, which is why Cloak supports the card route only.
+- *Lost guest session:* nobody can restore a guest whose browser data is gone (only a linked login could, which Cloak
+  doesn't ask for). To trace funds, support needs the Spicenet wallet, the receive address, the Spicenet action id, the
+  card provider's reference, the transactions, the amount and the time. Each card payment now keeps the action ids and
+  offers "Copy support details" (the card provider's reference is in its receipt email; the SDK doesn't expose it).
+- *Refunds:* a failed payout doesn't reverse the card payment. Cancelling an unpaid withdrawal returns the credit to the
+  user's Spicenet account, so Resume delivers it. The page says so.
+- *Expiry:* an expired request doesn't free the money until it is cancelled. Resume waits only while a pending request
+  can still be paid (its hour); after that it reopens the window, whose recovery (`skipRecovery={false}`) completes or
+  cancels it. Asked Matt to confirm that recovery covers an expired withdrawal.
+- *Below fees:* no fixed minimum. A failed quote leaves the USDC in the guest wallet on Arbitrum, where Resume finds it.
+
 **Still to do before switching on (the user's live test):** one real deposit on mainnet, confirming the Elysium transfer
 reaches the receive address, the receipt check records the delivered amount, and it lands in the Cloak private
 balance; and one interrupted deposit resumed without paying again.

@@ -7,7 +7,7 @@ import { Powered, TELEGRAM } from "./ui";
 import { CloakCard, Mastercard, Visa } from "./cloakCard";
 import { every } from "./every";
 import { friendly } from "./errors";
-import { CARD_CAP, CARD_MIN, MIN_CAPACITY, arrived, depositLimit, checkFirst, closed, open as following, pendingDeposit, resumable, txHashOf, type Deposit, type Stage } from "./spicenet-state";
+import { CARD_CAP, CARD_MIN, MIN_CAPACITY, addActions, arrived, checkFirst, supportDetails, closed, open as following, pendingDeposit, resumable, txHashOf, type Deposit, type Stage } from "./spicenet-state";
 const SpiceFunding = lazy(() => import("./spicenet-flow"));
 const CARD_ICON = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5" /><path d="M3 10h18M7 15h4" /></svg>;
 
@@ -47,9 +47,10 @@ class Contained extends Component<{ children: ReactNode; onError: (m: string) =>
  * so no new receive address) starts. The customer resumes it or contacts the team with its receive address. Spicenet's
  * guest session lives in this browser, so money that never left Spicenet can be resumed only here.
  *
- * Escrow capacity: Spicenet's escrow on Elysium pays every delivery. Its USDC balance is shown before a deposit starts,
- * new deposits wait while it is nearly empty, and a delivery larger than it holds is refused before anything is
- * submitted (spicenet-flow.tsx).
+ * Limits: a fixed 500 USDC per payment (10 at least), set in the card widget and checked again before delivery. Spicenet's
+ * rebalancer refills its Elysium escrow from other chains (Matt, Nov 20), so its balance isn't a limit; card payments
+ * only pause while it is empty. Each payment keeps what Spicenet's support asks for (receive address, Spicenet wallet,
+ * action ids, transactions, amount, time), behind "Copy support details".
  *
  * Off unless VITE_SPICENET_99901=1, and never on any network but Elysium mainnet (a testnet receive address can't be
  * collected on mainnet). Turned on only once Spicenet's Elysium payouts are live and checked.
@@ -124,7 +125,13 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
   const on = SPICENET_ON && !!NET;
   const pending = on ? pendingDeposit(list) : undefined;
   const dry = capacity !== null && capacity < MIN_CAPACITY;
-  const limit = depositLimit(capacity);
+  const limit = CARD_CAP;
+  const [copiedId, setCopiedId] = useState("");
+  const copySupport = (d: Deposit) => {
+    navigator.clipboard?.writeText(supportDetails(d, (x) => usdc(x))).catch(() => {});
+    setCopiedId(d.id);
+    setTimeout(() => setCopiedId(""), 1500);
+  };
 
   async function start() {
     if (pendingDeposit(load())) return; // one at a time (the button is hidden then too)
@@ -164,12 +171,6 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
         <CloakCard />
         <div className="kv" style={{ marginTop: 18 }}>
           <div className="r"><span>Per payment</span><span><b>{on ? `${usdc(CARD_MIN)} to ${usdc(limit)} USDC` : "Opens soon"}</b></span></div>
-          {on && limit < CARD_CAP && (
-            <div className="r" style={{ display: "block" }}>
-              <div className="meter"><i style={{ width: `${Math.max(3, Math.min(100, Number((limit * 100n) / CARD_CAP)))}%` }} /></div>
-              <div className="row-flex xs mute" style={{ justifyContent: "space-between", marginTop: 6 }}><span>Available now {usdc(limit)}</span><span>Cloak's cap {usdc(CARD_CAP)}</span></div>
-            </div>
-          )}
           <div className="r"><span>Arrives</span><span>Usually within minutes</span></div>
           <div className="r"><span>Fees</span><span>Shown in checkout before you pay</span></div>
           <div className="r"><span>Pay with</span><span className="netlogos"><Visa h={13} color="var(--visa)" /><Mastercard h={20} /></span></div>
@@ -178,7 +179,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
           <button className="btn btn-ink btn-lg btn-block" style={{ marginTop: 16 }} disabled>{CARD_ICON}Opening soon</button>
         ) : dry ? (
           <>
-            <div className="warnbox" style={{ marginTop: 16 }}>Card payments are paused. Spicenet's payout balance on Elysium is empty right now. Try again later.</div>
+            <div className="warnbox" style={{ marginTop: 16 }}>Card payments are paused while Spicenet refills its payout balance on Elysium. Try again shortly.</div>
             <button className="btn btn-ink btn-lg btn-block" style={{ marginTop: 10 }} disabled>{CARD_ICON}Continue to payment</button>
           </>
         ) : pending && !open ? (
@@ -207,7 +208,10 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
                 <div>
                   <b>{d.received ? `${usdc(d.received)} USDC` : d.amount ? `About ${usdc(d.amount)} USDC` : "Card payment"}</b>
                   <span className="xs mute">{new Date(d.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}{d.stage === "landing" ? " · final in about an hour" : ""}</span>
-                  {resumable(d) && d !== pending && <button className="link xs" disabled={!!open} onClick={() => resume(d)}>Resume delivery</button>}
+                  <span className="xs" style={{ display: "flex", gap: 12, marginTop: 2 }}>
+                    {resumable(d) && d !== pending && <button className="link" disabled={!!open} onClick={() => resume(d)}>Resume delivery</button>}
+                    {d.stage !== "arrived" && <button className="link" onClick={() => copySupport(d)}>{copiedId === d.id ? "Copied" : "Copy support details"}</button>}
+                  </span>
                 </div>
                 {d.tx && txLink(d.tx) ? <a className="pill ok" href={txLink(d.tx)} target="_blank" rel="noreferrer">{label(d)}</a> : <span className={d.stage === "arrived" ? "pill ok" : d.stage === "waiting" ? "pill warn" : "pill"}>{label(d)}</span>}
               </div>
@@ -215,7 +219,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
           )}
           {pending && (
             <p className="xs mute" style={{ margin: "12px 0 0" }}>
-              Not there after an hour? <a className="link" href={TELEGRAM} target="_blank" rel="noreferrer">Contact us</a> with its receive address <span className="mono">{pending.to.slice(0, 6)}…{pending.to.slice(-4)}</span>
+              Not there after an hour? Copy its support details and <a className="link" href={TELEGRAM} target="_blank" rel="noreferrer">send them to us</a>.
             </p>
           )}
         </div>
@@ -232,8 +236,8 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
           <ul className="dep-dots">
             <li>Fees and any ID check are set by the card partner</li>
             <li>One payment at a time, within the limit</li>
-            <li>Finish in this browser. An unfinished payment can only resume here</li>
-            <li>Cloak can't refund a card payment. Until the USDC arrives, only Spicenet and its card partner can</li>
+            <li>Finish in this browser. If its data is cleared before the USDC arrives, nobody can restore access</li>
+            <li>A failed delivery isn't refunded to your card. It stays with Spicenet and Resume delivers it</li>
             <li>Spicenet sees the payment and the receive address, like any card on-ramp</li>
           </ul>
         </div>
@@ -244,9 +248,11 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
           <Suspense fallback={null}>
             <SpiceFunding
               to={open.d.to}
+              since={open.d.at}
+              onActions={(ids) => ids.length && change(open.d.id, (d) => addActions(d, ids))}
               resume={open.resume ? { guest: open.d.guest, checkFirst: checkFirst(open.d) } : undefined}
               onGuest={(g) => change(open.d.id, (d) => (d.guest ? d : { ...d, guest: g }))}
-              onSubmitted={() => change(open.d.id, (d) => ({ ...d, submitted: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined }))}
+              onSubmitted={() => change(open.d.id, (d) => ({ ...d, submitted: true, submittedAt: d.submittedAt ?? Date.now(), stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined }))}
               onDelivered={({ txHash }) => {
                 const tx = txHashOf(txHash);
                 change(open.d.id, (d) => ({ ...d, submitted: true, sent: true, stage: d.stage === "funding" || d.stage === "failed" ? "waiting" : d.stage, note: undefined, ...(tx ? { deliveryTx: tx } : {}) }));
@@ -270,5 +276,5 @@ export function useCardLimit(): { on: boolean; range: string } {
     if (!SPICENET_ON) return;
     spicenetCapacity(publicClient, CHAIN_ID).then(setCapacity, () => setCapacity(null));
   }, []);
-  return { on: SPICENET_ON, range: `${usdc(CARD_MIN)} to ${usdc(depositLimit(capacity))} USDC` };
+  return { on: SPICENET_ON, range: capacity !== null && capacity < MIN_CAPACITY ? "Paused" : `${usdc(CARD_MIN)} to ${usdc(CARD_CAP)} USDC` };
 }
