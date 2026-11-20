@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { formatEther, formatUnits, type Address, type Hex } from "viem";
 import type { GloamPrivate } from "@cloakely/sdk";
-import { ASSETS, GLOAM, txLink } from "../config";
+import { ASSETS, CHAIN_ID, GLOAM, txLink } from "../config";
 import { collectIssued, gloamDelivered } from "../gloam";
 import { openBox, sealBox } from "../deviceBox";
 import { publicClient } from "../wallet";
@@ -11,7 +11,8 @@ import { Link, useRoute } from "../router";
 import { Icon } from "../ui";
 import { QR } from "../qr";
 import { every } from "../every";
-import { BridgeIn } from "../bridge";
+import { BridgeIn, RelayDepositAddress, relayReserved } from "../bridge";
+import { relayServes } from "@cloakely/sdk";
 import { SpiceBridge, SpicenetDocs, useCardLimit } from "../spicenet";
 import { CloakCard } from "../cloakCard";
 import { Gate } from "../gate";
@@ -78,6 +79,9 @@ export function Receive({ view = "menu" }: { view?: DepositView }) {
   return <DepositWay view={view} />;
 }
 
+/** Relay serves Elysium mainnet only, so "another network" shows there. */
+const RELAY_LIVE = relayServes(CHAIN_ID);
+
 function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
   const { query } = useRoute();
   const { priv } = useApp();
@@ -86,6 +90,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
   const [err, setErr] = useState("");
   const [state, setState] = useState<Record<string, { waiting: string[]; delivered: { amount: string; tx: Hex }[] }>>({});
   const [copied, setCopied] = useState(false);
+  const [other, setOther] = useState(false);
   const { refresh } = usePrivateBalances();
   const delivered = useRef(-1);
 
@@ -110,7 +115,9 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
     if (!priv || !RECEIVE) return;
     (async () => {
       const list = await load(priv);
-      if (!list.length) return fresh(priv, list);
+      // no address yet, or every one is held for a Relay transfer: make one for Elysium
+      const held = relayReserved();
+      if (!list.length || list.every((x) => held.has(x.address.toLowerCase()))) return fresh(priv, list);
       setIssued(list);
     })();
   }, [priv]);
@@ -183,7 +190,9 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
         <Gate what={view === "card" ? "pay by card into your private balance" : view === "bridge" ? "bridge funds into your private balance" : "get a receive address"} />
       </>
     );
-  const cur = issued?.at(-1);
+  // the newest address not held for a Relay deposit (those are for that one payment only)
+  const reserved = relayReserved();
+  const cur = issued ? [...issued].reverse().find((x) => !reserved.has(x.address.toLowerCase())) : undefined;
   const curState = cur ? state[cur.address] : undefined;
   const curUsed = !!curState && (curState.waiting.length > 0 || curState.delivered.length > 0);
   const copy = () => {
@@ -192,6 +201,8 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
+  // where a bridge delivers: always a new address, held for that one transfer, so it can't be linked to anything else
+  const bridgeTo = async (_avoid: string[]): Promise<Address | undefined> => (priv ? fresh(priv, await load(priv)) : undefined);
   const collect = () => priv && load(priv).then((l) => collectIssued(priv, l)).then(() => refresh()).catch(() => {});
 
   if (view === "bridge")
@@ -199,7 +210,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
       <>
         {head}
         <div style={{ maxWidth: 640 }}>
-          <BridgeIn to={cur?.address} viaAddress={query.get("via") === "address"} onArrived={collect} />
+          <BridgeIn recipient={bridgeTo} onArrived={collect} />
         </div>
       </>
     );
@@ -219,12 +230,22 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
       </>
     );
 
-  const older = issued ? [...issued].reverse().slice(1, 12) : [];
+  const older = issued ? [...issued].reverse().filter((x) => x !== cur).slice(0, 11) : [];
   return (
     <>
       {head}
       <div className="grid">
         <div className="card">
+          {RELAY_LIVE && <div className="seg" role="tablist" aria-label="Network" style={{ marginBottom: 16 }}>
+            <button role="tab" aria-selected={!other} className={other ? "" : "on"} onClick={() => setOther(false)}>Elysium</button>
+            <button role="tab" aria-selected={other} className={other ? "on" : ""} onClick={() => setOther(true)}>Another network</button>
+          </div>}
+          {other && RELAY_LIVE ? (
+            <>
+              <p className="small soft" style={{ margin: "0 0 12px" }}>For an exchange that doesn't list Elysium. Pick the coin and network it withdraws on, and Relay gives you a one-time address that lands in your private balance.</p>
+              <RelayDepositAddress recipient={bridgeTo} onArrived={collect} />
+            </>
+          ) : <>
           {!cur ? (
             <div className="empty" style={{ padding: "36px 20px" }}>{busy ? "Making your address…" : err || "…"}</div>
           ) : (
@@ -244,11 +265,9 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
             <div className="r"><span>Fee</span><span>None, the relayer pays gas</span></div>
           </div>
           <div className="warnbox" style={{ marginTop: 12 }}>Send on Elysium only. Anything sent on another network, or any other token, can't be recovered.</div>
-          <div className="infobox" style={{ marginTop: 10 }}>
-            <b>Exchange doesn't list Elysium?</b><br />Get a one-time deposit address on a network it supports, and Relay brings it here.{" "}
-            <Link to="/app/deposit/bridge?via=address" className="link">Get a deposit address</Link>
-          </div>
+          {RELAY_LIVE && <p className="small soft" style={{ marginTop: 10 }}>Exchange doesn't list Elysium? <button className="link" style={{ background: "none", border: 0, padding: 0, font: "inherit", cursor: "pointer" }} onClick={() => setOther(true)}>Use another network</button>.</p>}
           <p className="by" style={{ marginTop: 16 }}>By Cloak's receive contract on Elysium</p>
+          </>}
         </div>
         <div className="col">
           <div className="card">
