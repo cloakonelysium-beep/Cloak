@@ -205,6 +205,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
         )}
         {err && <div className="err">{err}</div>}
         <Powered by="Spicenet" logo="/partners/spicenet-mark.svg" extra="Card checkout by Swapper" />
+        <SpicenetDocs />
       </div>
 
       <div className="col">
@@ -278,6 +279,17 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
         </Contained>
       )}
     </div>
+  );
+}
+
+/** Spicenet's own documentation, for anyone who wants the full picture before paying. */
+export const SPICENET_DOCS = "https://spiceflow-docs.spicenet.io/how-it-works";
+export function SpicenetDocs() {
+  return (
+    <p className="xs mute" style={{ margin: "14px 0 0", textAlign: "center" }}>
+      Want to know more about Spicenet?{" "}
+      <a className="link" href={SPICENET_DOCS} target="_blank" rel="noreferrer">Read the docs</a>
+    </p>
   );
 }
 

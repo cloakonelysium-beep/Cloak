@@ -33,7 +33,7 @@ const lc = (a: string) => String(a).toLowerCase();
 
 export function checkDelivery<B extends PlanBatch>(
   plan: readonly B[],
-  { to, usdc, feeRecipients, decode, feeLimit }: { to: string; usdc: string; feeRecipients: readonly string[]; decode: Decode; feeLimit?: { fixed: bigint; bps: bigint } },
+  { to, usdc, feeRecipients, decode, feeLimit, format = String }: { to: string; usdc: string; feeRecipients: readonly string[]; decode: Decode; feeLimit?: { fixed: bigint; bps: bigint }; format?: (raw: bigint) => string },
 ): readonly B[] {
   const allowed = new Set([lc(to), ...feeRecipients.map(lc)]);
   let toReceive = 0n;
@@ -50,7 +50,11 @@ export function checkDelivery<B extends PlanBatch>(
     } else fee += amount;
   };
   const settle = () => {
-    if (feeLimit && fee > feeLimit.fixed + (net * feeLimit.bps) / 10_000n) throw new Error("Spicenet's delivery plan sends more to fees than Cloak allows. Nothing was submitted.");
+    const allowed = feeLimit ? feeLimit.fixed + (net * feeLimit.bps) / 10_000n : 0n;
+    if (feeLimit && fee > allowed)
+      throw new Error(
+        `Fee too high: Spicenet quoted ${format(fee)} USDC in fees for this delivery, and Cloak allows at most ${format(allowed)} USDC. Nothing was delivered or charged for it, and your money stays in your Spicenet balance. Try again in a few minutes with Resume delivery.`,
+      );
     net = 0n;
     fee = 0n;
   };

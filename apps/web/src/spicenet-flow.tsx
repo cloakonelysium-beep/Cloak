@@ -173,7 +173,7 @@ function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, on
       // escrow's balance: Spicenet's rebalancer refills it from other chains (Matt, Nov 20)
       if (context.destinationAmount > CARD_CAP) throw new Error(`Deposits through Spicenet are limited to ${formatUnits(CARD_CAP, NET.usdcDecimals)} USDC for now. Enter a smaller amount.`);
       const plan = await quoteSpicenetWithdrawalBatches({ amount: context.destinationAmount, recipient: to, token: NET.usdc, chainId: 99901, userAddress: guest, estimate: execution.estimate });
-      return checkDelivery(plan, { to, usdc: NET.usdc, feeRecipients: FEE_TO, decode, feeLimit: FEE_LIMIT }) as typeof plan;
+      return checkDelivery(plan, { to, usdc: NET.usdc, feeRecipients: FEE_TO, decode, feeLimit: FEE_LIMIT, format: (x) => formatUnits(x, NET.usdcDecimals) }) as typeof plan;
     },
     [guest, to, execution.estimate],
   );

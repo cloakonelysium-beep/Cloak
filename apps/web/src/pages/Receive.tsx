@@ -12,7 +12,8 @@ import { Icon } from "../ui";
 import { QR } from "../qr";
 import { every } from "../every";
 import { BridgeIn } from "../bridge";
-import { SpiceBridge, useCardLimit } from "../spicenet";
+import { SpiceBridge, SpicenetDocs, useCardLimit } from "../spicenet";
+import { CloakCard } from "../cloakCard";
 import { Gate } from "../gate";
 import { friendly } from "../errors";
 
@@ -168,7 +169,20 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
     </>
   );
   if (!RECEIVE) return <>{head}<div className="empty">Receive addresses aren't available on this network yet.</div></>;
-  if (!priv) return <>{head}<Gate what={view === "card" ? "pay by card into your private balance" : view === "bridge" ? "bridge funds into your private balance" : "get a receive address"} /></>;
+  if (!priv)
+    return (
+      <>
+        {head}
+        {/* the card page shows Cloak's card before a wallet is connected too */}
+        {view === "card" && (
+          <div className="card" style={{ padding: 24, maxWidth: 460, marginBottom: 16 }}>
+            <CloakCard />
+            <SpicenetDocs />
+          </div>
+        )}
+        <Gate what={view === "card" ? "pay by card into your private balance" : view === "bridge" ? "bridge funds into your private balance" : "get a receive address"} />
+      </>
+    );
   const cur = issued?.at(-1);
   const curState = cur ? state[cur.address] : undefined;
   const curUsed = !!curState && (curState.waiting.length > 0 || curState.delivered.length > 0);
