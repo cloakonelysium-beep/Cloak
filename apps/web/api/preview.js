@@ -69,8 +69,8 @@ function summary(s) {
 }
 
 const LINK_CARDS = {
-  claim: ["Someone sent you money, privately", "Open the link to claim it into your private balance on Cloak, or straight to any wallet. No gas needed.", "/brand/og-claim.jpg"],
-  pay: ["You have a payment request", "Open the link to pay it privately from your Cloak balance. Nobody sees who paid whom.", "/brand/og-pay.jpg"],
+  claim: ["Someone sent you money, privately", "Open the link to claim it into your private balance on Cloak, or straight to any wallet. No gas needed.", "/brand/og-claim.jpg?v=2"],
+  pay: ["You have a payment request", "Open the link to pay it privately from your Cloak balance. Nobody sees who paid whom.", "/brand/og-pay.jpg?v=2"],
 };
 
 function linkCard(kind, site) {
@@ -114,7 +114,7 @@ async function dropCard(a, n) {
 export async function GET(req) {
   const n = netOf(req);
   const SITE = n.site;
-  const FALLBACK_IMG = `${SITE}/og.jpg`;
+  const FALLBACK_IMG = `${SITE}/og.jpg?v=2`;
   const q = new URL(req.url).searchParams;
   const kind = q.get("kind");
   if (kind === "claim" || kind === "pay") return linkCard(kind, SITE);

@@ -46,7 +46,7 @@ const cache = { "cache-control": "public, max-age=3600, s-maxage=86400, stale-wh
 
 export async function GET(req) {
   const n = netOf(req);
-  const FALLBACK = `${n.site}/og.jpg`;
+  const FALLBACK = `${n.site}/og.jpg?v=2`;
   const a = (new URL(req.url).searchParams.get("drop") ?? "").toLowerCase();
   if (!/^0x[0-9a-f]{40}$/.test(a)) return Response.redirect(FALLBACK, 302);
   const got = await loadDrop(a, n).catch(() => null);
