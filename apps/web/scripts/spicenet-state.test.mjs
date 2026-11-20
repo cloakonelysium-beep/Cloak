@@ -82,3 +82,19 @@ test("support details hold what Spicenet's support asks for, and no secrets", ()
   for (const want of [base.to, d.guest, "act_1", H1, "Started", "Card provider reference"]) assert.ok(t.includes(want), want);
   assert.ok(!/[:;—]/.test(t.replace(/0x[0-9a-fA-F]+|\d{4}-\d\d-\d\dT[\d:.]+Z/g, "")), "no colons or semicolons in the words");
 });
+
+test("resume after an expired request follows Spicenet's recovery status, never the stale pending list alone", () => {
+  const now = Date.parse("2026-11-20T12:00:00Z");
+  const old = { actionId: "x", createdAt: iso(now - 2 * 3600_000) };
+  const live = { actionId: "y", createdAt: iso(now - 10 * 60_000) };
+  assert.deepEqual(S.resumeStep([], {}, now), { kind: "open" });
+  assert.deepEqual(S.resumeStep([live], {}, now), { kind: "wait", until: now + 50 * 60_000 });
+  assert.deepEqual(S.resumeStep([old, live], { x: ["cancelled"] }, now).kind, "wait", "a live one still waits");
+  assert.deepEqual(S.resumeStep([old], { x: ["unresolved"] }, now), { kind: "settling" });
+  assert.deepEqual(S.resumeStep([old], {}, now), { kind: "settling" }, "status unknown: don't reopen");
+  assert.deepEqual(S.resumeStep([old], { x: [] }, now), { kind: "settling" });
+  assert.deepEqual(S.resumeStep([old], { x: ["completed"] }, now), { kind: "delivered" });
+  assert.deepEqual(S.resumeStep([old], { x: ["cancelled"] }, now), { kind: "open" }, "cancelled: the credit is back, deliver again");
+  assert.deepEqual(S.resumeStep([old], { x: ["completed", "cancelled"] }, now), { kind: "open" });
+  assert.deepEqual(S.resumeStep([old], { x: ["completed", "unresolved"] }, now), { kind: "settling" });
+});

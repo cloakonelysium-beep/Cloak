@@ -80,12 +80,31 @@ export const CARD_MIN = 10_000_000n;
 export const REQUEST_TTL_MS = 60 * 60_000;
 type Action = { actionId: string; createdAt: string };
 const made = (a: Action) => Date.parse(a.createdAt) || 0;
-/** While a pending action could still be paid, resuming waits (never resend one that may still complete). Once every
- *  pending action is past its hour, Resume reopens the window, whose own recovery completes or cancels it. Returns
- *  when the wait ends, or null to open now. */
+/** While a pending action could still be paid, resuming waits (never resend one that may still complete). Returns
+ *  when the wait ends, or null when no pending action is still within its hour. */
 export function resumeWaitsUntil(pending: readonly Action[], now = Date.now()): number | null {
   const live = pending.map(made).filter((t) => now - t < REQUEST_TTL_MS);
   return live.length ? Math.max(...live) + REQUEST_TTL_MS : null;
+}
+/** Spicenet's answer for one intent of an action (relayerService.getIntentRecoveryStatus). */
+export type Recovery = "completed" | "cancelled" | "unresolved";
+export type ResumeStep = { kind: "wait"; until: number } | { kind: "settling" } | { kind: "delivered" } | { kind: "open" };
+/**
+ * Whether Resume may reopen the window (Matt, Nov 20). An expired request isn't cancelled by reopening: Spicenet's
+ * backend cancels it, and the wallet's "pending" list can lag behind, so for every pending action past its hour
+ * Spicenet's recovery status decides:
+ *  - any still within its hour: wait;
+ *  - any expired one unresolved (or unknown): Spicenet is still settling it, don't reopen;
+ *  - every expired one completed: it was delivered, the receipt check will show it;
+ *  - otherwise (cancelled, so the credit is back in the user's Spicenet account, or nothing pending): reopen.
+ */
+export function resumeStep(pending: readonly Action[], recovery: Readonly<Record<string, readonly Recovery[] | undefined>>, now = Date.now()): ResumeStep {
+  const until = resumeWaitsUntil(pending, now);
+  if (until) return { kind: "wait", until };
+  const expired = pending.map((a) => recovery[a.actionId]);
+  if (expired.some((r) => !r || r.length === 0 || r.includes("unresolved"))) return { kind: "settling" };
+  if (expired.length && expired.every((r) => r!.every((x) => x === "completed"))) return { kind: "delivered" };
+  return { kind: "open" };
 }
 /** This deposit's actions among the guest wallet's: those made since it started (a minute's slack for clocks). */
 export function actionsSince(actions: readonly Action[], since: number): string[] {

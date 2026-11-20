@@ -21,8 +21,9 @@
  *  4. Interrupted deposits reopen this same window (resume): the same guest session, the same receive address, the same
  *     depositBatches, with skipRecovery={false} so Spice Flow finds the funded balance and nobody pays again. If an
  *     action was already submitted, Spicenet's record of the guest wallet's actions is checked first: while a pending one
- *     can still be paid (its request lives an hour) nothing reopens. Past that hour an unpaid request can't complete and
- *     its money returns only when it is cancelled (Matt, Nov 20), so the window reopens and its recovery takes over.
+ *     can still be paid (its request lives an hour) nothing reopens. Past that hour Spicenet's backend cancels an unpaid
+ *     request (reopening doesn't, and the pending list can lag), so its recovery status decides: settling (wait),
+ *     delivered, or cancelled with the credit back, and only then does the window reopen (Matt, Nov 20).
  *     This deposit's Spicenet action ids are kept for support.
  *
  * Limits (Cloak's, for now): card checkout only, at most CARD_CAP (500 USDC), at least CARD_MIN,
@@ -33,7 +34,7 @@
  * and nothing here holds Cloak funds.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PrivyProvider, useGuestAccounts, usePrivy, useWallets } from "@privy-io/react-auth";
+import { PrivyProvider, useCreateWallet, useGuestAccounts, usePrivy, useWallets } from "@privy-io/react-auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { arbitrum, base, bsc, mainnet, optimism, polygon } from "viem/chains";
@@ -54,7 +55,7 @@ import { SPICENET } from "@cloakely/sdk";
 import { RPC_URL, chain } from "./config";
 import { checkDelivery } from "./spicenet-lock";
 import { SpiceWait } from "./spicenetWait";
-import { CARD_CAP, CARD_MIN, actionsSince, resumeWaitsUntil } from "./spicenet-state";
+import { CARD_CAP, CARD_MIN, actionsSince, resumeStep, type Recovery, type ResumeStep } from "./spicenet-state";
 import type { SwapperEmbedFactory } from "@spicenet-io/spiceflow-ui";
 
 const NET = SPICENET[99901];
@@ -97,7 +98,7 @@ function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, on
   const asked = useRef(false);
   const [err, setErr] = useState("");
   // a resume of a deposit whose action may be running first asks Spicenet ("check")
-  const [step, setStep] = useState<"check" | "busy" | "deposit">(resume?.checkFirst ? "check" : "deposit");
+  const [step, setStep] = useState<"check" | "deposit" | Exclude<ResumeStep["kind"], "open">>(resume?.checkFirst ? "check" : "deposit");
   const [waitUntil, setWaitUntil] = useState<number | null>(null);
   useEffect(() => {
     if (!ready || authenticated || asked.current) return;
@@ -105,6 +106,15 @@ function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, on
     createGuestAccount().catch((e) => setErr(e instanceof Error ? e.message : "Couldn't start a Spicenet session."));
   }, [ready, authenticated, createGuestAccount]);
   const embedded = walletsReady ? wallets.find((w) => w.walletClientType === "privy") : undefined;
+  // The guest's wallet is made here, once Privy's wallets are ready, rather than by Privy at login: made at login,
+  // before Privy's wallet frame is up, Privy shows its own "Creating your wallet" and "Welcome" screens over the page.
+  const { createWallet } = useCreateWallet();
+  const creating = useRef(false);
+  useEffect(() => {
+    if (!ready || !authenticated || !walletsReady || embedded || creating.current) return;
+    creating.current = true;
+    createWallet().catch((e) => setErr(e instanceof Error ? e.message : "Couldn't make a Spicenet wallet."));
+  }, [ready, authenticated, walletsReady, embedded]);
   const guest = embedded?.address as Address | undefined;
   const otherGuest = !!(resume?.guest && guest && resume.guest.toLowerCase() !== guest.toLowerCase());
 
@@ -112,23 +122,27 @@ function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, on
     if (guest && !otherGuest) onGuest(guest);
   }, [guest, otherGuest]);
 
-  // Before resuming, Spicenet's own record of the guest wallet's actions decides. While a pending one can still be paid
-  // (its request lives an hour), nothing reopens: never resend an action that may still complete. Once every pending
-  // one is past that hour it can't complete, and its money comes back only when it is cancelled (Matt, Nov 20), so the
-  // window reopens and its own recovery (skipRecovery={false}) completes or cancels it.
+  // Before resuming, Spicenet decides (Matt, Nov 20). While a pending request can still be paid (its hour), nothing
+  // reopens: never resend one that may still complete. Past its hour, reopening doesn't cancel it (Spicenet's backend
+  // does) and the pending list can lag, so each expired action's recovery status decides (spicenet-state.ts
+  // resumeStep): still settling, delivered, or cancelled with the credit back, in which case the window reopens.
   useEffect(() => {
     if (step !== "check" || !guest || otherGuest) return;
     let live = true;
-    relayerService
-      .getWalletActions(guest, { pendingOnly: true })
-      .then((pending) => {
-        if (!live) return;
-        onActions(actionsSince(pending, since));
-        const until = resumeWaitsUntil(pending);
-        setWaitUntil(until);
-        setStep(until ? "busy" : "deposit");
-      })
-      .catch(() => live && setErr("Couldn't reach Spicenet to check this deposit. Try again in a moment."));
+    (async () => {
+      const pending = await relayerService.getWalletActions(guest, { pendingOnly: true });
+      onActions(actionsSince(pending, since));
+      const recovery: Record<string, Recovery[]> = {};
+      for (const a of pending) {
+        if (Date.now() - (Date.parse(a.createdAt) || 0) < 60 * 60_000) continue; // still within its hour: no need to ask
+        const n = Math.max(1, a.intents?.length ?? 0);
+        recovery[a.actionId] = await Promise.all(Array.from({ length: n }, (_, i) => relayerService.getIntentRecoveryStatus(a.actionId, i).catch(() => "unresolved" as const)));
+      }
+      if (!live) return;
+      const next = resumeStep(pending, recovery);
+      setWaitUntil(next.kind === "wait" ? next.until : null);
+      setStep(next.kind === "open" ? "deposit" : next.kind);
+    })().catch(() => live && setErr("Couldn't reach Spicenet to check this payment. Try again in a moment."));
     return () => {
       live = false;
     };
@@ -171,7 +185,7 @@ function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, on
   if (!ready || !authenticated || !guest) return <SpiceWait text="Starting a private session" onClose={onClose} />;
   if (otherGuest) return <SpiceWait busy={false} text="This payment was started in another Spicenet session, which this browser no longer has. Its funds stay with that session, and nothing new was charged." onClose={onClose} />;
   if (step === "check") return <SpiceWait text="Checking your payment with Spicenet" onClose={onClose} />;
-  if (step === "busy")
+  if (step === "wait")
     return (
       <SpiceWait
         busy={false}
@@ -179,6 +193,10 @@ function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, on
         onClose={onClose}
       />
     );
+  if (step === "settling")
+    return <SpiceWait busy={false} text="Spicenet is settling an expired delivery for this payment. Its money goes back to your Spicenet balance, then you can resume here. If this lasts more than a day, copy the payment's support details and send them to us." onClose={onClose} />;
+  if (step === "delivered")
+    return <SpiceWait busy={false} text="Spicenet says this payment was delivered. It shows here as soon as it reaches your receive address." onClose={onClose} />;
   return (
     <>
     {/* the waiting panel fades out as Spicenet's window opens over it */}
@@ -225,7 +243,7 @@ const cardOnly: SwapperEmbedFactory = async (options) => {
 /** Spicenet's deposit window, mounted when a deposit starts or resumes. Elysium mainnet only (the caller checks). */
 export default function SpiceFunding(props: SpiceFundingProps) {
   return (
-    <PrivyProvider appId={NET.privyAppId} config={{ embeddedWallets: { ethereum: { createOnLogin: "users-without-wallets" } }, supportedChains: [...CHAINS], defaultChain: ELYSIUM }}>
+    <PrivyProvider appId={NET.privyAppId} config={{ embeddedWallets: { ethereum: { createOnLogin: "off" }, showWalletUIs: false }, supportedChains: [...CHAINS], defaultChain: ELYSIUM }}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
           <SpiceFlowProvider provider="privy" mode="7702" network="mainnet" privyAppId={NET.privyAppId} appName="Cloak" rpcOverrides={{ 99901: RPC_URL }} swapper={{ enabled: true, embedFactory: cardOnly }}>
