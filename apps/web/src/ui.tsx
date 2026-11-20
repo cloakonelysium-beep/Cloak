@@ -22,7 +22,8 @@ export function Logo({ size = 28, inverse }: { size?: number; inverse?: boolean 
 }
 
 /** Coin icon: the official HYPE mark, the Cloak hood for $CLOAK, letters for other launch tokens. */
-export function TokenIcon({ symbol, size = 28, token }: { symbol: string; size?: number; token?: string }) {
+/** A token's icon; `chain` (a logo URL) adds the network's mark in the corner, for coins on other chains. */
+export function TokenIcon({ symbol, size = 28, token, chain }: { symbol: string; size?: number; token?: string; chain?: string }) {
   const meta = useTokenMeta(token);
   const builtin = (token ? LOGO_BY_ADDRESS[token.toLowerCase()] : undefined)
     ?? ({ HYPE: "/tokens/hype.svg", WHYPE: "/tokens/hype.svg", CLOAK: "/tokens/cloak.svg" } as Record<string, string>)[symbol.toUpperCase()]
@@ -32,8 +33,10 @@ export function TokenIcon({ symbol, size = 28, token }: { symbol: string; size?:
     ?? (!token ? ({ ETH: "/tokens/eth.svg", USDT: "/tokens/usdt.svg", USDT0: "/tokens/usdt.svg", BNB: "/tokens/bnb.svg", TRX: "/tokens/trx.svg", SOL: "/tokens/sol.svg", BTC: "/tokens/btc.svg", MON: "/tokens/mon.png", KNTQ: "/tokens/kntq.png" } as Record<string, string>)[symbol.toUpperCase()] : undefined);
   // HYPE always uses its official mark; launch tokens use the image uploaded at launch, if any
   const src = builtin === "/tokens/hype.svg" ? builtin : meta?.image ?? builtin;
-  if (src) return <img className="token-icon" src={src} alt={symbol} width={size} height={size} style={{ objectFit: "cover" }} />;
-  return <span className="token-icon token-letters" style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>{symbol.slice(0, 2)}</span>;
+  const icon = src ? <img className="token-icon" src={src} alt={symbol} width={size} height={size} style={{ objectFit: "cover" }} /> : <span className="token-icon token-letters" style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>{symbol.slice(0, 2)}</span>;
+  if (!chain) return icon;
+  const b = Math.max(12, Math.round(size * 0.46));
+  return <span className="token-icon-wrap" style={{ width: size, height: size }}>{icon}<img className="chain-badge" src={chain} alt="" width={b} height={b} /></span>;
 }
 
 const P = (d: string) => (props: { size?: number }) => (

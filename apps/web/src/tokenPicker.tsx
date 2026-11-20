@@ -64,7 +64,7 @@ export function TokenPicker<K extends string>({ options, value, onChange, search
 }
 
 /** One token in the search sheet. `key` is "HYPE" or the token's address; `bal` is the private balance, if any. */
-export type SheetToken = { key: string; symbol: string; name: string; iconToken?: Address; bal?: string; tag?: string; off?: string };
+export type SheetToken = { key: string; symbol: string; name: string; iconToken?: Address; /** the network's logo, for coins on other chains */ chain?: string; bal?: string; tag?: string; off?: string };
 
 /**
  * The token search sheet for swapping and bridging: a search box (name, symbol or contract address), quick picks for
@@ -104,7 +104,7 @@ export function TokenSheet({ title, tokens, value, quick = [], filters = [], pla
           {shown.length === 0 && <div className="small mute" style={{ padding: "28px 12px", textAlign: "center" }}>No token matches "{q.trim()}".</div>}
           {shown.map((t) => (
             <button type="button" role="option" aria-selected={t.key === value} aria-disabled={!!t.off} key={t.key} className={`asset-row ${t.key === value ? "on" : ""} ${t.off ? "off" : ""}`} onClick={() => pick(t)}>
-              <TokenIcon symbol={t.symbol} token={t.iconToken} size={36} />
+              <TokenIcon symbol={t.symbol} token={t.iconToken} chain={t.chain} size={36} />
               <div className="nm"><b>{t.symbol}{t.tag && <span className="chip">{t.tag}</span>}</b><span className="xs mute">{t.off ?? (t.key.startsWith("0x") ? `${t.name} · ${t.key.slice(0, 6)}…${t.key.slice(-4)}` : t.name)}</span></div>
               {t.bal !== undefined && <div className="amt"><span className="mono">{t.bal}</span></div>}
             </button>

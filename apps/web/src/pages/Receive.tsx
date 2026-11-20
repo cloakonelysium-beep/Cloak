@@ -11,7 +11,7 @@ import { Link, useRoute } from "../router";
 import { Icon } from "../ui";
 import { QR } from "../qr";
 import { every } from "../every";
-import { BridgeIn, RelayDepositAddress, relayReserved } from "../bridge";
+import { BridgeIn, ELYSIUM_LOGO, RelayDepositAddress, chainLogo } from "../bridge";
 import { relayServes } from "@cloakely/sdk";
 import { SpiceBridge, SpicenetDocs, useCardLimit } from "../spicenet";
 import { CloakCard } from "../cloakCard";
@@ -26,6 +26,8 @@ interface Issued {
   n: number;
   address: Address;
   at: number;
+  /** made for a Relay deposit address (Receive's "another network"): delivers there only, never shown as the Elysium address */
+  relay?: boolean;
 }
 
 const load = async (p: GloamPrivate): Promise<Issued[]> => {
@@ -94,13 +96,13 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
   const { refresh } = usePrivateBalances();
   const delivered = useRef(-1);
 
-  async function fresh(p: GloamPrivate, list: Issued[]): Promise<Address | undefined> {
+  async function fresh(p: GloamPrivate, list: Issued[], relay = false): Promise<Address | undefined> {
     setBusy(true);
     setErr("");
     try {
       const n = list.reduce((m, x) => Math.max(m, x.n + 1), 0);
       const address = await p.receiveAddress(n);
-      const next = [...list, { n, address, at: Math.floor(Date.now() / 1000) }];
+      const next = [...list, { n, address, at: Math.floor(Date.now() / 1000), ...(relay ? { relay: true } : {}) }];
       await sealBox(p, "receive", JSON.stringify(next));
       setIssued(next);
       return address;
@@ -116,8 +118,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
     (async () => {
       const list = await load(priv);
       // no address yet, or every one is held for a Relay transfer: make one for Elysium
-      const held = relayReserved();
-      if (!list.length || list.every((x) => held.has(x.address.toLowerCase()))) return fresh(priv, list);
+      if (!list.some((x) => !x.relay)) return fresh(priv, list);
       setIssued(list);
     })();
   }, [priv]);
@@ -191,8 +192,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
       </>
     );
   // the newest address not held for a Relay deposit (those are for that one payment only)
-  const reserved = relayReserved();
-  const cur = issued ? [...issued].reverse().find((x) => !reserved.has(x.address.toLowerCase())) : undefined;
+  const cur = issued ? [...issued].reverse().find((x) => !x.relay) : undefined;
   const curState = cur ? state[cur.address] : undefined;
   const curUsed = !!curState && (curState.waiting.length > 0 || curState.delivered.length > 0);
   const copy = () => {
@@ -202,7 +202,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
     setTimeout(() => setCopied(false), 1500);
   };
   // where a bridge delivers: always a new address, held for that one transfer, so it can't be linked to anything else
-  const bridgeTo = async (_avoid: string[]): Promise<Address | undefined> => (priv ? fresh(priv, await load(priv)) : undefined);
+  const bridgeTo = async (_avoid: string[]): Promise<Address | undefined> => (priv ? fresh(priv, await load(priv), true) : undefined);
   const collect = () => priv && load(priv).then((l) => collectIssued(priv, l)).then(() => refresh()).catch(() => {});
 
   if (view === "bridge")
@@ -237,8 +237,8 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
       <div className="grid">
         <div className="card">
           {RELAY_LIVE && <div className="seg" role="tablist" aria-label="Network" style={{ marginBottom: 16 }}>
-            <button role="tab" aria-selected={!other} className={other ? "" : "on"} onClick={() => setOther(false)}>Elysium</button>
-            <button role="tab" aria-selected={other} className={other ? "on" : ""} onClick={() => setOther(true)}>Another network</button>
+            <button role="tab" aria-selected={!other} className={other ? "" : "on"} onClick={() => setOther(false)}><span className="net-tab"><img src={ELYSIUM_LOGO} alt="" width={18} height={18} />Elysium</span></button>
+            <button role="tab" aria-selected={other} className={other ? "on" : ""} onClick={() => setOther(true)}><span className="net-tab"><span className="net-stack">{[1, 42161, 8453].map((id) => <img key={id} src={chainLogo(id)} alt="" width={16} height={16} />)}</span>Another network</span></button>
           </div>}
           {other && RELAY_LIVE ? (
             <>
@@ -291,7 +291,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
                 const st = state[x.address];
                 return (
                   <div key={x.n} className="pay-row">
-                    <div><b className="mono">{x.address.slice(0, 8)}…{x.address.slice(-6)}</b><span className="xs mute">#{x.n + 1} · {new Date(x.at * 1000).toLocaleDateString()}</span></div>
+                    <div><b className="mono">{x.address.slice(0, 8)}…{x.address.slice(-6)}</b><span className="xs mute">#{x.n + 1} · {new Date(x.at * 1000).toLocaleDateString()}{x.relay ? " · via Relay" : ""}</span></div>
                     {st?.waiting.length ? <span className="pill">Arriving</span> : st?.delivered.length ? <span className="pill ok">{st.delivered.length === 1 ? st.delivered[0].amount : `${st.delivered.length} payments`}</span> : <span className="xs mute">Nothing yet</span>}
                   </div>
                 );

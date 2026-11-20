@@ -17,6 +17,11 @@ const PREVIEW = import.meta.env.VITE_BRIDGE_PREVIEW === "1";
 const DEST = relayServes(CHAIN_ID) ? CHAIN_ID : 99901;
 const LIVE = relayServes(CHAIN_ID);
 
+/** Network logos (Relay's chain icons, kept in /chains), and Elysium's own mark. */
+const CHAIN_LOGOS = new Set([42161, 8453, 1, 56, 10, 137, 43114, 143, 130, 59144, 480, 146, 5000, 80094, 324, 534352, 57073]);
+export const ELYSIUM_LOGO = "/brand/elysium.svg";
+export const chainLogo = (id: number): string | undefined => (id === 99901 || id === 99801 ? ELYSIUM_LOGO : id === 999 ? "/tokens/hype.svg" : CHAIN_LOGOS.has(id) ? `/chains/${id}.png` : undefined);
+
 /** A bridge on its way, kept on this device so a reload keeps following it. */
 interface Pending {
   requestId: string;
@@ -38,9 +43,6 @@ const savePending = (x: Pending[]) => {
     localStorage.setItem(KEY, JSON.stringify(x.slice(-20)));
   } catch {}
 };
-
-/** Receive addresses a Relay transfer still delivers to (waiting or moving), kept for that one payment. */
-export const relayReserved = (): Set<string> => new Set(loadPending().filter((p) => p.stage === "waiting" || p.stage === "moving").map((p) => p.to.toLowerCase()));
 
 const STAGE: Record<RelayStage | "in", string> = {
   waiting: "Waiting for your deposit",
@@ -237,7 +239,7 @@ export function BridgeIn({ recipient, onArrived }: { recipient: (avoid: string[]
   const canWallet = src.kind === "evm" && !!wallet?.account && !!provider;
   const ready = amount > 0n && refundOk && !busy;
   const srcKey = `${chainId}:${token.symbol}`;
-  const sources: SheetToken[] = RELAY_SOURCES.filter((c) => !c.needsKey).flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}`, bal: bals[`${c.id}:${t.symbol}`] })));
+  const sources: SheetToken[] = RELAY_SOURCES.filter((c) => !c.needsKey).flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}`, chain: chainLogo(c.id), bal: bals[`${c.id}:${t.symbol}`] })));
   const needRefund = !(src.kind === "evm" && wallet?.account);
   const refundField = (
     <div className="field" style={{ margin: needRefund ? "10px 0 0" : 0 }}><label><span>Refund address on {src.name}{!needRefund ? ", your wallet unless you change it" : ""}</span></label>
@@ -247,13 +249,13 @@ export function BridgeIn({ recipient, onArrived }: { recipient: (avoid: string[]
   return (
     <div className="swap bridge">
       {sheet === "from" && <TokenSheet title="Send from" tokens={sources} value={srcKey} placeholder="Search a token or a network" filters={RELAY_SOURCES.filter((c) => !c.needsKey).slice(0, 6).map((c) => c.name)} onPick={(k) => { const [c, sym] = k.split(":"); setChainId(Number(c)); setSymbol(sym); }} onClose={() => setSheet(null)} />}
-      {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium" }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
+      {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium", chain: ELYSIUM_LOGO }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
       {!LIVE && <div className="summary small" style={{ margin: "0 0 10px" }}>Preview. Quotes are live from Relay into Elysium mainnet, and nothing is sent from this network.</div>}
       <div className="swap-box">
         <div className="k"><span>You send</span><span>{bal !== undefined ? <>Balance {showBalance(bal, token.decimals)}{bal > 0n && token.address !== "0x0000000000000000000000000000000000000000" && <button className="link" style={{ marginLeft: 8, background: "none", border: 0, padding: 0, font: "inherit", cursor: "pointer" }} onClick={() => setAmt(formatUnits(bal, token.decimals))}>Max</button>}</> : src.name}</span></div>
         <div className="amt">
           <input value={amt} onChange={(e) => setAmt(e.target.value)} inputMode="decimal" placeholder="0" aria-label="Amount" />
-          <button className="token-sel two" onClick={() => setSheet("from")} aria-haspopup="dialog"><TokenIcon symbol={token.symbol} /><span>{token.symbol}<small>{src.name}</small></span><Icon.chev size={14} /></button>
+          <button className="token-sel two" onClick={() => setSheet("from")} aria-haspopup="dialog"><TokenIcon symbol={token.symbol} chain={chainLogo(src.id)} /><span>{token.symbol}<small>{src.name}</small></span><Icon.chev size={14} /></button>
         </div>
       </div>
       <div className="flip still" aria-hidden="true"><Icon.arrowDown /></div>
@@ -261,7 +263,7 @@ export function BridgeIn({ recipient, onArrived }: { recipient: (avoid: string[]
         <div className="k"><span>You receive</span><span>Private balance</span></div>
         <div className="amt">
           <input value={q ? Number(q.receive.formatted).toPrecision(5).replace(/\.?0+$/, "") : ""} readOnly placeholder="0" aria-label="Estimated amount received" />
-          <button className="token-sel two" onClick={() => dests.length > 1 && setSheet("to")} style={dests.length > 1 ? undefined : { cursor: "default" }}><TokenIcon symbol={dest} /><span>{dest}<small>Elysium</small></span>{dests.length > 1 && <Icon.chev size={14} />}</button>
+          <button className="token-sel two" onClick={() => dests.length > 1 && setSheet("to")} style={dests.length > 1 ? undefined : { cursor: "default" }}><TokenIcon symbol={dest} chain={ELYSIUM_LOGO} /><span>{dest}<small>Elysium</small></span>{dests.length > 1 && <Icon.chev size={14} />}</button>
         </div>
       </div>
       {needRefund && refundField}
@@ -394,18 +396,18 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
-  const sources: SheetToken[] = evm.flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}` })));
+  const sources: SheetToken[] = evm.flatMap((c) => c.tokens.map((t) => ({ key: `${c.id}:${t.symbol}`, symbol: t.symbol, name: `on ${c.name}`, chain: chainLogo(c.id) })));
   const ready = amount > 0n && refundOk && !busy;
 
   return (
     <div className="bridge">
       {sheet === "from" && <TokenSheet title="Coin and network" tokens={sources} value={srcKey} placeholder="Search a coin or a network" filters={evm.slice(0, 6).map((c) => c.name)} onPick={(k) => { setSrcKey(k); setDest(sameOut(k.split(":")[1])); }} onClose={() => setSheet(null)} />}
-      {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium" }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
+      {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium", chain: ELYSIUM_LOGO }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
       <div className="swap-box">
-        <div className="k"><span>You send</span><span>{src.name}</span></div>
+        <div className="k"><span>About how much</span><span>for the estimate</span></div>
         <div className="amt">
           <input value={amt} onChange={(e) => setAmt(e.target.value)} inputMode="decimal" placeholder="0" aria-label="Amount to send" />
-          <button className="token-sel two" onClick={() => setSheet("from")} aria-haspopup="dialog"><TokenIcon symbol={token.symbol} /><span>{token.symbol}<small>{src.name}</small></span><Icon.chev size={14} /></button>
+          <button className="token-sel two" onClick={() => setSheet("from")} aria-haspopup="dialog"><TokenIcon symbol={token.symbol} chain={chainLogo(src.id)} /><span>{token.symbol}<small>{src.name}</small></span><Icon.chev size={14} /></button>
         </div>
       </div>
       <div className="flip still" aria-hidden="true"><Icon.arrowDown /></div>
@@ -413,10 +415,10 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
         <div className="k"><span>You receive</span><span>Private balance</span></div>
         <div className="amt">
           <input value={q ? Number(q.receive.formatted).toPrecision(5).replace(/\.?0+$/, "") : ""} readOnly placeholder="0" aria-label="Estimated amount received" />
-          <button className="token-sel two" onClick={() => dests.length > 1 && setSheet("to")} style={dests.length > 1 ? undefined : { cursor: "default" }}><TokenIcon symbol={dest} /><span>{dest}<small>Elysium</small></span>{dests.length > 1 && <Icon.chev size={14} />}</button>
+          <button className="token-sel two" onClick={() => dests.length > 1 && setSheet("to")} style={dests.length > 1 ? undefined : { cursor: "default" }}><TokenIcon symbol={dest} chain={ELYSIUM_LOGO} /><span>{dest}<small>Elysium</small></span>{dests.length > 1 && <Icon.chev size={14} />}</button>
         </div>
       </div>
-      <div className="field" style={{ margin: "10px 0 0" }}><label><span>Refund address on {src.name}{wallet?.account && !refund ? ", your wallet unless you change it" : ""}</span></label>
+      <div className="field" style={{ margin: "10px 0 0" }}><label><span>Refund address on {src.name}, a wallet you control{wallet?.account && !refund ? " (yours unless you change it)" : ""}</span></label>
         <input className="input mono" value={refund} onChange={(e) => setRefund(e.target.value)} placeholder={wallet?.account?.address ?? "0x…"} aria-label="Refund address" />
       </div>
       {refundTo && !refundOk && <div className="err">That isn't an address on {src.name}.</div>}
@@ -426,13 +428,13 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
       {err && <div className="err">{err}</div>}
       {q && q.depositAddress && (
         <div style={{ display: "grid", gap: 10, justifyItems: "center", textAlign: "center", marginTop: 14 }}>
-          <div className="small">Send exactly <b>{q.send.formatted} {q.send.token.symbol}</b> on <b>{q.send.chain}</b> to</div>
+          <div className="small">Send <b>{q.send.token.symbol}</b> on <b>{q.send.chain}</b> to</div>
           <QR text={q.depositAddress} size={168} label="Deposit address" />
           <div className="mono" style={{ wordBreak: "break-all" }}>{q.depositAddress}</div>
           <button className="btn btn-ghost" onClick={() => copy(q.depositAddress!)}><Icon.copy size={16} />{copied ? "Copied" : "Copy address"}</button>
-          <div className="warnbox" style={{ textAlign: "left" }}>For this one transfer only. Withdraw exactly this amount of {q.send.token.symbol} on the {q.send.chain} network. Another network or coin may not arrive.</div>
+          <div className="warnbox" style={{ textAlign: "left" }}>Send on <b>{q.send.chain}</b> only. Any amount works: Relay prices what actually arrives, so more or less than {q.send.formatted} {q.send.token.symbol} is fine. An amount too small to cover Relay's fee is refunded to your refund address. The address keeps working for later deposits, all landing in your private balance.</div>
           <div className="summary" style={{ width: "100%" }}>
-            <div className="row"><span className="mute">You get privately</span><span className="mono">about {Number(q.receive.formatted).toPrecision(5)} {q.receive.token.symbol}</span></div>
+            <div className="row"><span className="mute">For {q.send.formatted} {q.send.token.symbol} you get</span><span className="mono">about {Number(q.receive.formatted).toPrecision(5)} {q.receive.token.symbol}</span></div>
             <div className="row"><span className="mute">Relay's fee</span><span className="mono">${q.feeUsd.toFixed(2)}</span></div>
             <div className="row"><span className="mute">Time after it's sent</span><span>{q.timeSec <= 60 ? "About a minute" : `About ${Math.ceil(q.timeSec / 60)} min`}</span></div>
           </div>
@@ -450,8 +452,9 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
       )}
       <Powered by="Relay" logo="/partners/relay.png" />
       <div className="more-list">
-        <More title="Risks">Relay runs this, not Cloak. While your funds are with Relay, Cloak can't move, speed up or recover them. If it fails, Relay refunds to your refund address. Send exactly the quoted amount on the quoted network.</More>
-        <More title="What is public and what isn't">Relay delivers to a fresh receive address on Elysium, and Cloak moves it into your private balance. The exchange withdrawal is public, but it isn't tied to your wallet.</More>
+        <More title="Risks">Relay runs this, not Cloak. While your funds are with Relay, Cloak can't move, speed up or recover them. If it fails, Relay refunds to your refund address, so use a wallet you control there, never an exchange deposit address. Coins Relay doesn't support on that network aren't processed.</More>
+        <More title="What is public and what isn't">Relay delivers to a new receive address on Elysium, and Cloak moves it into your private balance. The exchange withdrawal is public, but it isn't tied to your wallet. Later deposits to the same address land at the same receive address, so they can be linked to each other.</More>
+        <More title="If you close this page">Nothing is lost. Relay delivers on its own once the deposit lands. The money waits at your receive address and moves into your private balance the next time you open Cloak on this device.</More>
       </div>
     </div>
   );
