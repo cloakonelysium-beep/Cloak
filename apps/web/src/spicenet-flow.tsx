@@ -67,6 +67,9 @@ const queryClient = new QueryClient();
 /** Spicenet's own fee addresses (spiceflow-core): the only recipients a delivery may have besides the receive address. */
 const FEE_TO = [SPICE_GAS_FEE_RECIPIENT, SPICE_PLATFORM_FEE_RECIPIENT, SPICE_COMBINED_FEE_RECIPIENT];
 const decode = (data: Hex) => decodeFunctionData({ abi: spicenetAbi, data });
+/** Fee sanity: Spicenet's fees in a delivery may be at most 1 USDC plus 2% of what reaches the receive address (real
+ *  fees are a few cents plus 0.1%). Catches a plan that would send most of a payment to fees. */
+const FEE_LIMIT = { fixed: 1_000_000n, bps: 200n };
 
 export interface SpiceFundingProps {
   /** The Cloak receive address on Elysium mainnet for this deposit only (the same one on every resume). */
@@ -170,7 +173,7 @@ function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, on
       // escrow's balance: Spicenet's rebalancer refills it from other chains (Matt, Nov 20)
       if (context.destinationAmount > CARD_CAP) throw new Error(`Deposits through Spicenet are limited to ${formatUnits(CARD_CAP, NET.usdcDecimals)} USDC for now. Enter a smaller amount.`);
       const plan = await quoteSpicenetWithdrawalBatches({ amount: context.destinationAmount, recipient: to, token: NET.usdc, chainId: 99901, userAddress: guest, estimate: execution.estimate });
-      return checkDelivery(plan, { to, usdc: NET.usdc, feeRecipients: FEE_TO, decode }) as typeof plan;
+      return checkDelivery(plan, { to, usdc: NET.usdc, feeRecipients: FEE_TO, decode, feeLimit: FEE_LIMIT }) as typeof plan;
     },
     [guest, to, execution.estimate],
   );

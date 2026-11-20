@@ -115,3 +115,21 @@ test("what the check can't read is refused: an unknown spicenet call, a call on 
   feesOnly[1].tokenTransfers = feesOnly[1].tokenTransfers.slice(1);
   assert.throws(() => checkDelivery(feesOnly, opts), /nothing for your Cloak receive address/);
 });
+
+test("fees: real ones pass the limit, a plan sending most of the payment to fees is refused", async () => {
+  const limit = { fixed: 1_000_000n, bps: 200n };
+  // the SDK's real plan with real-sized fees passes
+  assert.ok(checkDelivery(await quote(), { ...opts, feeLimit: limit }));
+  // a plan where Spicenet's gas fee takes 0.9 of the 1 USDC: refused (under the 1 USDC floor alone it would pass, so
+  // the floor is lowered here to prove the percentage bites)
+  const greedy = await quote({ estimate: async () => ({ intents: [{ batches: [{ chainId: 99901, quotedAmount: "1000000", totalDebit: "1000000", feeBreakdown: { spicenetFee: "0", gasFee: "900000", bridgeFee: "0" } }] }] }) });
+  assert.throws(() => checkDelivery(greedy, { ...opts, feeLimit: { fixed: 10_000n, bps: 200n } }), /more to fees than Cloak allows/);
+  // without a limit the same plan only has to pay the receive address something
+  assert.ok(checkDelivery(greedy, opts));
+});
+test("fees: the percentage is applied exactly, batch by batch", async () => {
+  // each batch pays 987,000 to the receive address and 13,000 in fees (8,000 gas, 5,000 platform)
+  const plan = await quote();
+  assert.ok(checkDelivery(plan, { ...opts, feeLimit: { fixed: 0n, bps: 140n } })); // 1.4% of 987,000 = 13,818 >= 13,000
+  assert.throws(() => checkDelivery(plan, { ...opts, feeLimit: { fixed: 0n, bps: 130n } }), /more to fees/); // 12,831 < 13,000
+});
