@@ -4,7 +4,7 @@ A checklist for a quick "is everything healthy?" pass. Any session (or person) c
 ten minutes. Each check says what healthy looks like and what to do if it isn't. Nothing here changes anything:
 every command only reads.
 
-Last full run: Nov 17, 2026 (results at the bottom).
+Last full run: Nov 20, 2026 (results at the bottom).
 
 ## What is running where
 
@@ -99,6 +99,20 @@ Healthy: both answer, and a second run a minute later shows a higher block.
 The escrow `0x7839287eAc1Db87b53aF06Be2A704f25F2186102` on Elysium mainnet pays every Spicenet deposit. Its USDC
 (`0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65`) balance caps one deposit; Spicenet tops it up automatically. Below
 about 50 USDC, tell Spicenet.
+
+## Results, Nov 20, 2026
+
+| Check | Result |
+|---|---|
+| Mainnet keeper | Healthy. Woke in 42 s, then ticking every few seconds. Chain 99901, relay and schedule on, commit 2066e61 |
+| Testnet keeper | Healthy. Took over 90 s to wake on the first call, then 0.3 s, ticking. Chain 99801 |
+| Render | Both live, not suspended, last deploy Nov 19 21:43 UTC |
+| Keeper gas | Mainnet 0.057 HYPE (top up below 0.03), testnet 0.69 HYPE |
+| Vercel | Newest Production deploy Ready. Last 24h: 1,372 requests, 67 page views |
+| Mainnet functions | `/api/tokenlist` 200 |
+| Testnet functions | `/api/tokenlist` still 503 (as Nov 17: testnet only, the feed for wallets and partners) |
+| Chains | Both answering. Mainnet block 8,655,415, testnet 30,638,631 |
+| Spicenet escrow | 187.21 USDC, unchanged since Nov 18: no Spicenet payout since then, so no card deposit has been delivered to a Cloak address yet |
 
 ## Results, Nov 17, 2026
 
