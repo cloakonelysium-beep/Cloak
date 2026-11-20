@@ -242,7 +242,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
           </div>}
           {other && RELAY_LIVE ? (
             <>
-              <p className="small soft" style={{ margin: "0 0 12px" }}>For an exchange that doesn't list Elysium. Pick the coin and network it withdraws on, and Relay gives you a one-time address that lands in your private balance.</p>
+              <p className="small soft" style={{ margin: "0 0 12px" }}>For an exchange that doesn't list Elysium. Pick the coin and network it withdraws on, and Relay gives you an address that lands in your private balance. Use it from this device: only this browser moves what arrives into your private balance.</p>
               <RelayDepositAddress recipient={bridgeTo} onArrived={collect} />
             </>
           ) : <>
@@ -265,6 +265,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
             <div className="r"><span>Fee</span><span>None, the relayer pays gas</span></div>
           </div>
           <div className="warnbox" style={{ marginTop: 12 }}>Send on Elysium only. Anything sent on another network, or any other token, can't be recovered.</div>
+          <div className="warnbox" style={{ marginTop: 8 }}><b>Only this device moves payments in.</b> This address is kept on this browser. Payments to it wait safely and move into your private balance when you open Cloak here, not on another device. Don't clear this browser's data while a payment is unclaimed.</div>
           {RELAY_LIVE && <p className="small soft" style={{ marginTop: 10 }}>Exchange doesn't list Elysium? <button className="link" style={{ background: "none", border: 0, padding: 0, font: "inherit", cursor: "pointer" }} onClick={() => setOther(true)}>Use another network</button>.</p>}
           <p className="by" style={{ marginTop: 16 }}>By Cloak's receive contract on Elysium</p>
           </>}
