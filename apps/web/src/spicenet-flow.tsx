@@ -53,6 +53,7 @@ import { spicenetAbi } from "@spicenet-io/spiceflow-core";
 import { SPICENET } from "@cloakely/sdk";
 import { RPC_URL, chain } from "./config";
 import { checkDelivery } from "./spicenet-lock";
+import { SpiceWait } from "./spicenetWait";
 import { CARD_CAP, CARD_MIN, actionsSince, resumeWaitsUntil } from "./spicenet-state";
 import type { SwapperEmbedFactory } from "@spicenet-io/spiceflow-ui";
 
@@ -73,6 +74,8 @@ export interface SpiceFundingProps {
   since: number;
   /** This deposit's Spicenet action ids, as they appear (kept for support). */
   onActions: (ids: string[]) => void;
+  /** Spicenet's own window is opening (the waiting panel can go). */
+  onReady: () => void;
   /** Resuming an interrupted deposit: the guest wallet it ran in, and whether an action may already be on its way. */
   resume?: { guest?: Address; checkFirst: boolean };
   /** The guest embedded wallet this deposit runs in (stored with the deposit, so a resume uses the same one). */
@@ -86,7 +89,7 @@ export interface SpiceFundingProps {
 }
 
 /** Inside the providers: a guest session, its embedded wallet, then the one SpiceDeposit. */
-function Inner({ to, since, onActions, resume, onGuest, onSubmitted, onDelivered, onError, onClose }: SpiceFundingProps) {
+function Inner({ to, since, onActions, onReady, resume, onGuest, onSubmitted, onDelivered, onError, onClose }: SpiceFundingProps) {
   const { ready, authenticated } = usePrivy();
   const { createGuestAccount } = useGuestAccounts();
   const { wallets, ready: walletsReady } = useWallets();
@@ -158,25 +161,28 @@ function Inner({ to, since, onActions, resume, onGuest, onSubmitted, onDelivered
     [guest, to, execution.estimate],
   );
 
-  if (err) return <div className="err">{err}</div>;
-  if (!ready || !authenticated || !guest) return <p className="small mute">Starting Spicenet…</p>;
-  if (otherGuest)
-    return (
-      <p className="small soft">
-        This deposit was started in another Spicenet session, which this browser no longer has. Its funds stay with that session; nothing new was charged.{" "}
-        <button className="link" onClick={onClose}>OK</button>
-      </p>
-    );
-  if (step === "check") return <p className="small mute">Checking with Spicenet…</p>;
+  const opening = !err && !otherGuest && step === "deposit" && ready && authenticated && !!guest;
+  useEffect(() => {
+    if (opening) onReady();
+  }, [opening]);
+
+  // every state before Spicenet's own window shows in the same waiting panel, so nothing lands below the page unseen
+  if (err) return <SpiceWait busy={false} text={err} onClose={onClose} />;
+  if (!ready || !authenticated || !guest) return <SpiceWait text="Starting a private session" onClose={onClose} />;
+  if (otherGuest) return <SpiceWait busy={false} text="This payment was started in another Spicenet session, which this browser no longer has. Its funds stay with that session, and nothing new was charged." onClose={onClose} />;
+  if (step === "check") return <SpiceWait text="Checking your payment with Spicenet" onClose={onClose} />;
   if (step === "busy")
     return (
-      <p className="small soft">
-        Spicenet is still delivering this payment, so there's nothing to resume yet.{" "}
-        {waitUntil ? `If it hasn't arrived by ${new Date(waitUntil).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}, come back and resume.` : "Check back in a little while."}{" "}
-        <button className="link" onClick={onClose}>OK</button>
-      </p>
+      <SpiceWait
+        busy={false}
+        text={`Spicenet is still delivering this payment, so there's nothing to resume yet. ${waitUntil ? `If it hasn't arrived by ${new Date(waitUntil).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}, come back and resume.` : "Check back in a little while."}`}
+        onClose={onClose}
+      />
     );
   return (
+    <>
+    {/* the waiting panel fades out as Spicenet's window opens over it */}
+    <SpiceWait text="Opening the checkout" onClose={onClose} fading />
     <SpiceDeposit
       isOpen
       onClose={onClose}
@@ -201,6 +207,7 @@ function Inner({ to, since, onActions, resume, onGuest, onSubmitted, onDelivered
         onError(e);
       }}
     />
+    </>
   );
 }
 

@@ -5,6 +5,7 @@ import { CHAIN_ID, txLink } from "./config";
 import { publicClient } from "./wallet";
 import { Powered, TELEGRAM } from "./ui";
 import { CloakCard, Mastercard, Visa } from "./cloakCard";
+import { SpiceWait } from "./spicenetWait";
 import { every } from "./every";
 import { friendly } from "./errors";
 import { CARD_CAP, CARD_MIN, MIN_CAPACITY, addActions, arrived, checkFirst, supportDetails, closed, open as following, pendingDeposit, resumable, txHashOf, type Deposit, type Stage } from "./spicenet-state";
@@ -85,6 +86,8 @@ async function check(d: Deposit) {
 
 export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promise<Address>; onArrived: () => void }) {
   const [busy, setBusy] = useState(false);
+  // Spicenet's own window is up (until then the waiting panel shows)
+  const [ready, setReady] = useState(false);
   const [open, setOpen] = useState<{ d: Deposit; resume: boolean } | null>(null);
   const [err, setErr] = useState("");
   const [list, setList] = useState<Deposit[]>(load);
@@ -146,6 +149,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
         save(next);
         return next;
       });
+      setReady(false);
       setOpen({ d, resume: false });
     } catch (e) {
       setErr(friendly(e));
@@ -163,7 +167,10 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
 
   const shown = [...list].reverse().filter((d) => d.stage !== "funding" && (d.stage !== "failed" || resumable(d))).slice(0, 6);
   const canResume = !!pending && resumable(pending);
-  const resume = (d: Deposit) => { setErr(""); setOpen({ d, resume: true }); };
+  const resume = (d: Deposit) => { setErr(""); setReady(false); setOpen({ d, resume: true }); };
+  // the button says what is happening from the first click until Spicenet's window is up
+  const working = busy || (!!open && !ready);
+  const stepText = busy ? "Making your receive address" : open && !ready ? "Opening the checkout" : "";
 
   return (
     <div className="dep-grid">
@@ -189,7 +196,10 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
           </>
         ) : (
           <>
-            <button className="btn btn-ink btn-lg btn-block" style={{ marginTop: 16 }} disabled={busy || !!open} onClick={start}>{CARD_ICON}{busy ? "Starting…" : "Continue to payment"}</button>
+            <button className={`btn btn-ink btn-lg btn-block${working ? " btn-loading" : ""}`} style={{ marginTop: 16 }} disabled={busy || !!open} aria-busy={working} onClick={start}>
+              {working ? <span className="spin" aria-hidden="true" /> : CARD_ICON}
+              {working ? stepText : open ? "Checkout open" : "Continue to payment"}
+            </button>
             <p className="xs mute" style={{ margin: "10px 0 0", textAlign: "center" }}>Opens Spicenet's checkout. Choose <b>With Card</b>.</p>
           </>
         )}
@@ -243,9 +253,10 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
         </div>
       </div>
 
+      {busy && !open && <SpiceWait text="Making your receive address" onClose={() => {}} />}
       {open && (
         <Contained onError={(m) => { setErr(m); shut(open.d.id, "Spicenet didn't start"); }}>
-          <Suspense fallback={null}>
+          <Suspense fallback={<SpiceWait text="Loading the secure checkout" onClose={() => shut(open.d.id)} />}>
             <SpiceFunding
               to={open.d.to}
               since={open.d.at}
@@ -260,6 +271,7 @@ export function SpiceBridge({ newAddress, onArrived }: { newAddress: () => Promi
                 setTimeout(() => follow(open.d.id), 0);
               }}
               onError={(m) => setErr(m)}
+              onReady={() => setReady(true)}
               onClose={() => shut(open.d.id)}
             />
           </Suspense>

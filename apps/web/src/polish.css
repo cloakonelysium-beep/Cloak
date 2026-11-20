@@ -308,3 +308,22 @@
 .ccard-bottom { position: absolute; left: 7%; right: 7%; bottom: 8%; display: flex; justify-content: space-between; align-items: flex-end; }
 .ccard-k { display: block; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
 .ccard-v { display: block; font-size: 13px; letter-spacing: .04em; margin-top: 2px; }
+
+/* Pay by card: the button while it works, and the waiting panel until Spicenet's own window is up */
+.spin { width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn.btn-loading, .btn.btn-loading:disabled { opacity: 1; cursor: progress; position: relative; overflow: hidden; }
+.btn-loading::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--on-ink) 18%, transparent) 50%, transparent 70%) 0 0 / 200% 100%; animation: skel 1.4s linear infinite; }
+.sn-wait { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: color-mix(in srgb, var(--brand-ink) 34%, transparent); backdrop-filter: blur(2px); animation: sn-in .18s var(--ease); }
+.sn-wait.out { animation: sn-out .35s .9s var(--ease) forwards; pointer-events: none; }
+@keyframes sn-in { from { opacity: 0; } }
+@keyframes sn-out { to { opacity: 0; visibility: hidden; } }
+.sn-wait-card { width: min(440px, 100%); background: var(--raised); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 18px 22px 20px; animation: sn-rise .22s var(--ease); }
+@keyframes sn-rise { from { transform: translateY(8px); opacity: 0; } }
+.sn-wait-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sn-wait-x { font-size: 22px; line-height: 1; background: none; border: 0; color: var(--mute); cursor: pointer; }
+.sn-wait-title { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; font: 500 17px var(--font-display); letter-spacing: -0.01em; }
+.sn-wait-title .spin { color: var(--signal); }
+.sn-wait-rows { display: grid; gap: 10px; }
+.sn-wait-row { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) { .spin, .btn-loading::after { animation-duration: 2.4s; } .sn-wait, .sn-wait-card { animation: none; } .sn-wait.out { visibility: hidden; } }
