@@ -1175,3 +1175,13 @@ button.asset-row { cursor: pointer; }
 .relay-more { grid-column: 1; grid-row: 2; }
 .relay-empty { display: grid; place-items: center; min-height: 220px; padding: 20px; text-align: center; border: 1px dashed var(--line); border-radius: var(--r-lg); }
 @media (max-width: 900px) { .relay-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 16px; } .relay-form, .relay-out, .relay-more { grid-column: 1; grid-row: auto; } .relay-empty { min-height: 0; } }
+
+/* Receive, another network: a plain form, not a swap */
+.pick-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 14px; border-radius: var(--r-sm); background: var(--card); border: 1px solid var(--line); color: var(--text); cursor: pointer; text-align: left; font: inherit; }
+.pick-row:hover { border-color: var(--line-2, var(--mute)); }
+.pick-text { display: grid; flex: 1; line-height: 1.25; }
+.pick-text small { color: var(--mute); font-size: 12px; }
+.pick-change { display: inline-flex; align-items: center; gap: 4px; color: var(--mute); font-size: 13px; }
+.input-suffix { position: relative; }
+.input-suffix .input { padding-right: 72px; }
+.input-suffix .suffix { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--mute); font-size: 13px; pointer-events: none; }

@@ -29,6 +29,8 @@ interface Pending {
   line: string;
   at: number;
   stage: RelayStage;
+  /** Receive's "another network": the Relay deposit address (reusable) */
+  deposit?: string;
 }
 const KEY = "cloak.bridges";
 const loadPending = (): Pending[] => {
@@ -370,7 +372,10 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
     const go = async () => {
       const out: Record<string, Landed> = {};
       for (const p of pending.slice(-5)) out[p.requestId] = await landedAt(p.to, p.at).catch(() => null);
-      if (live) setLanded(out);
+      if (!live) return;
+      setLanded(out);
+      // something is sitting at a receive address: move it in now rather than at the next round
+      if (Object.values(out).includes("arriving")) onArrived();
     };
     go();
     const stop = every(go, 12_000);
@@ -423,7 +428,7 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
       const x = await relayQuote({ from: { chainId: src.id, symbol: token.symbol }, to: { chainId: DEST, symbol: dest }, amount, recipient: to, refundTo });
       setQ(x);
       if (LIVE) {
-        const p: Pending = { requestId: x.requestId, to: x.recipient, line: `${x.send.formatted} ${x.send.token.symbol} on ${x.send.chain} to about ${Number(x.receive.formatted).toPrecision(4)} ${x.receive.token.symbol}`, at: Date.now(), stage: "waiting" };
+        const p: Pending = { requestId: x.requestId, to: x.recipient, line: `${x.send.token.symbol} on ${x.send.chain}, lands as ${x.receive.token.symbol}`, at: Date.now(), stage: "waiting", deposit: x.depositAddress ?? undefined };
         const next = [...pending.filter((y) => y.requestId !== p.requestId), p];
         setPending(next);
         savePending(next);
@@ -447,19 +452,25 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
       {sheet === "from" && <TokenSheet title="Coin and network" tokens={sources} value={srcKey} placeholder="Search a coin or a network" filters={evm.slice(0, 6).map((c) => c.name)} onPick={(k) => { setSrcKey(k); setDest(sameOut(k.split(":")[1])); }} onClose={() => setSheet(null)} />}
       {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium", chain: ELYSIUM_LOGO }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
       <div className="relay-form">
-      <div className="swap-box">
-        <div className="k"><span>About how much</span><span>for the estimate</span></div>
-        <div className="amt">
-          <input value={amt} onChange={(e) => setAmt(e.target.value)} inputMode="decimal" placeholder="0" aria-label="Amount to send" />
-          <button className="token-sel two" onClick={() => setSheet("from")} aria-haspopup="dialog"><TokenIcon symbol={token.symbol} chain={chainLogo(src.id)} /><span>{token.symbol}<small>{src.name}</small></span><Icon.chev size={14} /></button>
+      <div className="field">
+        <label><span>1. Coin and network you'll send from</span></label>
+        <button className="pick-row" onClick={() => setSheet("from")} aria-haspopup="dialog">
+          <TokenIcon symbol={token.symbol} chain={chainLogo(src.id)} size={30} />
+          <span className="pick-text"><b>{token.symbol}</b><small>on {src.name}</small></span>
+          <span className="pick-change">Change <Icon.chev size={14} /></span>
+        </button>
+      </div>
+      <div className="field">
+        <label><span style={{ whiteSpace: "nowrap" }}>2. About how much</span><span style={{ textAlign: "right" }}>any amount works</span></label>
+        <div className="input-suffix">
+          <input className="input" value={amt} onChange={(e) => setAmt(e.target.value)} inputMode="decimal" placeholder="0.00" aria-label="Amount to send" />
+          <span className="suffix">{token.symbol}</span>
         </div>
       </div>
-      <div className="flip still" aria-hidden="true"><Icon.arrowDown /></div>
-      <div className="swap-box">
-        <div className="k"><span>You receive</span><span>Private balance</span></div>
-        <div className="amt">
-          <input value={q ? Number(q.receive.formatted).toPrecision(5).replace(/\.?0+$/, "") : ""} readOnly placeholder="0" aria-label="Estimated amount received" />
-          <button className="token-sel two" onClick={() => dests.length > 1 && setSheet("to")} style={dests.length > 1 ? undefined : { cursor: "default" }}><TokenIcon symbol={dest} chain={ELYSIUM_LOGO} /><span>{dest}<small>Elysium</small></span>{dests.length > 1 && <Icon.chev size={14} />}</button>
+      <div className="field">
+        <label><span>3. Lands in your private balance as</span></label>
+        <div className="seg" role="radiogroup" aria-label="Lands as">
+          {dests.map((d) => <button key={d.symbol} role="radio" aria-checked={dest === d.symbol} className={dest === d.symbol ? "on" : ""} onClick={() => setDest(d.symbol)}><span className="net-tab"><TokenIcon symbol={d.symbol} size={16} />{d.symbol}</span></button>)}
         </div>
       </div>
       {editRefund || !wallet?.account ? (
@@ -481,17 +492,13 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
       {!q && <div className="relay-empty small mute">Your address shows here, with what to send and on which network.</div>}
       {q && q.depositAddress && (
         <div style={{ display: "grid", gap: 10, justifyItems: "center", textAlign: "center" }}>
+          <div className="small mute">For about {q.send.formatted} {q.send.token.symbol} you get about <b style={{ color: "var(--text)" }}>{Number(q.receive.formatted).toPrecision(4)} {q.receive.token.symbol}</b> privately. Relay's fee is about ${q.feeUsd.toFixed(2)}.</div>
           <div className="small">Send <b>{q.send.token.symbol}</b> on <b>{q.send.chain}</b> to</div>
           <QR text={q.depositAddress} size={168} label="Deposit address" />
           <div className="mono" style={{ wordBreak: "break-all" }}>{q.depositAddress}</div>
           <button className="btn btn-ghost" onClick={() => copy(q.depositAddress!)}><Icon.copy size={16} />{copied ? "Copied" : "Copy address"}</button>
           <div className="warnbox" style={{ textAlign: "left" }}><b>Only this device moves it into your private balance.</b> After you send, open Cloak on this same browser and device. On another device the money waits safely at your receive address but won't show until you come back here. Don't clear this browser's data while a deposit is on its way.</div>
           <div className="infobox" style={{ textAlign: "left" }}>Send on <b>{q.send.chain}</b> only. Any amount works: Relay prices what actually arrives, so more or less than {q.send.formatted} {q.send.token.symbol} is fine. An amount too small to cover Relay's fee is refunded to your refund address on {q.send.chain}. The address keeps working for later deposits, all landing in your private balance.</div>
-          <div className="summary" style={{ width: "100%" }}>
-            <div className="row"><span className="mute">For {q.send.formatted} {q.send.token.symbol} you get</span><span className="mono">about {Number(q.receive.formatted).toPrecision(5)} {q.receive.token.symbol}</span></div>
-            <div className="row"><span className="mute">Relay's fee</span><span className="mono">${q.feeUsd.toFixed(2)}</span></div>
-            <div className="row"><span className="mute">Time after it's sent</span><span>{q.timeSec <= 60 ? "About a minute" : `About ${Math.ceil(q.timeSec / 60)} min`}</span></div>
-          </div>
         </div>
       )}
       {pending.length > 0 && (
@@ -503,10 +510,10 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
             return (
               <div key={p.requestId} className="asset-row">
                 <div className="nm">
-                  <b className="small">{l && l !== "arriving" ? <>{l.amount} arrived</> : <>Estimate: {p.line}</>}</b>
-                  <span className="xs mute">to {p.to.slice(0, 8)}…{p.to.slice(-6)} · {new Date(p.at).toLocaleString()}{link && <> · <a className="link" href={link} target="_blank" rel="noreferrer">View ↗</a></>}</span>
+                  <b className="small">{l && l !== "arriving" ? <>{l.amount} arrived</> : p.deposit ? p.line : <>Earlier address</>}</b>
+                  <span className="xs mute">{p.deposit ? <>address {p.deposit.slice(0, 8)}…{p.deposit.slice(-6)}</> : <>to {p.to.slice(0, 8)}…{p.to.slice(-6)}</>} · {new Date(p.at).toLocaleString()}{link && <> · <a className="link" href={link} target="_blank" rel="noreferrer">View ↗</a></>}</span>
                 </div>
-                <div className="amt"><span className={l && l !== "arriving" ? "pill ok" : "pill"}>{l === "arriving" ? "Arrived. Moving into your private balance" : l ? "In your private balance" : STAGE[p.stage]}</span></div>
+                <div className="amt"><span className={l && l !== "arriving" ? "pill ok" : "pill"}>{l === "arriving" ? "Arrived. Moving into your private balance" : l ? "In your private balance" : p.stage === "failed" || p.stage === "refunded" ? STAGE[p.stage] : p.stage === "moving" ? STAGE.moving : "Nothing arrived yet"}</span></div>
               </div>
             );
           })}
