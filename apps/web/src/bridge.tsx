@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { formatUnits, numberToHex, parseUnits, type Address, type Hex } from "viem";
+import { formatUnits, numberToHex, parseAbiItem, parseUnits, type Address, type Hex } from "viem";
 import { RELAY_DESTINATIONS, RELAY_SOURCES, relayQuote, relayServes, relayStatus, validRefundAddress, type RelayQuote, type RelayStage } from "@cloakely/sdk";
-import { ASSETS, CHAIN_ID } from "./config";
+import { ASSETS, CHAIN_ID, GLOAM, txLink } from "./config";
 import { ensureElysium, publicClient, type Eip1193 } from "./wallet";
 import { useApp } from "./state";
 import { QR } from "./qr";
@@ -319,6 +319,29 @@ export function BridgeIn({ recipient, onArrived }: { recipient: (avoid: string[]
  * The Receive page's "another network": a Relay one-time deposit address on an EVM chain (for an exchange that doesn't
  * list Elysium), delivering to a fresh receive address. Separate from the Bridge page, which pays from the wallet.
  */
+/** Cloak's receive contract logs every payment it moves into the private balance, by receive address. */
+const RECEIVED = parseAbiItem("event Received(address indexed box, address indexed vault, address indexed asset, uint256 amount, bytes32 commitment)");
+type Landed = { amount: string; tx: Hex } | "arriving" | null;
+const symbolOf = (asset: string) => (/^0x0+$/.test(asset) ? { s: "HYPE", d: 18 } : (() => { const a = ASSETS.find((x) => x.token.toLowerCase() === asset.toLowerCase()); return a ? { s: a.symbol, d: a.decimals } : { s: "tokens", d: 18 }; })());
+/** What the chain says about a receive address: moved into the private balance (how much, which tx), sitting there, or nothing yet. */
+async function landedAt(to: Address, since: number): Promise<Landed> {
+  const rx = GLOAM?.receive as Address | undefined;
+  if (!rx) return null;
+  const head = await publicClient.getBlockNumber();
+  // about 7.3 blocks a second on Elysium; start a little before the address was made
+  const back = BigInt(Math.ceil(((Date.now() - since) / 1000 + 900) * 8));
+  const logs = await publicClient.getLogs({ address: rx, event: RECEIVED, args: { box: to }, fromBlock: head > back ? head - back : 0n });
+  if (logs.length) {
+    const sum = new Map<string, bigint>();
+    for (const l of logs) sum.set(l.args.asset!, (sum.get(l.args.asset!) ?? 0n) + l.args.amount!);
+    const amount = [...sum].map(([a, v]) => { const m = symbolOf(a); return `${Number(formatUnits(v, m.d)).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${m.s}`; }).join(" + ");
+    return { amount, tx: logs[logs.length - 1].transactionHash! };
+  }
+  const ERC = [{ type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] }] as const;
+  const bals = await Promise.all([publicClient.getBalance({ address: to }), ...ASSETS.map((x) => publicClient.readContract({ address: x.token, abi: ERC, functionName: "balanceOf", args: [to] }).catch(() => 0n))]);
+  return bals.some((b) => b > 0n) ? "arriving" : null;
+}
+
 export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoid: string[]) => Promise<Address | undefined>; onArrived: () => void }) {
   const { wallet } = useApp();
   const evm = RELAY_SOURCES.filter((c) => c.kind === "evm" && !c.needsKey);
@@ -338,6 +361,24 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
   const [pending, setPending] = useState<Pending[]>(loadPending);
   const [refund, setRefund] = useState("");
+  // what the chain says for each one: Relay may move a delivery to a new request when the amount differs from the quote,
+  // so its status can lag; the receive contract's log can't
+  const [landed, setLanded] = useState<Record<string, Landed>>({});
+  useEffect(() => {
+    if (!pending.length) return;
+    let live = true;
+    const go = async () => {
+      const out: Record<string, Landed> = {};
+      for (const p of pending.slice(-5)) out[p.requestId] = await landedAt(p.to, p.at).catch(() => null);
+      if (live) setLanded(out);
+    };
+    go();
+    const stop = every(go, 12_000);
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [pending.map((p) => p.requestId).join()]);
   const amount = useMemo(() => {
     try {
       return parseUnits(amt || "0", token.decimals);
@@ -402,9 +443,10 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
   const ready = amount > 0n && refundOk && !busy;
 
   return (
-    <div className="bridge">
+    <div className="relay-grid">
       {sheet === "from" && <TokenSheet title="Coin and network" tokens={sources} value={srcKey} placeholder="Search a coin or a network" filters={evm.slice(0, 6).map((c) => c.name)} onPick={(k) => { setSrcKey(k); setDest(sameOut(k.split(":")[1])); }} onClose={() => setSheet(null)} />}
       {sheet === "to" && <TokenSheet title="Receive privately as" tokens={dests.map((t) => ({ key: t.symbol, symbol: t.symbol, name: "Private balance on Elysium", chain: ELYSIUM_LOGO }))} value={dest} onPick={setDest} onClose={() => setSheet(null)} />}
+      <div className="relay-form">
       <div className="swap-box">
         <div className="k"><span>About how much</span><span>for the estimate</span></div>
         <div className="amt">
@@ -434,8 +476,11 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
         <button className="btn btn-ink btn-lg" disabled={!ready} onClick={make}>{busy ? "Making your address" : amount <= 0n ? "Enter an amount" : !refundOk ? "Add a refund address" : `Get an address on ${src.name}`}</button>
       </div>
       {err && <div className="err">{err}</div>}
+      </div>
+      <div className="relay-out">
+      {!q && <div className="relay-empty small mute">Your address shows here, with what to send and on which network.</div>}
       {q && q.depositAddress && (
-        <div style={{ display: "grid", gap: 10, justifyItems: "center", textAlign: "center", marginTop: 14 }}>
+        <div style={{ display: "grid", gap: 10, justifyItems: "center", textAlign: "center" }}>
           <div className="small">Send <b>{q.send.token.symbol}</b> on <b>{q.send.chain}</b> to</div>
           <QR text={q.depositAddress} size={168} label="Deposit address" />
           <div className="mono" style={{ wordBreak: "break-all" }}>{q.depositAddress}</div>
@@ -450,20 +495,31 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
         </div>
       )}
       {pending.length > 0 && (
-        <div className="asset-list" style={{ marginTop: 12 }}>
-          {[...pending].reverse().slice(0, 5).map((p) => (
-            <div key={p.requestId} className="asset-row">
-              <div className="nm"><b className="small">{p.line}</b><span className="xs mute">to {p.to.slice(0, 8)}…{p.to.slice(-6)} · {new Date(p.at).toLocaleString()}</span></div>
-              <div className="amt"><span className={p.stage === "done" ? "pill ok" : "pill"}>{STAGE[p.stage]}</span></div>
-            </div>
-          ))}
+        <div className="asset-list" style={{ marginTop: 16 }}>
+          <div className="xs mute" style={{ textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 4px" }}>Your deposits from other networks</div>
+          {[...pending].reverse().slice(0, 5).map((p) => {
+            const l = landed[p.requestId];
+            const link = l && l !== "arriving" ? txLink(l.tx) : undefined;
+            return (
+              <div key={p.requestId} className="asset-row">
+                <div className="nm">
+                  <b className="small">{l && l !== "arriving" ? <>{l.amount} arrived</> : <>Estimate: {p.line}</>}</b>
+                  <span className="xs mute">to {p.to.slice(0, 8)}…{p.to.slice(-6)} · {new Date(p.at).toLocaleString()}{link && <> · <a className="link" href={link} target="_blank" rel="noreferrer">View ↗</a></>}</span>
+                </div>
+                <div className="amt"><span className={l && l !== "arriving" ? "pill ok" : "pill"}>{l === "arriving" ? "Arrived. Moving into your private balance" : l ? "In your private balance" : STAGE[p.stage]}</span></div>
+              </div>
+            );
+          })}
         </div>
       )}
+      </div>
+      <div className="relay-more">
       <Powered by="Relay" logo="/partners/relay.png" />
       <div className="more-list">
         <More title="Risks">Relay runs this, not Cloak. While your funds are with Relay, Cloak can't move, speed up or recover them. If it fails, Relay refunds to your refund address (your wallet unless you changed it) on the network you sent from. Coins Relay doesn't support on that network aren't processed.</More>
         <More title="What is public and what isn't">Relay delivers to a new receive address on Elysium, and Cloak moves it into your private balance. The exchange withdrawal is public, but it isn't tied to your wallet. Later deposits to the same address land at the same receive address, so they can be linked to each other.</More>
         <More title="If you close this page">Nothing is lost. Relay delivers on its own once the deposit lands. The money waits at your receive address and moves into your private balance the next time you open Cloak on this device. Only this device knows that address for now, so come back on the same browser.</More>
+      </div>
       </div>
     </div>
   );

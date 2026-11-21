@@ -234,7 +234,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
   return (
     <>
       {head}
-      <div className="grid">
+      <div className={other && RELAY_LIVE ? "" : "grid"}>
         <div className="card">
           {RELAY_LIVE && <div className="seg" role="tablist" aria-label="Network" style={{ marginBottom: 16 }}>
             <button role="tab" aria-selected={!other} className={other ? "" : "on"} onClick={() => setOther(false)}><span className="net-tab"><img src={ELYSIUM_LOGO} alt="" width={18} height={18} />Elysium</span></button>
@@ -270,7 +270,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
           <p className="by" style={{ marginTop: 16 }}>By Cloak's receive contract on Elysium</p>
           </>}
         </div>
-        <div className="col">
+        {!(other && RELAY_LIVE) && <div className="col">
           <div className="card">
             <div className="card-head" style={{ marginBottom: 4 }}><h3>Payments to this address</h3>{cur && <span className="xs mute">#{cur.n + 1}</span>}</div>
             {!curUsed ? (
@@ -299,7 +299,7 @@ function DepositWay({ view }: { view: Exclude<DepositView, "menu"> }) {
               })}
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </>
   );

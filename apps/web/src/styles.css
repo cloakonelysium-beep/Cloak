@@ -1167,3 +1167,11 @@ button.asset-row { cursor: pointer; }
 .net-stack { display: inline-flex; }
 .net-stack img { box-shadow: 0 0 0 1.5px var(--card-2); }
 .net-stack img + img { margin-left: -6px; }
+
+/* Receive, another network: the form beside its address and status on a laptop, stacked on a phone */
+.relay-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: min-content 1fr; gap: 16px 28px; align-items: start; }
+.relay-form { grid-column: 1; grid-row: 1; }
+.relay-out { grid-column: 2; grid-row: 1 / span 2; }
+.relay-more { grid-column: 1; grid-row: 2; }
+.relay-empty { display: grid; place-items: center; min-height: 220px; padding: 20px; text-align: center; border: 1px dashed var(--line); border-radius: var(--r-lg); }
+@media (max-width: 900px) { .relay-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 16px; } .relay-form, .relay-out, .relay-more { grid-column: 1; grid-row: auto; } .relay-empty { min-height: 0; } }
