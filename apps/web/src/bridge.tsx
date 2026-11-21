@@ -337,6 +337,7 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
   const [copied, setCopied] = useState(false);
   const [sheet, setSheet] = useState<"from" | "to" | null>(null);
   const [pending, setPending] = useState<Pending[]>(loadPending);
+  const [refund, setRefund] = useState("");
   const amount = useMemo(() => {
     try {
       return parseUnits(amt || "0", token.decimals);
@@ -344,10 +345,11 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
       return 0n;
     }
   }, [amt, token]);
-  // refunds always go to the connected wallet: an address the user controls on every EVM chain, never an exchange's
-  const refundTo = wallet?.account?.address ?? "";
+  // refunds go to the connected wallet (the user's on every EVM chain) unless another address is given
+  const refundTo = refund.trim() || (wallet?.account?.address ?? "");
   const refundOk = validRefundAddress("evm", refundTo);
   useEffect(() => setQ(null), [srcKey, dest, amt, refundTo]);
+  const [editRefund, setEditRefund] = useState(false);
 
   // follow each one; when one arrives, collect at once
   useEffect(() => {
@@ -418,11 +420,18 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
           <button className="token-sel two" onClick={() => dests.length > 1 && setSheet("to")} style={dests.length > 1 ? undefined : { cursor: "default" }}><TokenIcon symbol={dest} chain={ELYSIUM_LOGO} /><span>{dest}<small>Elysium</small></span>{dests.length > 1 && <Icon.chev size={14} />}</button>
         </div>
       </div>
-      <div className="kv" style={{ margin: "10px 0 0" }}>
-        <div className="r"><span>Refunds to</span><span className="mono">{refundOk ? `your wallet ${refundTo.slice(0, 6)}…${refundTo.slice(-4)}` : "connect your wallet"}</span></div>
-      </div>
+      {editRefund || !wallet?.account ? (
+        <div className="field" style={{ margin: "10px 0 0" }}><label><span>Refund address on {src.name}, a wallet you control, never an exchange's</span></label>
+          <input className="input mono" value={refund} onChange={(e) => setRefund(e.target.value)} placeholder={wallet?.account?.address ?? "0x…"} aria-label="Refund address" />
+        </div>
+      ) : (
+        <div className="kv" style={{ margin: "10px 0 0" }}>
+          <div className="r"><span>Refunds to</span><span className="mono">your wallet {refundTo.slice(0, 6)}…{refundTo.slice(-4)} <button className="link" style={{ background: "none", border: 0, padding: 0, font: "inherit", cursor: "pointer", marginLeft: 6 }} onClick={() => setEditRefund(true)}>Change</button></span></div>
+        </div>
+      )}
+      {refundTo && !refundOk && <div className="err">That isn't an address on {src.name}.</div>}
       <div className="bridge-cta">
-        <button className="btn btn-ink btn-lg" disabled={!ready} onClick={make}>{busy ? "Making your address" : amount <= 0n ? "Enter an amount" : !refundOk ? "Connect your wallet" : `Get an address on ${src.name}`}</button>
+        <button className="btn btn-ink btn-lg" disabled={!ready} onClick={make}>{busy ? "Making your address" : amount <= 0n ? "Enter an amount" : !refundOk ? "Add a refund address" : `Get an address on ${src.name}`}</button>
       </div>
       {err && <div className="err">{err}</div>}
       {q && q.depositAddress && (
@@ -432,7 +441,7 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
           <div className="mono" style={{ wordBreak: "break-all" }}>{q.depositAddress}</div>
           <button className="btn btn-ghost" onClick={() => copy(q.depositAddress!)}><Icon.copy size={16} />{copied ? "Copied" : "Copy address"}</button>
           <div className="warnbox" style={{ textAlign: "left" }}><b>Only this device moves it into your private balance.</b> After you send, open Cloak on this same browser and device. On another device the money waits safely at your receive address but won't show until you come back here. Don't clear this browser's data while a deposit is on its way.</div>
-          <div className="infobox" style={{ textAlign: "left" }}>Send on <b>{q.send.chain}</b> only. Any amount works: Relay prices what actually arrives, so more or less than {q.send.formatted} {q.send.token.symbol} is fine. An amount too small to cover Relay's fee is refunded to your wallet on {q.send.chain}. The address keeps working for later deposits, all landing in your private balance.</div>
+          <div className="infobox" style={{ textAlign: "left" }}>Send on <b>{q.send.chain}</b> only. Any amount works: Relay prices what actually arrives, so more or less than {q.send.formatted} {q.send.token.symbol} is fine. An amount too small to cover Relay's fee is refunded to your refund address on {q.send.chain}. The address keeps working for later deposits, all landing in your private balance.</div>
           <div className="summary" style={{ width: "100%" }}>
             <div className="row"><span className="mute">For {q.send.formatted} {q.send.token.symbol} you get</span><span className="mono">about {Number(q.receive.formatted).toPrecision(5)} {q.receive.token.symbol}</span></div>
             <div className="row"><span className="mute">Relay's fee</span><span className="mono">${q.feeUsd.toFixed(2)}</span></div>
@@ -452,7 +461,7 @@ export function RelayDepositAddress({ recipient, onArrived }: { recipient: (avoi
       )}
       <Powered by="Relay" logo="/partners/relay.png" />
       <div className="more-list">
-        <More title="Risks">Relay runs this, not Cloak. While your funds are with Relay, Cloak can't move, speed up or recover them. If it fails, Relay refunds to your connected wallet on the network you sent from. Coins Relay doesn't support on that network aren't processed.</More>
+        <More title="Risks">Relay runs this, not Cloak. While your funds are with Relay, Cloak can't move, speed up or recover them. If it fails, Relay refunds to your refund address (your wallet unless you changed it) on the network you sent from. Coins Relay doesn't support on that network aren't processed.</More>
         <More title="What is public and what isn't">Relay delivers to a new receive address on Elysium, and Cloak moves it into your private balance. The exchange withdrawal is public, but it isn't tied to your wallet. Later deposits to the same address land at the same receive address, so they can be linked to each other.</More>
         <More title="If you close this page">Nothing is lost. Relay delivers on its own once the deposit lands. The money waits at your receive address and moves into your private balance the next time you open Cloak on this device. Only this device knows that address for now, so come back on the same browser.</More>
       </div>
