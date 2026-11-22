@@ -1,0 +1,95 @@
+# Moving HYPE from Cloak v1 to v2 (testnet)
+
+Nov 16. Elysium testnet only, HYPE only. Cloak v1 never ran on mainnet.
+
+## Where v1's HYPE is
+
+Cloak v1 (cloak.boblabs.tech, its own Vercel and Render accounts, still running: keeper `cloak-keeper-x5yw`, v1
+version 4, chain 99801) keeps private HYPE as WHYPE notes in its HYPE pool `0x3ACB22829bb422446caaDd8546e65ab530A53031`
+(router `0x343ab9a7aac93cee28321410510ea24417cc6386`). On Nov 16 the pool held 14.0026 WHYPE, and no other v1 contract
+held any HYPE or WHYPE. v1's code and testnet record are in this repo's history before `6effd97` ("Remove Cloak v1's code
+from v2").
+
+## The move
+
+v1's withdraw (`unshieldHype`) unwraps and sends plain HYPE to any address, relayed by v1's relayer, and v2's receive
+addresses move plain HYPE into the private balance. So:
+
+1. On testnet.oncloak.xyz, the Portfolio card "Have HYPE in Cloak v1?" makes a fresh v2 receive address for the move
+   (only when the user asks), added to the account's receive list.
+2. The user opens cloak.boblabs.tech and withdraws their v1 HYPE to that address. v1's relayer sends it: the wallet
+   isn't in the transaction.
+3. v2 moves it into the private balance like any payment: while the card is open (every 20 s) and on every unlock.
+
+Why not one click inside v2: it would bring v1's keys, tree sync and circuits (several MB) back into v2, and ask users
+to sign v1's account message, which says "Only sign this on cloak.boblabs.tech", on oncloak.xyz. That teaches the habit
+phishing relies on. Here each site asks only for its own signature, and nothing changes on v1 or on chain.
+
+Shown on testnet only (`V1_MOVE` in `apps/web/src/v1move.tsx`); a user can hide the card.
+
+## Simulated (Nov 16)
+
+On a fork of Elysium testnet with v1's live router and HYPE pool and v2's live contracts, real proofs on both sides
+(v1's SDK and circuits restored from `6effd97^` in a scratch folder): a v1 account shields 2 HYPE; it withdraws 1.5 HYPE
+to a fresh v2 receive address with a real v1 proof, sent by a relayer account; 1.5 plain HYPE arrives; v2 collects it
+into the test vault with real v2 proofs, sent by v2's relay; the user's wallet is in neither transaction; collecting
+again moves nothing.
+
+Result: passed in 74 s. The v1 account held 2 private HYPE; 1.5 withdrawn to the move address arrived as 1.49625 plain
+HYPE (v1's own 0.25% withdrawal fee, read from the pool's `afterFee`); the v1 transaction came from the relayer, with
+the user's address nowhere in it; v1's 0.5 change stayed private in v1; v2 credited exactly 1.49625 HYPE and the move
+address was left empty; the v2 shield came from v2's relay; a second collect moved nothing.
+
+So the user should expect v1's withdrawal fee (0.25%) on the way out of v1, and nothing on the way into v2.
+
+## v1's site and keeper are retired (Nov 22)
+
+cloak.boblabs.tech and v1's keeper (`cloak-keeper-x5yw`) are switched off. The move above depended on both: step 2
+happened on v1's site, and v1's relayer sent the withdrawal. **So the card's steps no longer work as written.** Don't
+ship the card until it's changed to one of the options below.
+
+**State on Nov 22.** v1's HYPE pool still holds 14.0026 WHYPE, the same as Nov 16, so nobody moved before the switch
+off.
+
+**What retiring doesn't touch.** The money is safe whatever happens to the site and keeper:
+
+- v1's vaults are contracts on chain with no owner switch to close withdrawals. A pool's `transact` (and the router's
+  `unshieldHype`) take a proof from any sender. The relayer is only who sends it and takes a fee; with fee 0 no
+  relayer is needed.
+- v1's own SDK already has a wallet path: `walletSubmitter` in `packages/sdk/src/private/client.ts` (history before
+  `a4634ee`). The user's wallet sends the withdrawal and pays the gas. The only cost is that the wallet appears as the
+  sender, which is acceptable for a move out of v1.
+
+**What a withdrawal still needs after retirement.**
+
+- v1's proving files (`transaction2x2.wasm`, `transaction2x2_final.zkey` and the others in
+  `apps/web/public/circuits` before `a4634ee`). They're served from `cloak.boblabs.tech/circuits` and from a
+  jsDelivr copy pinned to a commit
+  (`cdn.jsdelivr.net/gh/NECOKIZZ/Cloak@f55a12a40d475561ce2b4db933ab82855419eb2d/apps/web/public/circuits`). Both
+  answered on Nov 22. Copy them somewhere we control before the site goes, so nothing depends on the old domain or on
+  that commit staying on GitHub.
+- v1's client code (keys from the wallet signature, tree sync from the pool's events, the prover), in this repo's
+  history before `6effd97` / `a4634ee`.
+- An Elysium testnet RPC. Nothing else.
+
+**Options now that both are off.**
+
+1. ~~Keep both up until the pool is empty or a set date.~~ No longer possible.
+2. **Bring the site back as a static page, without a keeper.** Change v1's withdraw to send from the user's wallet
+   (`walletSubmitter`) when the relayer doesn't answer, and serve the proving files from the site itself. Vercel
+   hosting of a static site is free on Hobby; the keeper is what costs. The card here then says "your wallet sends the
+   withdrawal and appears in it". Needs a change in v1's repo (another account).
+3. **Retire both, withdraw from v1 inside v2.** A v1 withdraw page on testnet.oncloak.xyz, lazy-loaded so v1's code and
+   files only load there, sending from the user's wallet to a fresh v2 receive address. This brings back what the
+   section above avoided: v1's keys, tree sync and circuits in v2, and asking users to sign v1's account message
+   ("Only sign this on cloak.boblabs.tech") on oncloak.xyz, the habit phishing relies on. If chosen, the page has to
+   say plainly why it asks for v1's signature, and it should be the last step, after options 1 or 2.
+
+Recommended: first find out whose the 14.0026 WHYPE is. If it's only our own test HYPE, recover it by script with
+`walletSubmitter` (the wallets that hold those v1 accounts sign; no site or keeper needed) and drop the card. If other
+people hold some, option 3 (or 2, if v1's repo can still be deployed) for them, and copy v1's proving files first.
+
+## Later
+
+- A banner on v1's site pointing here (v1's code is in another account).
+- Other v1 assets (launch tokens, USDC) aren't moved by this card.
