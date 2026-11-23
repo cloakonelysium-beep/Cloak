@@ -43,6 +43,10 @@ skill, so new ones should too. The two finished examples are in `examples/` (rea
   `assets/` (SIL Open Font License).
 - Backdrop: `assets/glass.jpg` (the ribbed glass from the banner), dark radial shade, soft teal glow; it drifts
   240 px right and the glow breathes for the whole video.
+- **Contrast rule (from the user, always):** never put dark UI on the dark background. Dark-mode cards, dark
+  pills, dark logos or dark text on `#0b1013` don't read. Anything shown as a surface (app modals, cards, pills, URL
+  chips, tooltips) uses the site's LIGHT theme (`#f8f7f4` paper, `#10161a` ink, `#2d7388` signal, `#c9852e` seal)
+  so it pops off the dark backdrop. A logo with dark parts sits on a light tile. The cursor over light cards is dark.
 - Surfaces: `.glassy` cards (6% ink fill, 14% ink border, 24 px backdrop blur), radius 32 to 36 px, pills 999 px.
 - Sealed values: the striped `.seal` bar with a slow shimmer (`backgroundPositionX` drift). This is how Cloak shows
   "hidden": never use black boxes, padlock emoji or scrambled text.
