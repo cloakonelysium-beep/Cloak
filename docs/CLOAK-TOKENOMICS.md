@@ -2,6 +2,8 @@
 
 Nov 27. A full design for $CLOAK, built on what Cloak already runs on mainnet. It extends `docs/CLOAK.md` and changes two decisions there (the buyback split, and where $CLOAK launches). **Those changes need Bob's yes before anything is built.**
 
+> **Update (Nov 27, later): Bob may launch $CLOAK on a launchpad (Montra or Ascend) for the crowd.** That plan is section 11. It replaces sections 3 and 4 (supply and genesis). The engine (section 5), the utility (section 6) and the things we won't do (section 7) still apply, with the changes listed in 11.7.
+
 Prices use 1 HYPE = $73, the figure the mainnet decisions used. Every number in the scenarios is an assumption, not a forecast.
 
 ---
@@ -294,6 +296,134 @@ The privacy rule (section 2, lesson 3) decides where utility goes. **Utility goe
 5. **Which utilities to build first:** recommended in this order: the launch fee in $CLOAK (6.1), the Spotlight (6.2), gated rounds on the form (6.3), Names (6.4), voting (6.5), bonds (6.6).
 6. **For $CLOAK's launch:** lift or raise the total cap, a minimum price around 0.024 HYPE (about $875k market cap), and `minRaise` around 4,000 HYPE.
 
+## 11. If $CLOAK launches on a launchpad (Montra or Ascend)
+
+Going where the crowd already is makes sense. A launch nobody watches is worse than a fair one. This section is the plan for that case. Montra's numbers were read from its contracts on Elysium mainnet (Nov 27, through its registry `0xF1E2…2aa7`) and from its docs. Ascend's come from its GitBook docs and weren't checked on chain.
+
+### 11.1 What a launchpad changes
+
+| | Cloak's sealed-bid auction | Montra | Ascend |
+|---|---|---|---|
+| Supply | Any (500,000) | **1 billion to 1 quadrillion** (every one of its 405 live options defaults to 1B) | **1 billion, fixed** |
+| How the price is found | Sealed bids, one clearing price | One-sided Uniswap v4 position from the opening price up. Half the supply is bought by 4× the opening price | v4 pool on Ascend's hook. No bonding curve |
+| Team allocation | Up to 20%, streamed | **None.** The creator can make a first buy in the launch transaction | Not stated |
+| Anti-snipe | 10% falling to 0.3% over 5 minutes | **99% falling to the base fee over up to 30 minutes.** The creator's first buy doesn't pay it | None documented |
+| Trading fee | 0.3% (80% creator, 20% Cloak) | **1, 2, 3, 5 or 10%.** Montra takes 0.4% on every tier, an LP fee (0.1% to 1%) starts past the "LP line" at 142.6×, and the creator side gets the rest. The fee can only be lowered, and can be locked | 1% base, with the creator choosing up to 10%. At the 1% base, the creator side gets 0.35% to 0.75% by market cap band. Under a $40k market cap, 90% of creator fees are held, and lost if it doesn't reach $40k within 14 days |
+| Builder rebate | n/a | **25% of Montra's 0.4% for 90 days** to a builder code. Cloak already has one, `cloak` | Not found |
+| Liquidity | Locked forever | Locked by the hook (no function removes it). Others can add LP | "Permanently locked" |
+| Admin | Cloak's rules | The token is a clone with no owner, mint or proxy. The factory is upgradeable and owned by Montra's Safe | 3-of-5 Safe, no proxies (as stated) |
+| Activity | | Much bigger (one count: 371 pools vs Ascend's 13, unverified) | Kinetiq's flagship. Staking-funded buybacks of "Ascended" tokens are planned, **not live** |
+
+**What we lose:**
+- the genesis burn;
+- 500,000;
+- a team share;
+- privacy from the first block. A Montra or Ascend pool has its own hook, so Cloak's router can't trade it and Cloak's vaults can't take it (see 11.5).
+
+**What we gain:**
+- the crowd and the trending lists;
+- **a large creator fee on $CLOAK's own trading, which can feed the engine from day one.**
+
+### 11.2 Recommendation: Montra
+
+1. **Cloak already integrates Montra privately.** Privacy on Elysium (`projects/montra`) launches Montra tokens from one-time seats, holds them, claims their fees and sells them back into the private balance. People can buy $CLOAK without showing their wallet **on launch day**, before any vault lists it. That's the story: "the privacy protocol's token, bought privately on day one."
+2. **The builder rebate:** launched with the code `cloak`, Cloak gets 0.1% of all $CLOAK volume for 90 days on top of the creator side.
+3. **The creator fee is paid at once,** not held behind Ascend's $40k threshold.
+4. **Anti-snipe up to 30 minutes at 99%,** and anything paid above the base fee goes to the creator side, which means into the buyback.
+5. **Much more activity,** which is the reason for using a launchpad at all.
+
+Ascend is worth it only if its "Ascended" buyback support goes live and is big, or the Kinetiq relationship is worth more than Montra's crowd. The rest of this section assumes Montra. On Ascend, the same plan works with its fee bands.
+
+### 11.3 The token on Montra
+
+- **Supply: 1,000,000,000** (Montra's minimum). Nothing in section 3 survives except the reasoning that the number is cosmetic. 1B is the norm on launchpads, which helps there, and burns read as big numbers ("2.4M burned").
+- **The pair: HYPE** (Cloak's revenue, routes and vaults are all in HYPE).
+- **The fee tier: 2% at launch**:
+  - Montra 0.4%, creator side 1.6% (1.3% past the LP line);
+  - after 30 days, lower it to the 2% tier's floor of 1.1% and call `lockFee`;
+  - the high fee is paid while trading is hottest, then it drops for good.
+  - If 2% looks greedy for the crowd, take the 1% tier (0.6% creator side) instead.
+- **Anti-snipe: 15 minutes** (99% falling to 2%). It's long enough to beat the bots and short enough for real buyers. What bots pay goes to the buyback.
+- **The creator: a fresh seat, launched through Privacy on Elysium with the builder code.** Publish the seat's address on launch day.
+- **The fee recipient: `CloakMontraSink`, a small contract with no owner** (to build, about 40 lines). It does three things:
+  - calls the hook's `claim` for $CLOAK's pool;
+  - burns the $CLOAK side with the token's own `burn` (a real burn, `totalSupply` goes down);
+  - sends the HYPE side to `CloakConfig.feeRecipient()`, read live. That's the treasury now, and `CloakBuyback` once it exists, so moving the treasury never needs a new sink.
+
+  Only the current recipient can call `updateRecipient` (`NotRecipient` otherwise), and the sink has no function that calls it. **So once it's set at launch, nobody can ever redirect $CLOAK's fees, Cloak included.** Anyone can check that.
+- **Don't use Montra's "holders" fee route.** There are two reasons:
+  1. It pays holders from revenue, which is the security problem section 7 avoids.
+  2. **It punishes privacy.** Rewards build up for every holder in proportion to its balance, contracts included, and a contract has to call `claimRewards` itself. Gloam's vault can't. So the rewards of every privately held $CLOAK would sit in the vault forever, and only public holders would get paid.
+
+### 11.4 Cloak's own $CLOAK, without a team share
+
+Montra has no allocation, so Cloak only owns what it buys.
+
+**The cost is tiny.** On a one-sided position, buying a fraction f of the supply costs the opening market cap × f / (1 − f). At Montra's example opening of about $3.5k:
+
+| Share bought | Cost |
+|---|---|
+| 1% | about $35 |
+| 2% | about $71 |
+| 5% | about $184 |
+| 10% | about $389 |
+
+That's exactly why a big first buy looks bad: the crowd will call it an insider grab, fairly.
+
+**Recommendation: a first buy of 2% (20,000,000 $CLOAK) from the treasury, put straight into a public 12-month lock**, for ecosystem use only (relayer bonds, grants, the private pool in 11.5), never for the team.
+- The team is paid from the 40% operating share of revenue, not from tokens.
+- Announce the 2% and the lock before launch.
+- The stricter alternative is to buy nothing at launch. The ecosystem reserve then fills from the buyback's 25% instead. It's the cleaner story (Gloam did 0%), and it costs the ecosystem a few weeks.
+
+### 11.5 Making $CLOAK private (Montra pools have a hook)
+
+Cloak's router trades only plain HYPE v4 pools with no hook, or Cloak's own launch pools. Cloak's vaults have rules too:
+- the launch vault takes only Cloak launches;
+- the ecosystem vault needs a pool with no hook, and lets at most **1% of a token's supply** be private (fixed at deploy).
+
+So $CLOAK can't use either of Cloak's vaults. The plan has three stages:
+1. **Launch day: seats.** Private buys, holdings and sales through Privacy on Elysium's Montra page. Each holding is a one-time address funded from Gloam's vault and driven by the relay, so the holder's wallet never shows. It's private in the sense that matters (who), but the tokens sit in public one-time addresses, not shielded notes.
+2. **Week 1 to 4: a plain pool owned by Cloak.** Seed a native-HYPE v4 pool with no hook, using the ecosystem reserve's $CLOAK and treasury HYPE. Arbitrage keeps it at the Montra price. Its LP fees go to the engine. This is the pool Cloak's router and Gloam's router can trade. The ecosystem reserve exists for exactly this.
+3. **After that: Gloam's main vault.** Ask Gloam to list $CLOAK (they said they'd look once it has a market, with starting caps and their 3-day timelock).
+   - Then $CLOAK becomes a shielded asset: private swaps through `CloakRouterV4` on the plain pool, private sends, payment links, and the funds proofs that gated rounds (6.3) and voting (6.5) need.
+   - `CloakFundsGate` reads only Gloam's vault and Cloak's launch vault, so those two utilities wait for this stage.
+
+### 11.6 What the engine gets from $CLOAK's own pool
+
+$CLOAK's trading is now a big revenue line of its own. For every $1M of $CLOAK volume:
+
+| Stage | Creator side | Builder rebate | Cloak gets |
+|---|---|---|---|
+| 2% tier, below the LP line, first 90 days | 1.6% | 0.1% | **$17,000** |
+| 2% tier, past the LP line, first 90 days | 1.3% | 0.1% | $14,000 |
+| Lowered to 1.1% | about 0.6% | after 90 days, none | about $6,000 |
+
+Anti-snipe fees paid by bots in the first 15 minutes come on top.
+
+A launch-week volume of $3M on Montra would bring Cloak about $50k. At 60% to the buyback and 75% of that burned, that's about $23k of $CLOAK burned, plus the $CLOAK side of the fees, which `CloakMontraSink` burns straight away.
+
+### 11.7 What changes in sections 4 to 9
+
+- **Section 4 (genesis)** is replaced by 11.3 to 11.5. No `minRaise`, cap lift or team-share burn is needed, since there's no auction and no allocation.
+- **Section 5 (the engine)** stays as it is. Add two revenue lines: `CloakMontraSink` (the HYPE side of $CLOAK's pool) and the builder rebate. The buyback buys on the Montra pool through Montra's router, and most of the 2% fee it pays comes back to itself through the sink. It burns with `burn()` rather than sending to `0x…dEaD`.
+- **Section 6 (utility):**
+  - the launch fee in $CLOAK, the Spotlight, Names, the review fee and relayer bonds all work on day one, since they need only public $CLOAK;
+  - gated rounds and private voting wait for Gloam's listing (11.5);
+  - pay-with-$CLOAK in the trade picker waits for the plain pool.
+- **Section 7 (won't do):** add Montra's holders route (11.3).
+- **GLOAK keeps the sealed-bid story.** Cloak's own auction is still the thing to show the world, and GLOAK shows it: "Cloak launches GLOAK on Cloak, and $CLOAK goes where the crowd is."
+
+### 11.8 Decisions for Bob (launchpad version)
+
+1. **Montra or Ascend:** Montra (recommended), for the reasons in 11.2.
+2. **The fee tier:** 2%, lowered to 1.1% and locked after 30 days (recommended), or a flat 1%.
+3. **Cloak's first buy:** 2% into a 12-month public lock (recommended), or 0%.
+4. **The fee route:** 100% to `CloakMontraSink` (no holders route). I'd treat this one as non-negotiable.
+5. **Anti-snipe:** 15 minutes.
+6. **The plain pool for private trading:** seeded in week 1 to 4 from the ecosystem reserve and treasury HYPE, then ask Gloam to list.
+
+To build before launch day: `CloakMontraSink` (with forge tests on a fork of Montra's real hook), a check on a fork that only the recipient can call `updateRecipient` and that `claim` pays the sink, and the launch through Privacy on Elysium's existing `launchFromMine` with the builder code.
+
 ## Sources
 
 - Gloam's token page and buyback log: https://gloam.trade/token, and gloamtrade/gloam pull requests [#240](https://github.com/gloamtrade/gloam/pull/240), [#249](https://github.com/gloamtrade/gloam/pull/249), [#351](https://github.com/gloamtrade/gloam/pull/351)
@@ -301,4 +431,6 @@ The privacy rule (section 2, lesson 3) decides where utility goes. **Utility goe
 - Railgun: https://docs.railgun.org (RAIL tokenomics, security rewards, deductions)
 - Hyperliquid: https://hyperliquid.gitbook.io/hyperliquid-docs (fees, staking)
 - Aztec: https://www.techflowpost.com/en-US/article/34324
+- Montra: https://montramarkets.xyz/docs (launching, fees, holders, anti-snipe, reference, builders), and its live configs read on chain through its registry `0xF1E2FA75422F889e565F3142bdbf60B28dce2aa7`
+- Ascend: https://ascendlaunch.gitbook.io/docs (fees, Ascended status, staking, contracts)
 - Cloak: `docs/CLOAK.md`, `docs/MAINNET-DECISIONS.md`, `docs/GLOAK.md`, `contracts/src/CloakAuction.sol` (settlement burns), `contracts/src/CloakFactory.sol` (20% cap, 30-day minimum stream), `contracts-v4/src/CloakV4Hook.sol` (20% share), `contracts-gloam/src/CloakFundsGate.sol`
