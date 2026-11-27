@@ -18,7 +18,7 @@ Prices use 1 HYPE = $73, the figure the mainnet decisions used. Every number in 
 | **Genesis burn** | Every unsold token and every unused pool token is burned at settlement. Supply is set by real demand on day one |
 | **The engine** | All of Cloak's revenue goes to `CloakBuyback`, a contract with no owner. **60% buys $CLOAK** (75% of that is burned, 25% is kept for the ecosystem). **40% runs Cloak** |
 | **$CLOAK's own pool** | Cloak is the creator, so it gets 100% of its trading fees. The $CLOAK side is burned and the HYPE side goes to the buyback |
-| **Utility** | Pay launch fees in $CLOAK (burned), the sealed-bid Spotlight (burned), Cloak Names (burned yearly), $CLOAK-gated launch rounds (proved privately, already built), private voting, and bonds for relayers |
+| **Utility** | Launch day, no contract changes: private buying and holding, WL and guaranteed spots in Cloak's NFT auctions for holders, and a holder vote from day 7. Roadmap: pay the launch fee in $CLOAK, premium sealed-bid launches for holders, private holder lists, private voting |
 | **Never** | Yield, revenue share, emissions, a transfer tax, reflections, rebases, or any perk that makes you show your wallet |
 
 The idea in one line: **every product Cloak ships either earns revenue that burns $CLOAK, or needs $CLOAK to be burned or locked to use it.** No part of it depends on people simply holding.
@@ -88,7 +88,7 @@ How the creator's 75,000 is used. It's one stream to one address, the 2-of-3 Saf
 | Use | $CLOAK | % of supply |
 |---|---|---|
 | Team | 40,000 | 8% |
-| Ecosystem: relayer bonds to start, grants, integrations (Eloscape, Montra, launchpads), rewards for early private users | 25,000 | 5% |
+| Ecosystem: grants, integrations (Eloscape, Montra, launchpads), rewards for early private users | 25,000 | 5% |
 | Partners and security (Gloam, Elysium, auditors, bug bounties) | 10,000 | 2% |
 
 There's **no airdrop pot**. The sale is the distribution. Early users can be rewarded later from the ecosystem share, proved privately with `CloakReceiptCheck` (proof you made private payments), never with a snapshot of wallets.
@@ -155,14 +155,14 @@ It has no owner, and the splits are fixed in the code.
   audits, relay gas, ops     ┌───────────┴───────────┐
                             75%                     25%
                     burned (0x…dEaD)     Ecosystem reserve ($CLOAK, Safe)
-                                         relayer bonds, grants, liquidity
+                                         grants, the plain pool, drops
 ```
 
 - **45% of all revenue is burned as $CLOAK.** The current plan (Gloam's split) burns 25%.
 - **Separately, $CLOAK's own pool fees:** the $CLOAK side is burned at once (100%). The HYPE side goes into the engine above.
 - **Other tokens' fees** (launch tokens from the 20% share, Montra's) are sold for HYPE through the router first. Cloak never holds other projects' tokens.
 - **How it buys** (as already decided, with one addition): in small pieces, only when the price is within 1% of its 30-minute average, and with a per-day limit that grows with the pool's depth. The caller gets its gas back, capped. The addition is that **it runs at a random time each day**, so nobody can trade ahead of it on a schedule.
-- **Changing the splits** means deploying a new `CloakBuyback` and pointing CloakConfig at it. That waits 3 days in public, and once voting is live (section 6.5), it also needs a holder vote.
+- **Changing the splits** means deploying a new `CloakBuyback` and pointing CloakConfig at it. That waits 3 days in public, and once the holder vote is live (6.3), it also goes to a vote first.
 
 **Why we can burn more than Gloam:** Cloak's costs are close to zero. Hosting is on free plans, and the relay's gas is covered about 30 times by fees (decisions H6). The audit is paid from the genesis raise. So 40% is plenty for running Cloak, and the rest can go to buybacks.
 
@@ -186,56 +186,78 @@ How to read it: **the lower the price compared with revenue, the faster supply s
 
 ---
 
-## 6. Utility: real reasons to buy, burn or lock $CLOAK
+## 6. Utility (revised Nov 27: nothing that changes Cloak's contracts for now)
 
-The privacy rule (section 2, lesson 3) decides where utility goes. **Utility goes where people are already public:** launch creators, listed projects and relayers. Where a holder needs to show they hold $CLOAK, **they prove it with a zero-knowledge proof and never show the wallet.**
+Bob's rules for utility:
+- launch day uses **only contracts that are already live** on mainnet;
+- anything that needs contract work goes on the **roadmap**, with three items: paying the launch fee in $CLOAK, premium sealed-bid launches for holders, and private holder lists for NFT auctions.
 
-### 6.1 Pay the launch fee in $CLOAK, and it's burned (biggest sink, small build)
+The Spotlight, Cloak Names, the listing review fee and relayer bonds are dropped.
 
-- A creator can pay **1.0% in $CLOAK instead of 1.5% in HYPE**.
-- How: before bidding closes, the creator deposits $CLOAK in a small `CloakLaunchBoost` escrow for their auction. At settlement it burns $CLOAK worth 1.0% of the raise (priced at the pool's 30-minute average), returns the rest, and `CloakBuyback` pays the creator back the HYPE launch fee for that auction.
-- **No change to the factory or the auction.** The fee already flows to `CloakBuyback`, so it can pay it back.
-- What it does: every launch that uses it has to **buy $CLOAK on the market (1% of its raise) and burn all of it**. That's about 1.5 times what the engine would have burned from that fee (45% of 1.5%, about 0.68%). It's BNB's model on a launchpad, and creators save a third of the fee.
-- Risk: a creator could push the price up to burn fewer tokens. The 30-minute average and the pool's depth make that expensive, and there's a cap on how far the price can be off.
+### What Gloam's token does (for comparison)
 
-### 6.2 The Spotlight: sealed bids for the front page (burned)
+$GLOAM's utility is:
+- **governance**: holders vote on new assets, new chains, deposit limits and fees. The first vote ran in the open from Oct 29 to Nov 1, and private voting is "Next";
+- **first access** to new features;
+- **private holding** in Gloam's vault;
+- **later**, relayers staking it.
 
-- Each week, the featured spots on oncloak.xyz (homepage, Telegram bot posts, the launch feed) go to the highest sealed bids, **paid in $CLOAK and 100% burned**.
-- It uses Cloak's own sealed-bid code (CloakAuction or CloakDrop), so creators can't snipe each other and there's one clearing price.
-- The site reads the winners from the chain. No new contract holds money, and nobody can buy a spot outside the auction.
+Value comes from buybacks, which are "a treasury decision", plus the vote. That's the bar. $CLOAK matches it on day one and goes further with real access to auctions.
 
-### 6.3 $CLOAK-gated launch rounds (already built)
+### On launch day (no contract changes)
 
-- `CloakFundsGate` already lets a creator gate a launch to people who **privately hold at least X of an asset**, using Gloam's funds circuit, without showing any balance or notes.
-- Day one: creators can open a round to "$CLOAK holders, at least 250" with nothing new built. Holders keep $CLOAK private (it's in the launch vault), and the app shows the option on the create form.
-- This is the earlier idea of "launch priority for holders", done **without** linking a wallet to trades. The one thing it shows is the notes' nullifiers (when those notes are later spent). The site already explains that.
+**6.1 Private from the first trade.**
+- Buy, hold and sell $CLOAK without showing your wallet, through Privacy on Elysium's Montra page (one-time seats funded from the private balance, sent by the relay). It's built and tested on a mainnet fork.
+- No other token on Elysium can say that on its first day.
 
-### 6.4 Cloak Names (burned every year)
+**6.2 Holder access to Cloak's NFT auctions.**
+- `CloakDrop` is live on mainnet (factory `0x6b10…ca3`, no owner) and every drop already takes two lists, both Merkle roots:
+  - **GTD**: guaranteed spots at a fixed price, minted before bidding opens;
+  - **WL**: WL bids rank as price × (1 + boost) and pay the clearing price ÷ (1 + boost). The boost is up to 30%, so a WL winner pays up to 23% less and wins ties against public bids.
+- **Cloak publishes a "$CLOAK holders" list every week** (a snapshot at a random block in the past week, announced after the fact, so you can't buy the day before and sell the day after):
+  - holders of at least 1,000,000 $CLOAK (0.1%) go on the GTD list;
+  - holders of at least 100,000 go on the WL list;
+  - the snapshot counts public wallets and Privacy on Elysium seats.
+- **The create-drop form offers that list as a preset**, so every NFT creator on Cloak can give $CLOAK holders WL or GTD with one click. Creators get a crowd that's ready to buy, and holders get access across every drop, not just Cloak's own.
+- **Cloak's first drop** is a genesis NFT collection in launch week, with GTD and WL for holders. Its proceeds go to the treasury and the buyback.
+- App work only:
+  - the snapshot script;
+  - the preset on the form;
+  - letting a seat bid in a drop (it calls the drop through its escrow's `ownerCall`, as it already calls Montra). Until that's done, WL bids come from public wallets.
 
-- Readable private addresses: `cloak:bob` points to a receive address and payment links (both already built).
-- Register a name by burning $CLOAK, and burn again each year to keep it. Short names cost more (for example 3 letters 500, 4 letters 100, 5+ letters 25 a year, set by governance).
-- A name points to a receive box, which is public anyway. It never points to a wallet.
+**6.3 The holder vote, from day 7.**
+- **An open, signed vote with no contract**, the way Gloam ran its first one:
+  - each holder signs a message (EIP-712) for a choice;
+  - the weight is their $CLOAK balance at a snapshot block;
+  - a public script anyone can rerun counts the result.
+- **Private holders vote too:** a seat signs with its own key, so they vote without showing their main wallet.
+- **What the Safe does with a result:** it carries out what passes, within powers it already has:
+  - lowering $CLOAK's fee tier on day 30;
+  - the first drop's terms and the holder thresholds in 6.2;
+  - which launchpads the ecosystem vault vets next;
+  - how the ecosystem reserve is used (grants, the plain pool in 11.5);
+  - whether to burn Cloak's 2% lock early.
+- No vote can pay holders.
+- Build: a page on the site, the counting script and a weekly snapshot. **Ready a week after the token: yes.**
 
-### 6.5 Private voting (a small new contract, no circuit change)
+**6.4 Burns from day one.** $CLOAK's pool fees go to `CloakMontraSink` (11.3). That's a new 40-line contract, but it changes nothing that's already deployed. If even that should wait, the fee recipient starts as Cloak's launch seat. Cloak claims and burns by hand, with every round published as Gloam does. Then the seat hands the route to the sink with `updateRecipient`, which only the current recipient can call. The buyback runs the same way (by hand, logged) until `CloakBuyback` is reviewed.
 
-- Holders vote on the things that should be theirs to decide: fee rates within the hard limits already in the contracts, the buyback's splits, which launchpads the ecosystem vault approves, the market rules (C2) above their floors, and grants from the ecosystem share.
-- **The vote is private:** each vote is a funds proof of "at least 100 $CLOAK", one vote per 100, cast from a fresh address through the relay. A new contract, `CloakVote`, reuses `CloakFundsGate`'s verifier and context checks, but tracks nullifiers per **proposal** rather than per gate, so the same notes can't vote yes and no. That makes it, as far as we know, the first private token vote on Elysium. Gloam lists private voting as "Next".
-- Holders can't vote themselves money. There's no option to pay holders.
+### Roadmap (needs contract work, after the audit)
 
-### 6.6 Relayer bonds (later, once others run relays)
+**R1. Pay the launch fee in $CLOAK.**
+- A creator pays 1.0% of the raise in $CLOAK, bought on the market and burned, instead of 1.5% in HYPE.
+- A new `CloakLaunchBoost` escrow plus `CloakBuyback`, which pays the HYPE fee back. The factory and the auction stay as they are.
 
-- Anyone can already run a relay. Once others do, the app lists relays that have **bonded 2,500 $CLOAK**, which is burned if a relay is proven to misbehave (for example, going over the revert cap or failing to deliver a paid relay).
-- Relays are **paid for the work** (gas plus a fee from Cloak's 40%), not for holding. More relays also means no single operator sees everyone's IP, which makes Cloak more private.
-- The ecosystem share pays for the first bonds.
+**R2. Premium sealed-bid launches for holders.**
+- A new auction version that brings `CloakDrop`'s WL rules to token launches: holder bids rank with a boost and pay clearing ÷ (1 + boost), and a creator can set aside part of the sale for a holders-only round.
+- It's a new factory and auction, so it waits for the audit.
+- Creators choose it, holders get first and cheaper access to the best launches, and it's one more reason to launch on Cloak.
 
-### 6.7 Ecosystem listing review fee (burned)
+**R3. Private holder lists for NFT auctions and launches.**
+- Once Gloam lists $CLOAK (11.5), replace the snapshot with a zero-knowledge proof: `CloakFundsGate`, already live, confirms wallets that privately hold at least the threshold, and its confirmed list becomes the drop's or launch's WL.
+- Holders get access without their holdings ever being public. That's the privacy version of 6.2.
 
-- A launchpad that wants its tokens privately tradable in `CloakEcosystemVault` pays a **review fee in $CLOAK, burned**, for Cloak to vet its code (C1). The fee doesn't guarantee a listing, and the market rules (C2) still apply.
-
-### 6.8 Already there
-
-- **Pay with $CLOAK** in the trade picker (it routes through HYPE).
-- **Graduation** to Gloam's main vault, where the biggest private crowd is.
+**R4. Private voting** (`CloakVote`, reusing Gloam's funds circuit), replacing the open vote in 6.3 once $CLOAK is shielded.
 
 ---
 
@@ -246,7 +268,7 @@ The privacy rule (section 2, lesson 3) decides where utility goes. **Utility goe
 | Yield, revenue share or "real yield" staking | Paying holders from revenue looks like a security. Burning does the same job without the promise. Gloam and Cloak's own decisions say the same |
 | Emissions or "staking rewards" | They dilute holders to pay holders. Aztec and Hyperliquid both show the burn being offset |
 | A transfer tax (like VOID's "trading tax") | Aggregators and wallets flag it, CloakToken's clean listing story is lost, and private routing gets harder. GLOAK is where Cloak tests special token rules |
-| Fee discounts for proving you hold $CLOAK when trading | The proof would tie your trades together. We only use private proofs (6.3, 6.5) where linking doesn't matter |
+| Fee discounts for proving you hold $CLOAK when trading | The proof would tie your trades together. We only use private proofs (R3, R4) where linking doesn't matter |
 | Pairing every launch with $CLOAK instead of HYPE | That's how Virtuals did it. It makes demand, but every launch's liquidity would fall with $CLOAK, it adds a hop to every private route, and it means new contracts. If anything, it's for a far later version |
 | Founder top-ups to the buyback (like Gloam) | They make the burns look bigger than the fees really pay for. We report only what the contract does |
 | An upgradeable buyback or token (VoidCash's risk) | One key with no delay could change everything. Ours have no owner and no proxy |
@@ -257,7 +279,7 @@ The privacy rule (section 2, lesson 3) decides where utility goes. **Utility goe
 
 **Phase 0, now until the audit**
 - Keep revenue in the treasury (as now).
-- Build and test `CloakBuyback` (forge, plus a fork run like part 22), `CloakLaunchBoost` and the Spotlight. All three hold little or nothing, and none touches the factory, the auction or the vaults.
+- Build and test `CloakBuyback` and `CloakMontraSink` (forge, plus fork runs). Neither touches a deployed contract. Roadmap contracts (R1, R2) come after the audit.
 - Run GLOAK (it's ready, and only the owner's door call is left). It shows the sealed-bid machine working with real money before $CLOAK.
 - Publish this design so people can comment on it.
 
@@ -268,11 +290,12 @@ The privacy rule (section 2, lesson 3) decides where utility goes. **Utility goe
 - Announce together with Gloam (H5).
 
 **Phase 2, the first 90 days**
-- Launch fee in $CLOAK, the Spotlight, $CLOAK-gated rounds on the create form, a burn and privacy dashboard (burned, in vaults, in the pool, in public, like GLOAK's privacy meter).
-- Ask Gloam to list $CLOAK (H4).
+- Launch week: the first weekly holder list and Cloak's genesis NFT drop with GTD and WL for holders (6.2), and a burn and privacy dashboard (burned, in vaults, in the pool, in public, like GLOAK's privacy meter).
+- Day 7: the first holder vote (6.3).
+- Ask Gloam to list $CLOAK (H4), and seed the plain pool (11.5).
 
-**Phase 3**
-- Cloak Names, `CloakVote` with the Safe acting on passed votes, relayer bonds, and graduation into Gloam's vault.
+**Phase 3 (roadmap, after the audit)**
+- R1 the launch fee in $CLOAK, R2 premium sealed-bid launches for holders, R3 private holder lists, R4 private voting, and graduation into Gloam's vault.
 
 ---
 
@@ -293,7 +316,7 @@ The privacy rule (section 2, lesson 3) decides where utility goes. **Utility goe
 2. **Launch on Cloak:** yes (recommended), replacing "open" in `docs/CLOAK.md`.
 3. **Split 50 / 35 / 15** (auction / pool / Cloak), streamed over 24 months, with the team share following the market (4.3).
 4. **The buyback split: 40% ops and 60% buyback, 75% of that burned**, replacing the current 50/50 with half burned. If that's too much, a 50/50 split with 75% burned still burns 37.5% of revenue.
-5. **Which utilities to build first:** recommended in this order: the launch fee in $CLOAK (6.1), the Spotlight (6.2), gated rounds on the form (6.3), Names (6.4), voting (6.5), bonds (6.6).
+5. **Utility:** launch day 6.1 to 6.4, then the roadmap R1 to R4 (section 6, revised Nov 27).
 6. **For $CLOAK's launch:** lift or raise the total cap, a minimum price around 0.024 HYPE (about $875k market cap), and `minRaise` around 4,000 HYPE.
 
 ## 11. If $CLOAK launches on a launchpad (Montra or Ascend)
@@ -370,7 +393,7 @@ Montra has no allocation, so Cloak only owns what it buys.
 
 That's exactly why a big first buy looks bad: the crowd will call it an insider grab, fairly.
 
-**Recommendation: a first buy of 2% (20,000,000 $CLOAK) from the treasury, put straight into a public 12-month lock**, for ecosystem use only (relayer bonds, grants, the private pool in 11.5), never for the team.
+**Recommendation: a first buy of 2% (20,000,000 $CLOAK) from the treasury, put straight into a public 12-month lock**, for ecosystem use only (grants, the private pool in 11.5, the first NFT drop), never for the team.
 - The team is paid from the 40% operating share of revenue, not from tokens.
 - Announce the 2% and the lock before launch.
 - The stricter alternative is to buy nothing at launch. The ecosystem reserve then fills from the buyback's 25% instead. It's the cleaner story (Gloam did 0%), and it costs the ecosystem a few weeks.
@@ -385,7 +408,7 @@ So $CLOAK can't use either of Cloak's vaults. The plan has three stages:
 1. **Launch day: seats.** Private buys, holdings and sales through Privacy on Elysium's Montra page. Each holding is a one-time address funded from Gloam's vault and driven by the relay, so the holder's wallet never shows. It's private in the sense that matters (who), but the tokens sit in public one-time addresses, not shielded notes.
 2. **Week 1 to 4: a plain pool owned by Cloak.** Seed a native-HYPE v4 pool with no hook, using the ecosystem reserve's $CLOAK and treasury HYPE. Arbitrage keeps it at the Montra price. Its LP fees go to the engine. This is the pool Cloak's router and Gloam's router can trade. The ecosystem reserve exists for exactly this.
 3. **After that: Gloam's main vault.** Ask Gloam to list $CLOAK (they said they'd look once it has a market, with starting caps and their 3-day timelock).
-   - Then $CLOAK becomes a shielded asset: private swaps through `CloakRouterV4` on the plain pool, private sends, payment links, and the funds proofs that gated rounds (6.3) and voting (6.5) need.
+   - Then $CLOAK becomes a shielded asset: private swaps through `CloakRouterV4` on the plain pool, private sends, payment links, and the funds proofs that private holder lists (R3) and private voting (R4) need.
    - `CloakFundsGate` reads only Gloam's vault and Cloak's launch vault, so those two utilities wait for this stage.
 
 ### 11.6 What the engine gets from $CLOAK's own pool
@@ -407,9 +430,8 @@ A launch-week volume of $3M on Montra would bring Cloak about $50k. At 60% to th
 - **Section 4 (genesis)** is replaced by 11.3 to 11.5. No `minRaise`, cap lift or team-share burn is needed, since there's no auction and no allocation.
 - **Section 5 (the engine)** stays as it is. Add two revenue lines: `CloakMontraSink` (the HYPE side of $CLOAK's pool) and the builder rebate. The buyback buys on the Montra pool through Montra's router, and most of the 2% fee it pays comes back to itself through the sink. It burns with `burn()` rather than sending to `0x…dEaD`.
 - **Section 6 (utility):**
-  - the launch fee in $CLOAK, the Spotlight, Names, the review fee and relayer bonds all work on day one, since they need only public $CLOAK;
-  - gated rounds and private voting wait for Gloam's listing (11.5);
-  - pay-with-$CLOAK in the trade picker waits for the plain pool.
+  - revised Nov 27: launch day is 6.1 to 6.4 (private buying, NFT holder lists, the day-7 vote, burns), with no contract changes;
+  - the roadmap is R1 to R4. R3 and R4 also wait for Gloam's listing (11.5).
 - **Section 7 (won't do):** add Montra's holders route (11.3).
 - **GLOAK keeps the sealed-bid story.** Cloak's own auction is still the thing to show the world, and GLOAK shows it: "Cloak launches GLOAK on Cloak, and $CLOAK goes where the crowd is."
 
