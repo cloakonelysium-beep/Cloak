@@ -1,5 +1,7 @@
 # $CLOAK
 
+> **Superseded on Nov 27 by `docs/token/CLOAK-TOKEN.md`** (launch on Montra, 1B supply, the buyback split, holder utility and the roadmap). This file is kept for the history of the decisions.
+
 Nov 10. What's decided, what's open, and how $CLOAK fits into Cloak's vaults. The decisions behind it are in `docs/MAINNET-DECISIONS.md` (Part D and Part E).
 
 ## In one paragraph

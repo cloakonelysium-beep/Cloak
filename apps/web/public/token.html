@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>$CLOAK</title>
+<meta name="description" content="The token of Cloak, the privacy layer for Elysium. Fixed supply, private from the first trade, and burned as Cloak is used.">
+<link rel="icon" href="/logo.svg">
+<meta property="og:title" content="$CLOAK">
+<meta property="og:description" content="The token of Cloak. Private from the first trade, and burned as Cloak is used.">
+<meta property="og:image" content="/og.jpg">
+<style>
+  :root { --ink: #10161a; --paper: #f8f7f4; --signal: #2d7388; --mute: #5b6266; --line: #e4e3df; --card: #ffffff; --soft: #eef3f4; --burn: #b4532a; --run: #8a9397; --keep: #2d7388; }
+  @media (prefers-color-scheme: dark) { :root { --ink: #eef1f0; --paper: #0b1013; --signal: #6cb6cb; --mute: #9aa3a6; --line: #1d2529; --card: #11181c; --soft: #142026; --burn: #e0875f; --run: #5e686c; --keep: #6cb6cb; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 "Inter", ui-sans-serif, system-ui, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 16px 80px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+  header img { width: 36px; height: 36px; }
+  header a { color: inherit; text-decoration: none; font-weight: 600; font-size: 18px; }
+  h1 { font-size: 44px; line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 12px; }
+  .lede { color: var(--mute); font-size: 18px; margin: 0 0 32px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-bottom: 18px; }
+  h2 { font-size: 20px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  p { margin: 8px 0; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; color: var(--signal); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  ul { margin: 12px 0 0; padding-left: 20px; }
+  li { margin: 6px 0; }
+  b { font-weight: 600; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; margin-bottom: 18px; }
+  .fact { background: var(--card); padding: 16px 18px; }
+  .fact span { display: block; font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; }
+  .fact strong { display: block; font-size: 18px; font-weight: 600; margin-top: 2px; }
+  .bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 16px 0 10px; gap: 2px; }
+  .bar i { display: block; height: 100%; }
+  .legend { display: grid; gap: 6px; font-size: 15px; }
+  .legend div { display: flex; align-items: baseline; gap: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 44px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; border-top: 0; }
+  .note { color: var(--mute); font-size: 14px; }
+  .pending { display: inline-block; font-size: 13px; color: var(--mute); background: var(--soft); border-radius: 999px; padding: 2px 10px; }
+  footer { margin-top: 36px; color: var(--mute); font-size: 14px; }
+  footer a, section a { color: var(--signal); }
+  @media (max-width: 520px) { h1 { font-size: 36px; } th, td { padding: 8px 4px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><img src="/logo.svg" alt=""><a href="/">Cloak</a></header>
+  <h1><img src="/tokens/cloak.svg" alt="" width="40" height="40" style="vertical-align:-4px;margin-right:10px">$CLOAK</h1>
+  <p class="lede">The token of Cloak, the privacy layer for Elysium. Private from the first trade, and burned as Cloak is used.</p>
+
+  <div class="facts">
+    <div class="fact"><span>Supply</span><strong>1,000,000,000</strong></div>
+    <div class="fact"><span>Minting</span><strong>Never</strong></div>
+    <div class="fact"><span>Launches on</span><strong>Montra</strong></div>
+    <div class="fact"><span>Pair</span><strong>HYPE</strong></div>
+    <div class="fact"><span>Team allocation</span><strong>None</strong></div>
+    <div class="fact"><span>Transfer tax</span><strong>None</strong></div>
+    <div class="fact"><span>Owner</span><strong>None</strong></div>
+    <div class="fact"><span>Liquidity</span><strong>Locked for good</strong></div>
+  </div>
+
+  <section>
+    <span class="tag">From the first trade</span>
+    <h2>Private by default</h2>
+    <p>Buy, hold and sell $CLOAK from your private balance at <a href="https://elysium.oncloak.xyz">elysium.oncloak.xyz</a>. Each holding sits at a fresh one-time address, funded from Gloam's shielded vault and sent by Cloak's relay, so your wallet never appears.</p>
+    <p>The goal after that is Gloam's main vault, where $CLOAK becomes a fully shielded asset you can swap, send and pay with privately.</p>
+    <p class="note">What stays visible is each trade's size on the public pool and the one-time address's balance. Who holds it stays private.</p>
+  </section>
+
+  <section>
+    <span class="tag">How it gains value</span>
+    <h2>Using Cloak burns $CLOAK</h2>
+    <p>Everything Cloak earns goes to the buyback. That's launches, launch pool trading, private buys, sales and bids, NFT drops, partner integrations and $CLOAK's own pool.</p>
+    <div class="bar" role="img" aria-label="45% burned, 15% to the ecosystem reserve, 40% runs Cloak">
+      <i style="width:45%;background:var(--burn)"></i><i style="width:15%;background:var(--keep)"></i><i style="width:40%;background:var(--run)"></i>
+    </div>
+    <div class="legend">
+      <div><i class="dot" style="background:var(--burn)"></i><span class="num">45%</span><span>buys $CLOAK and burns it for good</span></div>
+      <div><i class="dot" style="background:var(--keep)"></i><span class="num">15%</span><span>buys $CLOAK for the ecosystem reserve, like the private pool, grants and drops</span></div>
+      <div><i class="dot" style="background:var(--run)"></i><span class="num">40%</span><span>runs Cloak, from audits to gas to the team</span></div>
+    </div>
+    <ul>
+      <li><b>$CLOAK's own trading fees</b> go to a contract with no owner. It burns the $CLOAK side at once and sends the HYPE side to the buyback. Nobody can ever redirect them, Cloak included.</li>
+      <li><b>Buys come in small pieces</b>, close to the average price, at a random time each day, so nobody can trade ahead of them.</li>
+      <li><b>Bots that rush the opening</b> pay up to 99% in the first 15 minutes, and that goes to the buyback too.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Holders get in first</span>
+    <h2>Your pass to Cloak's auctions</h2>
+    <p>Every week Cloak publishes a holder list from a snapshot at a random block. Every creator who launches a sealed NFT drop on Cloak can offer it to $CLOAK holders with one click.</p>
+    <table>
+      <tr><th>Hold</th><th>You get</th></tr>
+      <tr><td><b>1,000,000</b></td><td>Guaranteed spots in NFT drops, minted at a fixed price before bidding opens</td></tr>
+      <tr><td><b>100,000</b></td><td>A boost in sealed auctions. Your bids rank higher and you pay up to 23% less</td></tr>
+    </table>
+    <p class="note">Private holders count. Holdings at Cloak's one-time addresses are on the list and can use their spots without showing a main wallet.</p>
+  </section>
+
+  <section>
+    <span class="tag">From day 7</span>
+    <h2>Holders decide</h2>
+    <p>Holders vote with a signed message, weighted by their $CLOAK at a snapshot block, and anyone can recount the result. Private holders vote from their one-time address.</p>
+    <ul>
+      <li>When $CLOAK's own trading fee comes down</li>
+      <li>Drop terms and holder tiers</li>
+      <li>Which launchpads Cloak brings into its private vaults next</li>
+      <li>How the ecosystem reserve is used</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Cloak's own $CLOAK</span>
+    <h2>Bought in public, locked, never for the team</h2>
+    <p>Cloak buys 2% of the supply in the launch transaction and locks it for 12 months, for the ecosystem only. The team is paid from Cloak's revenue, never from $CLOAK.</p>
+  </section>
+
+  <section>
+    <span class="tag">Roadmap</span>
+    <h2>What comes next</h2>
+    <ul>
+      <li><b>Pay your launch fee in $CLOAK.</b> Launch with 1% of your raise in $CLOAK, bought and burned, instead of 1.5% in HYPE.</li>
+      <li><b>Premium sealed-bid launches for holders.</b> Holder bids rank higher and pay less in token launches, and creators can reserve part of a sale for holders.</li>
+      <li><b>Private holder lists.</b> Prove you hold enough $CLOAK with a zero-knowledge proof instead of a public snapshot.</li>
+      <li><b>Private voting.</b> The same holder vote, with zero-knowledge proofs.</li>
+      <li><b>Gloam's main vault.</b> $CLOAK as a fully shielded asset.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Never</span>
+    <h2>What $CLOAK will never do</h2>
+    <ul>
+      <li>Pay yield, staking rewards or a share of revenue. $CLOAK is not a share in Cloak.</li>
+      <li>Mint, rebase or tax transfers.</li>
+      <li>Have an owner or an upgradeable buyback.</li>
+      <li>Ask you to show your wallet for a perk.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">On chain</span>
+    <h2>Contracts and burns</h2>
+    <table>
+      <tr><th>What</th><th>Address</th></tr>
+      <tr><td>$CLOAK</td><td><span class="pending">At launch</span></td></tr>
+      <tr><td>Pool on Montra</td><td><span class="pending">At launch</span></td></tr>
+      <tr><td>Fee contract</td><td><span class="pending">At launch</span></td></tr>
+      <tr><td>Buyback</td><td><span class="pending">At launch</span></td></tr>
+      <tr><td>Cloak's 2% lock</td><td><span class="pending">At launch</span></td></tr>
+    </table>
+    <p class="note">Every buy and burn will be listed here with its transaction.</p>
+  </section>
+
+  <section>
+    <span class="tag">The honest part</span>
+    <h2>Burns follow use</h2>
+    <p>If Cloak is busy, more $CLOAK is burned. If it's quiet, less is. None of this is a promise about price. It's how Cloak uses what it earns, written in contracts anyone can check.</p>
+    <p class="note">Not financial advice.</p>
+  </section>
+
+  <footer>
+    <a href="/">oncloak.xyz</a> · <a href="/roadmap">Roadmap</a> · Follow <a href="https://x.com/cloakonelysium">@cloakonelysium</a> · Join <a href="https://t.me/cloakdesk">t.me/cloakdesk</a> · Built on <a href="https://github.com/gloamtrade/gloam">Gloam</a>
+  </footer>
+</div>
+</body>
+</html>

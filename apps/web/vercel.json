@@ -67,6 +67,10 @@
       "destination": "/roadmap.html"
     },
     {
+      "source": "/token",
+      "destination": "/token.html"
+    },
+    {
       "source": "/brand",
       "destination": "/brand.html"
     },

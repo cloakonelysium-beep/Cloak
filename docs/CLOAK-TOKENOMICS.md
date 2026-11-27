@@ -1,5 +1,7 @@
 # $CLOAK tokenomics: the proposal
 
+> **The settled sketch is `docs/token/CLOAK-TOKEN.md`** (Nov 27), with the X article and the token page. This file keeps the reasoning and the alternatives. Where they differ, the sketch wins.
+
 Nov 27. A full design for $CLOAK, built on what Cloak already runs on mainnet. It extends `docs/CLOAK.md` and changes two decisions there (the buyback split, and where $CLOAK launches). **Those changes need Bob's yes before anything is built.**
 
 > **Update (Nov 27, later): Bob may launch $CLOAK on a launchpad (Montra or Ascend) for the crowd.** That plan is section 11. It replaces sections 3 and 4 (supply and genesis). The engine (section 5), the utility (section 6) and the things we won't do (section 7) still apply, with the changes listed in 11.7.
